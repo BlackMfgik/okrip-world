@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/bluemap/:path*",
-      "destination": "http://ip199-83-103-227.joinserver.xyz:25718/:path*"
+      "destination": "/api/bluemap/:path*"
     }
   ]
 }
