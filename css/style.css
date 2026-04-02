@@ -203,7 +203,6 @@ html.light-theme .wrap::before {
   margin-right: 20px;
 }
 
-/* ── THEME TOGGLE ────────────────────────── */
 .theme-toggle {
   display: flex;
   align-items: center;
@@ -265,7 +264,6 @@ html.light-theme .wrap::before {
   flex-shrink: 0;
 }
 
-/* ── BODY LAYOUT ─────────────────────────── */
 .body {
   display: flex;
   flex: 1;
@@ -287,7 +285,6 @@ html.light-theme .wrap::before {
   transition: opacity 0.8s ease-in-out;
 }
 
-/* ── HOME PAGE ───────────────────────────── */
 .home-wrap {
   flex: 1;
   display: flex;
@@ -485,7 +482,6 @@ html.light-theme .wrap::before {
   transform: scale(1.1);
 }
 
-/* ── SERVERS PAGE ────────────────────────── */
 .servers-wrap {
   flex: 1;
   padding: 28px 28px;
@@ -766,7 +762,6 @@ html.light-theme .wrap::before {
   transition: color 1.2s ease-in-out;
 }
 
-/* ── MAP PAGE ────────────────────────────── */
 .maparea {
   flex: 1;
   position: relative;
@@ -855,7 +850,6 @@ html.light-theme .wrap::before {
   display: block;
 }
 
-/* ── COPY TOAST ──────────────────────────── */
 .toast {
   position: fixed;
   bottom: 24px;
