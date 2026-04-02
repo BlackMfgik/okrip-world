@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  const path = req.url.replace("/api/bluemap", "") || "/";
+  const path = req.url.replace(/^\/api\/bluemap/, "") || "/";
   const target = `http://ip199-83-103-227.joinserver.xyz:25718${path}`;
 
   try {

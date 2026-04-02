@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Модована Карта — Okrip World</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+      /* Map page needs full height body layout */
+      .wrap {
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <nav class="nav">
+        <a href="index.html" class="nav-logo">OKRIP WORLD</a>
+        <div class="nav-links">
+          <a href="servers.html">СЕРВЕРИ</a>
+        </div>
+        <span class="nav-online">ОНЛАЙН 67</span>
+        <div class="theme-toggle" id="theme-toggle">
+          <button class="theme-toggle-btn" title="Переключити тему"></button>
+        </div>
+      </nav>
+
+      <div class="body">
+        <div class="maparea">
+          <iframe
+            id="bluemap-frame"
+            src="about:blank"
+            title="BlueMap - Модовано"
+            allowfullscreen
+          ></iframe>
+
+          <div class="map-placeholder" id="placeholder">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 48 48"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect
+                x="4"
+                y="4"
+                width="40"
+                height="40"
+                stroke="#e8e4dc"
+                stroke-width="1.5"
+                fill="none"
+              />
+              <polyline
+                points="4,28 14,18 22,24 30,14 44,24"
+                stroke="#4a9"
+                stroke-width="1.5"
+                fill="none"
+              />
+              <circle
+                cx="34"
+                cy="16"
+                r="4"
+                stroke="#e8e4dc"
+                stroke-width="1.5"
+                fill="none"
+              />
+            </svg>
+            <div class="pulse" id="pulse-dot"></div>
+            <span>ЗАВАНТАЖЕННЯ МОДОВАНОЇ КАРТИ</span>
+          </div>
+
+          <div class="map-error" id="map-error">МАПА НАРАЗІ НЕДОСТУПНА</div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/map.js"></script>
+    <script>
+      // Modded server not yet available — show error banner immediately
+      document.addEventListener("DOMContentLoaded", function () {
+        var err = document.getElementById("map-error");
+        var dot = document.getElementById("pulse-dot");
+        if (err) err.classList.add("visible");
+        if (dot) dot.style.animationPlayState = "paused";
+      });
+    </script>
+  </body>
+</html>
