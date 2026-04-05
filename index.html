@@ -6,7 +6,15 @@
     <title>Okrip World</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="stylesheet" href="css/style.css" />
-    <script>try{if(localStorage.getItem("theme")==="light")document.documentElement.classList.add("light-theme")}catch(e){}</script>
+    <script>
+      try {
+        if (localStorage.getItem("theme") === "light")
+          document.documentElement.classList.add("light-theme", "theme-init");
+        else document.documentElement.classList.add("theme-init");
+      } catch (e) {
+        document.documentElement.classList.add("theme-init");
+      }
+    </script>
   </head>
   <body>
     <div class="wrap">
@@ -20,6 +28,8 @@
       <div class="body">
         <div class="home-wrap">
           <div class="home-grid"></div>
+          <div class="home-night-bg"></div>
+          <div class="home-day-bg"></div>
 
           <div class="home-eyebrow">MINECRAFT NETWORK</div>
 
@@ -44,7 +54,7 @@
               <span class="stat-label">СЕРВЕРИ</span>
             </div>
             <div class="stat">
-              <span class="stat-num">1.21</span>
+              <span class="stat-num">1.21.1</span>
               <span class="stat-label">ВЕРСІЯ</span>
             </div>
           </div>

@@ -885,6 +885,7 @@ html.light-theme .wrap::before {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
 @media (max-width: 600px) {
   .nav {
     padding: 0 16px;
@@ -985,4 +986,106 @@ html.light-theme .social-icon {
 
 html.light-theme .social-icon:hover {
   color: var(--accent-light);
+}
+
+/* ── HOME NIGHT BACKGROUND ───────────────────────────────────────────
+ * Завжди display:block — перемикання ТІЛЬКИ через opacity.
+ * display:none блокує transition, тому його тут немає.
+ * ─────────────────────────────────────────────────────────────────── */
+.home-night-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url("../content/main_night.png");
+  background-size: cover;
+  background-position: center top;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  -webkit-mask-image: radial-gradient(
+    ellipse 58% 72% at 50% 48%,
+    black 0%,
+    black 25%,
+    rgba(0, 0, 0, 0.85) 40%,
+    rgba(0, 0, 0, 0.5) 60%,
+    rgba(0, 0, 0, 0.15) 78%,
+    transparent 95%
+  );
+  mask-image: radial-gradient(
+    ellipse 58% 72% at 50% 48%,
+    black 0%,
+    black 25%,
+    rgba(0, 0, 0, 0.85) 40%,
+    rgba(0, 0, 0, 0.5) 60%,
+    rgba(0, 0, 0, 0.15) 78%,
+    transparent 95%
+  );
+  /* Reveal-анімація при першому завантаженні / поверненні до темної теми */
+  animation: bgReveal 2.2s cubic-bezier(0.22, 0.61, 0.36, 1) 0.3s both;
+  /* Плавний перехід при зміні теми */
+  transition: opacity 1.2s ease-in-out;
+}
+
+/* Єдина анімація появлення для обох фонів:
+   тільки opacity + легкий scale (GPU-прискорено, без mask-image —
+   mask-image є дискретною властивістю і не інтерполюється). */
+@keyframes bgReveal {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── HOME DAY BACKGROUND ─────────────────────────────────────────────
+ * Теж завжди display:block, старого display:none немає.
+ * ─────────────────────────────────────────────────────────────────── */
+.home-day-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url("../content/main_day.png");
+  background-size: cover;
+  background-position: center top;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.2s ease-in-out;
+  -webkit-mask-image: radial-gradient(
+    ellipse 58% 72% at 50% 48%,
+    black 0%,
+    black 25%,
+    rgba(0, 0, 0, 0.85) 40%,
+    rgba(0, 0, 0, 0.5) 60%,
+    rgba(0, 0, 0, 0.15) 78%,
+    transparent 95%
+  );
+  mask-image: radial-gradient(
+    ellipse 58% 72% at 50% 48%,
+    black 0%,
+    black 25%,
+    rgba(0, 0, 0, 0.85) 40%,
+    rgba(0, 0, 0, 0.5) 60%,
+    rgba(0, 0, 0, 0.15) 78%,
+    transparent 95%
+  );
+}
+
+/* ── ТЕМА: переключення фонів ────────────── */
+html.light-theme .home-night-bg {
+  opacity: 0;
+  animation: none;
+}
+
+/* При перемиканні теми — плавний CSS-transition (opacity 0→1) */
+html.light-theme .home-day-bg {
+  opacity: 1;
+}
+
+/* При першому завантаженні з світлою темою — анімація появлення.
+   theme-init встановлюється в <head> до першого рендеру
+   і прибирається через JS після завершення анімації. */
+html.theme-init.light-theme .home-day-bg {
+  animation: bgReveal 2.2s cubic-bezier(0.22, 0.61, 0.36, 1) 0.3s both;
 }
