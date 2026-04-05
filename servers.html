@@ -6,7 +6,12 @@
     <title>Сервери — Okrip World</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="stylesheet" href="css/style.css" />
-    <script>try{if(localStorage.getItem("theme")==="light")document.documentElement.classList.add("light-theme")}catch(e){}</script>
+    <script>
+      try {
+        if (localStorage.getItem("theme") === "light")
+          document.documentElement.classList.add("light-theme");
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div class="wrap">
@@ -20,6 +25,8 @@
 
       <div class="body">
         <div class="servers-wrap">
+          <div class="servers-night-bg"></div>
+          <div class="servers-day-bg"></div>
           <div class="page-header">
             <div class="page-title">СЕРВЕРИ</div>
           </div>

@@ -491,6 +491,67 @@ html.light-theme .wrap::before {
   padding: 28px 28px;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── SERVERS PAGE BACKGROUNDS ─────────────────────────────────────── */
+.servers-night-bg,
+.servers-day-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center top;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.2s ease-in-out;
+  -webkit-mask-image: radial-gradient(
+    ellipse 58% 72% at 50% 48%,
+    black 0%,
+    black 25%,
+    rgba(0, 0, 0, 0.85) 40%,
+    rgba(0, 0, 0, 0.5) 60%,
+    rgba(0, 0, 0, 0.15) 78%,
+    transparent 95%
+  );
+  mask-image: radial-gradient(
+    ellipse 58% 72% at 50% 48%,
+    black 0%,
+    black 25%,
+    rgba(0, 0, 0, 0.85) 40%,
+    rgba(0, 0, 0, 0.5) 60%,
+    rgba(0, 0, 0, 0.15) 78%,
+    transparent 95%
+  );
+}
+
+.servers-night-bg {
+  background-image: url("../content/second_sunset.png");
+  animation: bgReveal 2.2s cubic-bezier(0.22, 0.61, 0.36, 1) 0.3s both;
+}
+
+.servers-day-bg {
+  background-image: url("../content/second_sunrise.png");
+}
+
+html.light-theme .servers-night-bg {
+  opacity: 0;
+  animation: none;
+}
+
+html.light-theme .servers-day-bg {
+  opacity: 1;
+}
+
+html.theme-init.light-theme .servers-day-bg {
+  animation: bgReveal 2.2s cubic-bezier(0.22, 0.61, 0.36, 1) 0.3s both;
+}
+
+.servers-wrap .page-header,
+.servers-wrap .servers-grid {
+  position: relative;
+  z-index: 1;
 }
 
 .page-header {
@@ -988,19 +1049,20 @@ html.light-theme .social-icon:hover {
   color: var(--accent-light);
 }
 
-/* ── HOME NIGHT BACKGROUND ───────────────────────────────────────────
+/* ── HOME BACKGROUNDS ────────────────────────────────────────────────
  * Завжди display:block — перемикання ТІЛЬКИ через opacity.
  * display:none блокує transition, тому його тут немає.
  * ─────────────────────────────────────────────────────────────────── */
-.home-night-bg {
+.home-night-bg,
+.home-day-bg {
   position: absolute;
   inset: 0;
-  background-image: url("../content/main_night.png");
   background-size: cover;
   background-position: center top;
   z-index: 0;
   pointer-events: none;
   opacity: 0;
+  transition: opacity 1.2s ease-in-out;
   -webkit-mask-image: radial-gradient(
     ellipse 58% 72% at 50% 48%,
     black 0%,
@@ -1019,13 +1081,15 @@ html.light-theme .social-icon:hover {
     rgba(0, 0, 0, 0.15) 78%,
     transparent 95%
   );
-  /* Reveal-анімація при першому завантаженні / поверненні до темної теми */
-  animation: bgReveal 2.2s cubic-bezier(0.22, 0.61, 0.36, 1) 0.3s both;
-  /* Плавний перехід при зміні теми */
-  transition: opacity 1.2s ease-in-out;
 }
 
-/* Єдина анімація появлення для обох фонів:
+.home-night-bg {
+  background-image: url("../content/main_night.png");
+  /* Reveal-анімація при першому завантаженні / поверненні до темної теми */
+  animation: bgReveal 2.2s cubic-bezier(0.22, 0.61, 0.36, 1) 0.3s both;
+}
+
+/* Єдина анімація появлення для всіх фонів:
    тільки opacity + легкий scale (GPU-прискорено, без mask-image —
    mask-image є дискретною властивістю і не інтерполюється). */
 @keyframes bgReveal {
@@ -1039,37 +1103,8 @@ html.light-theme .social-icon:hover {
   }
 }
 
-/* ── HOME DAY BACKGROUND ─────────────────────────────────────────────
- * Теж завжди display:block, старого display:none немає.
- * ─────────────────────────────────────────────────────────────────── */
 .home-day-bg {
-  position: absolute;
-  inset: 0;
   background-image: url("../content/main_day.png");
-  background-size: cover;
-  background-position: center top;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 1.2s ease-in-out;
-  -webkit-mask-image: radial-gradient(
-    ellipse 58% 72% at 50% 48%,
-    black 0%,
-    black 25%,
-    rgba(0, 0, 0, 0.85) 40%,
-    rgba(0, 0, 0, 0.5) 60%,
-    rgba(0, 0, 0, 0.15) 78%,
-    transparent 95%
-  );
-  mask-image: radial-gradient(
-    ellipse 58% 72% at 50% 48%,
-    black 0%,
-    black 25%,
-    rgba(0, 0, 0, 0.85) 40%,
-    rgba(0, 0, 0, 0.5) 60%,
-    rgba(0, 0, 0, 0.15) 78%,
-    transparent 95%
-  );
 }
 
 /* ── ТЕМА: переключення фонів ────────────── */
