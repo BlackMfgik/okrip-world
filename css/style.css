@@ -591,7 +591,9 @@ html.theme-init.light-theme .servers-day-bg {
 }
 
 .server-card {
-  background-color: var(--bg-primary);
+  background-color: rgba(10, 10, 10, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   padding: 20px 22px;
   display: flex;
   flex-direction: column;
@@ -640,7 +642,7 @@ html.theme-init.light-theme .servers-day-bg {
 }
 
 .server-card:hover {
-  background-color: var(--bg-secondary);
+  background-color: rgba(15, 15, 15, 0.6);
   box-shadow:
     0 12px 32px rgba(0, 0, 0, 0.6),
     inset 0 1px 0 rgba(25, 145, 175, 0.1);
@@ -947,6 +949,18 @@ html.theme-init.light-theme .servers-day-bg {
   transform: translateX(-50%) translateY(0);
 }
 
+@media (max-width: 900px) {
+  .servers-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .server-card:nth-child(1),
+  .server-card:nth-child(2),
+  .server-card:nth-child(3) {
+    grid-column: 1 / 2;
+  }
+}
+
 @media (max-width: 600px) {
   .nav {
     padding: 0 16px;
@@ -961,11 +975,29 @@ html.theme-init.light-theme .servers-day-bg {
   }
 
   .servers-wrap {
-    padding: 28px 16px;
+    padding: 28px 12px;
+  }
+
+  .servers-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .server-card:nth-child(1),
+  .server-card:nth-child(2),
+  .server-card:nth-child(3) {
+    grid-column: 1 / 2;
   }
 
   .server-card {
-    padding: 24px 20px;
+    padding: 22px 18px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .server-type {
+    flex-wrap: wrap;
+    gap: 8px;
   }
 }
 
@@ -1013,12 +1045,12 @@ html.light-theme .btn-ghost:hover {
 }
 
 html.light-theme .server-card {
-  background: var(--bg-primary);
+  background: rgba(248, 248, 248, 0.55);
   box-shadow: none;
 }
 
 html.light-theme .server-card:hover {
-  background: var(--bg-secondary);
+  background: rgba(239, 239, 239, 0.7);
 }
 
 html.light-theme .server-card::after {
