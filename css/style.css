@@ -589,9 +589,6 @@ html.theme-init.light-theme .servers-day-bg {
 .server-card:nth-child(2) {
   grid-column: 3 / 5;
 }
-.server-card:nth-child(3) {
-  grid-column: 2 / 4;
-}
 
 .server-card {
   background-color: rgba(10, 10, 10, 0.45);
@@ -757,6 +754,30 @@ html.theme-init.light-theme .servers-day-bg {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.server-card-footer-new {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.server-card-footer-new .split-ip-group {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.server-card-footer-new .server-ip-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.server-card-footer-new .split-port-block {
+  flex: 0 0 auto !important;
+  min-width: 90px;
 }
 
 .btn-map {
@@ -958,8 +979,7 @@ html.theme-init.light-theme .servers-day-bg {
   }
 
   .server-card:nth-child(1),
-  .server-card:nth-child(2),
-  .server-card:nth-child(3) {
+  .server-card:nth-child(2) {
     grid-column: 1 / 2;
   }
 }
@@ -987,8 +1007,7 @@ html.theme-init.light-theme .servers-day-bg {
   }
 
   .server-card:nth-child(1),
-  .server-card:nth-child(2),
-  .server-card:nth-child(3) {
+  .server-card:nth-child(2) {
     grid-column: 1 / 2;
   }
 
@@ -1053,6 +1072,183 @@ html.light-theme .btn-ghost {
 
 html.light-theme .btn-ghost:hover {
   background: rgba(25, 145, 175, 0.05);
+}
+
+/* ── Split card (Vanilla + Creative hub) ────────────────────── */
+.split-card {
+  padding: 0 !important;
+  gap: 0 !important;
+  overflow: hidden;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Split body ── */
+.split-body {
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  flex: 1; /* займає весь простір між верхом і футером */
+}
+
+.split-half {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 20px;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  min-width: 0;
+  cursor: default;
+}
+
+/* Ліва сторона — контент від лівого краю, відступ до лінії */
+.split-left {
+  align-items: flex-start;
+  padding-right: 48px;
+}
+
+/* Права сторона — контент від правого краю, відступ до лінії */
+.split-right {
+  align-items: flex-end;
+  text-align: right;
+  padding-left: 48px;
+}
+
+/* Всі дочірні елементи не виходять за межі при стисканні */
+.split-half * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ── Типографіка всередині split ── */
+.split-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  transition: color 1.2s ease-in-out;
+}
+
+.split-card .server-badge {
+  font-size: 12px;
+}
+.split-card .server-desc {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.split-card .feature {
+  font-size: 13px;
+}
+
+/* Права колонка — бейдж: крапка справа */
+.split-badge-right {
+  flex-direction: row-reverse;
+}
+
+/* Права колонка — фічі: тире справа */
+.feature-right {
+  flex-direction: row-reverse;
+}
+.feature-right::before {
+  content: none;
+}
+.feature-right::after {
+  content: "—";
+  color: var(--accent-color);
+  font-size: 13px;
+  flex-shrink: 0;
+  transition: color 1.2s ease-in-out;
+}
+
+/* ── Діагональна "/" лінія ── */
+.split-divider {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1.5px;
+  height: 200%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(25, 145, 175, 0.15) 20%,
+    rgba(25, 145, 175, 0.65) 40%,
+    rgba(25, 145, 175, 0.65) 60%,
+    rgba(25, 145, 175, 0.15) 80%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* ── Спільний футер: [МАПА] [IP] [МАПА] ── */
+.split-shared-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* IP + PORT поруч */
+.split-ip-group {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.split-ip-group .server-ip-block {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Порт — менша ширина */
+.split-port-block {
+  flex: 0 0 auto !important;
+  min-width: 90px;
+}
+
+/* ── Mobile ── */
+@media (max-width: 700px) {
+  .split-body {
+    flex-direction: column;
+  }
+
+  .split-left {
+    padding-right: 20px;
+  }
+  .split-right {
+    padding-left: 20px;
+    align-items: flex-start;
+    text-align: left;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .feature-right {
+    flex-direction: row;
+  }
+  .feature-right::before {
+    content: "—";
+  }
+  .feature-right::after {
+    content: none;
+  }
+  .split-badge-right {
+    flex-direction: row;
+  }
+  .split-divider {
+    display: none;
+  }
+
+  .split-shared-footer {
+    flex-wrap: wrap;
+  }
 }
 
 html.light-theme .server-card {

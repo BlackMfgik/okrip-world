@@ -17,7 +17,7 @@
     <div class="wrap">
       <nav class="nav">
         <a href="index.html" class="nav-logo">OKRIP WORLD</a>
-        <span class="nav-online">ОНЛАЙН 67</span>
+        <span class="nav-online" id="nav-total-online">ОНЛАЙН —</span>
         <div class="theme-toggle" id="theme-toggle">
           <button class="theme-toggle-btn" title="Переключити тему"></button>
         </div>
@@ -32,66 +32,76 @@
           </div>
 
           <div class="servers-grid">
-            <!-- VANILLA -->
-            <div class="server-card">
-              <div class="server-badge">
-                <div class="dot"></div>
-                ONLINE
-              </div>
-              <div class="server-type">
-                VANILLA<span class="server-online">18 ОНЛАЙН</span>
-              </div>
-              <p class="server-desc">
-                Чистий Minecraft без модифікацій.<br />
-                Грай так, як задумували розробники — виживання, дослідження та
-                будівництво у своєму темпі.
-              </p>
-              <div class="server-features">
-                <span class="feature">Чистий виживач 1.21</span>
-                <span class="feature">Без wipe — світ зберігається</span>
-                <span class="feature">Білдінг та фармінг</span>
-              </div>
-              <div class="server-ip-block" title="Натисни, щоб скопіювати">
-                <div>
-                  <div class="ip-label">IP АДРЕСА</div>
-                  <div class="ip-value">okripworld.minecraft.best</div>
+            <!-- VANILLA + CREATIVE (хаб) -->
+            <div
+              class="server-card split-card"
+              data-server-ip="OkripWorld.mcserver.host"
+            >
+              <!-- Split body: left = Vanilla, right = Creative -->
+              <div class="split-body">
+                <div class="split-half split-left">
+                  <div class="server-badge">
+                    <div class="dot"></div>
+                    ONLINE
+                    <span class="server-online">— ОНЛАЙН</span>
+                  </div>
+                  <div class="split-label">VANILLA</div>
+                  <p class="server-desc">
+                    Чистий Minecraft без модифікацій.<br />
+                    Виживання, дослідження та будівництво у своєму темпі.
+                  </p>
+                  <div class="server-features">
+                    <span class="feature">Чистий виживач 1.21.11</span>
+                    <span class="feature">Без wipe — світ зберігається</span>
+                    <span class="feature">Білдінг та фармінг</span>
+                  </div>
                 </div>
-                <span class="copy-hint">КОПІЮВАТИ</span>
-              </div>
-              <div class="server-card-footer">
-                <div class="server-status">
-                  <div class="dot"></div>
-                  <span>ПОРТ 25565</span>
-                </div>
-                <a href="map-vanilla.html" class="btn-map">МАПА →</a>
-              </div>
-            </div>
 
-            <!-- CREATIVE -->
-            <div class="server-card">
-              <div class="server-badge">SOON</div>
-              <div class="server-type">CREATIVE</div>
-              <p class="server-desc">
-                Безмежна творчість у творчому режимі.<br />
-                Будуй масштабні проєкти, мегаспоруди та архітектурні шедеври без
-                обмежень ресурсів.
-              </p>
-              <div class="server-features">
-                <span class="feature">Творчий режим 1.21</span>
-                <span class="feature">WorldEdit підтримка</span>
-                <span class="feature">Особисті ділянки</span>
-              </div>
-              <div class="server-ip-block" title="Натисни, щоб скопіювати">
-                <div>
-                  <div class="ip-label">IP АДРЕСА</div>
-                  <div class="ip-value">soon</div>
+                <div class="split-divider"></div>
+
+                <div class="split-half split-right">
+                  <div class="server-badge split-badge-right">
+                    ONLINE
+                    <div class="dot"></div>
+                  </div>
+                  <div class="split-label">CREATIVE</div>
+                  <p class="server-desc">
+                    Безмежна творчість у творчому режимі.<br />
+                    Будуй масштабні проєкти без обмежень ресурсів.
+                  </p>
+                  <div class="server-features">
+                    <span class="feature feature-right"
+                      >Творчий режим 1.21.11</span
+                    >
+                    <span class="feature feature-right">Особисті ділянки</span>
+                  </div>
                 </div>
-                <span class="copy-hint">КОПІЮВАТИ</span>
               </div>
-              <div class="server-card-footer">
-                <div class="server-status">
-                  <div class="dot"></div>
-                  <span>ПОРТ 25565</span>
+
+              <!-- Shared footer: [МАПА] [IP | ПОРТ] [МАПА] -->
+              <div class="split-shared-footer">
+                <a href="map-vanilla.html" class="btn-map">МАПА →</a>
+                <div class="split-ip-group">
+                  <div
+                    class="server-ip-block"
+                    title="Натисни, щоб скопіювати IP"
+                  >
+                    <div>
+                      <div class="ip-label">IP АДРЕСА</div>
+                      <div class="ip-value">OkripWorld.mcserver.host</div>
+                    </div>
+                    <span class="copy-hint">КОПІЮВАТИ</span>
+                  </div>
+                  <div
+                    class="server-ip-block split-port-block"
+                    title="Натисни, щоб скопіювати порт"
+                  >
+                    <div>
+                      <div class="ip-label">ПОРТ</div>
+                      <div class="ip-value">25594</div>
+                    </div>
+                    <span class="copy-hint">КОПІЮВАТИ</span>
+                  </div>
                 </div>
                 <a href="map-creative.html" class="btn-map">МАПА →</a>
               </div>
@@ -111,17 +121,28 @@
                 <span class="feature">Нові виміри та боси</span>
                 <span class="feature">Технологічні моди</span>
               </div>
-              <div class="server-ip-block" title="Натисни, щоб скопіювати">
-                <div>
-                  <div class="ip-label">IP АДРЕСА</div>
-                  <div class="ip-value">soon</div>
-                </div>
-                <span class="copy-hint">КОПІЮВАТИ</span>
-              </div>
-              <div class="server-card-footer">
-                <div class="server-status">
-                  <div class="dot"></div>
-                  <span>ПОРТ 25565</span>
+              <div class="server-card-footer-new">
+                <div class="split-ip-group">
+                  <div
+                    class="server-ip-block"
+                    title="Натисни, щоб скопіювати IP"
+                  >
+                    <div>
+                      <div class="ip-label">IP АДРЕСА</div>
+                      <div class="ip-value">soon</div>
+                    </div>
+                    <span class="copy-hint">КОПІЮВАТИ</span>
+                  </div>
+                  <div
+                    class="server-ip-block split-port-block"
+                    title="Натисни, щоб скопіювати порт"
+                  >
+                    <div>
+                      <div class="ip-label">ПОРТ</div>
+                      <div class="ip-value">25565</div>
+                    </div>
+                    <span class="copy-hint">КОПІЮВАТИ</span>
+                  </div>
                 </div>
                 <a href="map-modded.html" class="btn-map">МАПА →</a>
               </div>
