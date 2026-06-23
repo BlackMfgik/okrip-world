@@ -6,7 +6,12 @@
     <title>Ванільна Карта — Okrip World</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="stylesheet" href="css/style.css" />
-    <script>try{if(localStorage.getItem("theme")==="light")document.documentElement.classList.add("light-theme")}catch(e){}</script>
+    <script>
+      try {
+        if (localStorage.getItem("theme") === "light")
+          document.documentElement.classList.add("light-theme");
+      } catch (e) {}
+    </script>
     <style>
       /* Map page needs full height body layout */
       .wrap {
@@ -31,8 +36,8 @@
         <div class="maparea">
           <iframe
             id="bluemap-frame"
-            src="/bluemap/#world:695:-51:-173:0:0.11:1.16:0:0:free"
-            title="BlueMap - Ванілла"
+            src="http://146.59.52.46:8080/#world:695:-51:-173:0:0.11:1.16:0:0:free"
+            title="BlueMap"
             allowfullscreen
           ></iframe>
 
