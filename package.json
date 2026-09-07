@@ -1,25 +1,40 @@
 {
-  "name": "okrip-web",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "okrip-world",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Okrip World — Minecraft-спільнота. Next.js/TypeScript rewrite.",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/BlackMfgik/okrip-web.git"
+  "dependencies": {
+    "next": "15.5.25",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "zustand": "^5.0.3",
+    "@tanstack/react-query": "^5.66.0"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/BlackMfgik/okrip-web/issues"
+  "overrides": {
+    "postcss": "^8.5.28"
   },
-  "homepage": "https://github.com/BlackMfgik/okrip-web#readme",
   "devDependencies": {
-    "vite": "^5.4.0"
+    "typescript": "^5.7.3",
+    "@types/node": "^22.10.7",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "tailwindcss": "^3.4.17",
+    "postcss": "^8.5.28",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.19.0",
+    "eslint-config-next": "15.5.25",
+    "@eslint/eslintrc": "^3.2.0",
+    "vitest": "^3.0.4",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "jsdom": "^26.0.0"
   }
 }

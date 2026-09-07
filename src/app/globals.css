@@ -1,5 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
 :root {
   --bg: #050505;
   --bg-elevated: rgba(255, 255, 255, 0.04);
@@ -344,7 +348,6 @@ body {
   cursor: pointer;
   transition: all 0.3s;
 }
-/* Кнопка "Обрати сервер" завжди як у чорній темі, незалежно від теми сайту */
 .btn-primary {
   background: #ffffff;
   color: #050505;
@@ -391,7 +394,6 @@ body {
   opacity: 0;
   animation: fade-up 0.7s ease 0.5s forwards;
 }
-/* Кнопки соцмереж завжди як у чорній темі, незалежно від теми сайту */
 .social-icon {
   width: 44px;
   height: 44px;
@@ -632,6 +634,10 @@ body {
 }
 
 /* ── Map pages ── */
+.wrap:has(.maparea) {
+  height: 100vh;
+}
+
 .maparea {
   position: relative;
   width: 100%;
