@@ -9,14 +9,11 @@
     <script>
       try {
         if (localStorage.getItem("theme") === "light")
-          document.documentElement.classList.add("light-theme", "theme-init");
-        else document.documentElement.classList.add("theme-init");
-      } catch (e) {
-        document.documentElement.classList.add("theme-init");
-      }
+          document.documentElement.classList.add("light-theme");
+      } catch (e) {}
     </script>
   </head>
-  <body>
+  <body class="home-page">
     <div class="wrap">
       <nav class="nav">
         <a href="index.html" class="nav-logo">OKRIP WORLD</a>
@@ -32,37 +29,29 @@
           <div class="home-night-bg"></div>
           <div class="home-day-bg"></div>
 
-          <div class="home-eyebrow">MINECRAFT NETWORK</div>
-
+          <div class="home-eyebrow">Minecraft Network</div>
           <h1 class="home-title">OKRIP<br /><span>WORLD</span></h1>
-
           <p class="home-sub">
             Українська Minecraft-спільнота.<br />
-            Три сервери — один дім.
+            Два сервери — один дім.
           </p>
-
           <div class="home-actions">
-            <a href="servers.html" class="btn btn-primary">ОБРАТИ СЕРВЕР</a>
+            <a href="servers.html" class="btn btn-primary">Обрати сервер →</a>
           </div>
-
           <div class="home-stats">
             <div class="stat">
               <span class="stat-num" id="stat-total-online">—</span>
-              <span class="stat-label">ОНЛАЙН</span>
+              <span class="stat-label">Онлайн</span>
             </div>
             <div class="stat">
-              <span class="stat-num">3</span>
-              <span class="stat-label">СЕРВЕРИ</span>
+              <span class="stat-num">2</span>
+              <span class="stat-label">Сервери</span>
             </div>
             <div class="stat">
-              <span class="stat-num"
-                >1.21.11<br />
-                1.21.1</span
-              >
-              <span class="stat-label">ВЕРСІЯ</span>
+              <span class="stat-num">1.21.11</span>
+              <span class="stat-label">Версія</span>
             </div>
           </div>
-
           <div class="social-links">
             <a
               href="https://t.me/okripworld"
@@ -121,7 +110,6 @@
       </div>
     </div>
 
-    <!-- ── OiOi mascot ── -->
     <div class="oioi-mascot" id="oioi-mascot" aria-label="OiOi">
       <img
         src="content/OiOi.svg"
@@ -129,11 +117,11 @@
         class="oioi-img"
         draggable="false"
       />
-      <div class="oioi-bubble" aria-hidden="true">
-        <span>OiOi</span>
-      </div>
+      <div class="oioi-bubble" aria-hidden="true"><span>OiOi</span></div>
     </div>
 
-    <script type="module" src="js/main.js"></script>
+    <div class="toast" id="toast"></div>
+
+    <script src="js/main.js"></script>
   </body>
 </html>
