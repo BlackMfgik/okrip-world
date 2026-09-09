@@ -32,8 +32,9 @@ export function SocialLinks() {
           rel="noopener noreferrer"
           className="social-icon"
           title={link.title}
+          aria-label={link.title}
         >
-          <svg viewBox="0 0 24 24" fill="currentColor">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d={link.path} />
           </svg>
         </a>

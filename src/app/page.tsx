@@ -4,17 +4,21 @@ import { Nav } from "@/components/nav";
 import { Mascot } from "@/components/mascot";
 import { SocialLinks } from "@/components/social-links";
 import { HomeStatOnline } from "@/components/home-stat-online";
+import { pageMetadata, SITE_DESCRIPTION } from "@/lib/site";
+import { SERVERS } from "@/lib/servers";
 
-export const metadata: Metadata = {
-  title: "Okrip World",
-};
+export const metadata: Metadata = pageMetadata(
+  "Okrip World — Українська Minecraft-спільнота",
+  SITE_DESCRIPTION,
+  "/",
+);
 
 export default function HomePage() {
   return (
     <>
       <Nav />
 
-      <div className="body">
+      <main className="body">
         <div className="home-wrap">
           <div className="home-grid" />
           <div className="home-night-bg" />
@@ -29,7 +33,7 @@ export default function HomePage() {
           <p className="home-sub">
             Українська Minecraft-спільнота.
             <br />
-            Два сервери — один дім.
+            Ванільний сервер — один дім.
           </p>
           <div className="home-actions">
             <Link href="/servers" className="btn btn-primary">
@@ -42,8 +46,8 @@ export default function HomePage() {
               <span className="stat-label">Онлайн</span>
             </div>
             <div className="stat">
-              <span className="stat-num">2</span>
-              <span className="stat-label">Сервери</span>
+              <span className="stat-num">{SERVERS.length}</span>
+              <span className="stat-label">{SERVERS.length === 1 ? "Сервер" : "Сервери"}</span>
             </div>
             <div className="stat">
               <span className="stat-num">1.21.11</span>
@@ -52,7 +56,7 @@ export default function HomePage() {
           </div>
           <SocialLinks />
         </div>
-      </div>
+      </main>
 
       <Mascot />
     </>

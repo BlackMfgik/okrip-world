@@ -8,7 +8,7 @@ interface NavProps {
 
 export function Nav({ staticOnline }: NavProps) {
   return (
-    <nav className="nav">
+    <nav className="nav" aria-label="Основна навігація">
       <Link href="/" className="nav-logo">
         OKRIP WORLD
       </Link>
