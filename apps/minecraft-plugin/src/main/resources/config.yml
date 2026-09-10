@@ -1,0 +1,5 @@
+api-url: "https://api.example.com"
+server-id: "vanilla"
+server-token: "REPLACE_WITH_AT_LEAST_32_RANDOM_CHARACTERS"
+poll-interval-seconds: 5
+timeout-seconds: 8

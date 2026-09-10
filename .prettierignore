@@ -1,0 +1,12 @@
+node_modules
+.next
+pnpm-lock.yaml
+dist
+build
+.gradle
+.pnpm-store
+.tools
+.turbo
+output
+coverage
+*.tsbuildinfo

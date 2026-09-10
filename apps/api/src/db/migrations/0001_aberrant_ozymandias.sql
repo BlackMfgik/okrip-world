@@ -1,0 +1,2 @@
+ALTER TABLE "minecraft_commands" ADD COLUMN "sequence" bigserial NOT NULL;--> statement-breakpoint
+ALTER TABLE "minecraft_identities" ADD CONSTRAINT "valid_minecraft_name" CHECK (username ~ '^[A-Za-z0-9_]{3,16}$' AND normalized_username = lower(username));

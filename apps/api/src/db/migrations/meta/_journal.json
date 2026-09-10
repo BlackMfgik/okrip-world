@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788994076773,
+      "tag": "0000_dizzy_genesis",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788994245845,
+      "tag": "0001_aberrant_ozymandias",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788994355908,
+      "tag": "0002_workflow_guards",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "@okrip/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=../../.env src/server.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src test",
+    "test": "vitest run",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@okrip/contracts": "workspace:*",
+    "fastify": "^5.2.1",
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.0.0",
+    "@fastify/rate-limit": "^10.2.1",
+    "drizzle-orm": "^0.45.0",
+    "pg": "^8.13.3",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.11",
+    "tsx": "^4.19.3",
+    "vitest": "^3.0.4",
+    "drizzle-kit": "^0.31.0",
+    "@electric-sql/pglite": "^0.3.14"
+  }
+}

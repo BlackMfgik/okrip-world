@@ -1,0 +1,13 @@
+name: OkripWhitelist
+version: 1.0.0
+main: world.okrip.whitelist.OkripWhitelistPlugin
+api-version: '1.21.11'
+description: Durable Okrip World whitelist synchronization
+commands:
+  okripban:
+    description: Ban a registered nickname and synchronize access
+    permission: okrip.admin
+    usage: /okripban <nickname> <reason>
+permissions:
+  okrip.admin:
+    default: op

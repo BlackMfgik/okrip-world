@@ -1,0 +1,16 @@
+.git
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/.gradle
+**/build
+.pnpm-store
+.tools
+.env
+.env.*
+!.env.example
+*.log
+output
+**/coverage
+**/*.tsbuildinfo

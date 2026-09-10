@@ -1,0 +1,27 @@
+# Стани та інваріанти
+
+## Заявка та доступ
+
+`pending → approved | rejected | cancelled`. Рішення остаточне; повторний approve/reject повертає вже відомий стан. Після rejected/cancelled дозволена нова заявка з тим самим ніком, якщо player_access відсутній. Після будь-якого рішення про доступ нові заявки блокуються.
+
+`approved → active`; `active → banned` через авторизовану подію Minecraft. Модель містить revoked. Відновлення revoked/banned та зміна закріпленого ніка — окремі адміністративні операції, публічних endpoint у MVP для них немає. Захисні DB-trigger забороняють випадкове відновлення чи заміну ідентичності; OAuth ніколи не змінює player_access. Не вимикайте trigger і не видаляйте історію для обходу бану.
+
+Сервіси блокують рядок users перед змінами заявок/доступу. В одній транзакції схвалення: CAS pending → approved, insert active access, insert whitelist_add, audit, Telegram edit job. Помилка будь-якої вставки відкочує всі зміни. Дублювання Discord ID / normalized Minecraft nickname / pending application додатково обмежене в PostgreSQL.
+
+Нік закріплюється при першій заявці, незалежно від регістру подальшого вводу. Для offline-mode використовується точне первісне написання ніка: воно визначає offline UUID. Premium ownership не перевіряється і verified_ownership залишається false.
+
+## Черга команд
+
+`pending → leased → completed`; `leased → failed → leased`; expired leased → leased з новим токеном. Схвалення ніколи не відкочується через недоступний Minecraft.
+
+Коротке advisory transaction lock серіалізує вибір команд для одного serverId. Монотонна sequence зберігає порядок команд одного player_access. Прострочені оренди відновлюються; команди інших гравців можуть виконуватися під час backoff проблемної команди. LeaseToken відсікає старі підтвердження. Невиконаний whitelist_add для вже banned/revoked access пропускається; ban event створює whitelist_remove, потім ban (із kick).
+
+Плагін має один worker. HTTP, online profile resolution і запис локального журналу виконуються поза Minecraft thread. Bukkit mutations повертаються на server thread. Перед зміною перевіряється локальний 45-секундний deadline, менший за lease; після успішної зміни пишеться журнал підтвердження. При розриві мережі він відправляється повторно, у тому числі після перезапуску. Аварія між зміною whitelist і записом журналу спричиняє ідемпотентне повторне виконання.
+
+Локальний ban при whitelist_add надсилає ban event, щоб не лишити сайт у syncing назавжди. Polling ProfileBanList також бачить стандартні offline-бани. Плагіни з власним сховищем банів потребують окремого адаптера або команди /okripban. Unban із Minecraft не відновлює web-доступ автоматично.
+
+## Telegram delivery
+
+Створення заявки атомарно записує telegram_jobs. Worker того самого API виконує одну job за раз, з таймаутом і backoff до 5 хвилин; webhook лишається в API. Crash/timeout після прийняття sendMessage, але до запису message_id може створити дубль повідомлення: Telegram не має idempotency key для sendMessage. Усі копії ведуть до тієї самої заявки; дубльовані кнопки не створюють повторного доступу. Основне відоме повідомлення редагується після рішення.
+
+MVP розрахований на одну активну API-репліку й один плагін для serverId. Перекриття деплоїв може дублювати Telegram notification, але DB CAS зберігає одноразовість рішення. Автоматичного горизонтального масштабування немає.

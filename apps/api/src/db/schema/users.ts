@@ -1,0 +1,12 @@
+import { pgTable, varchar } from "drizzle-orm/pg-core";
+import { id, createdAt, updatedAt } from "./common.js";
+
+export const users = pgTable("users", {
+  id: id(),
+  discordId: varchar("discord_id").notNull().unique(),
+  discordUsername: varchar("discord_username").notNull(),
+  discordGlobalName: varchar("discord_global_name"),
+  discordAvatar: varchar("discord_avatar"),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});

@@ -1,0 +1,112 @@
+import { randomUUID } from "node:crypto";
+import { commandSchema } from "@okrip/contracts";
+import type { Database } from "../../db/client.js";
+import { AppError } from "../../shared/errors.js";
+import { audit } from "../audit/audit.repository.js";
+import {
+  lockUser,
+  enqueueMessage,
+} from "../applications/application.repository.js";
+import { addCommand } from "../moderation/moderation.repository.js";
+import * as repo from "./minecraft-command.repository.js";
+export function minecraftService(db: Database, serverId: string) {
+  return {
+    async lease() {
+      return db.transaction(async (tx) => {
+        await repo.lockQueue(tx, serverId);
+        // Preserve order per player while letting unrelated players make progress.
+        const command = await repo.head(tx, serverId);
+        if (!command) return { commands: [] };
+        if (
+          command.status === "leased" &&
+          command.leaseUntil &&
+          command.leaseUntil > new Date()
+        )
+          return { commands: [] };
+        if (command.availableAt > new Date()) return { commands: [] };
+        const access = await repo.commandAccess(tx, command.playerAccessId);
+        if (command.type === "whitelist_add" && access.status !== "active") {
+          await repo.complete(tx, command.id);
+          return { commands: [] };
+        }
+        const leaseToken = randomUUID();
+        await repo.lease(tx, command.id, leaseToken);
+        return { commands: [commandSchema.parse({ ...command, leaseToken })] };
+      });
+    },
+    async acknowledge(id: string, leaseToken: string, error?: string) {
+      return db.transaction(async (tx) => {
+        const command = await repo.find(tx, id, serverId);
+        if (!command)
+          throw new AppError(404, "not_found", "Команду не знайдено.");
+        if (command.leaseToken !== leaseToken)
+          throw new AppError(
+            409,
+            "stale_lease",
+            "Оренда команди вже неактуальна.",
+          );
+        if (command.status === "completed") return;
+        if (
+          command.status !== "leased" ||
+          !command.leaseUntil ||
+          command.leaseUntil <= new Date()
+        )
+          throw new AppError(409, "stale_lease", "Оренда команди завершилась.");
+        if (error) await repo.fail(tx, id, error, command.attempts);
+        else await repo.complete(tx, id);
+        await audit(tx, {
+          actorType: "minecraft_server",
+          actorId: serverId,
+          eventType: error ? "command_failed" : "command_completed",
+          entityType: "command",
+          entityId: id,
+          metadata: error ? { error } : {},
+        });
+      });
+    },
+    async ban(event: { eventId: string; username: string; reason: string }) {
+      return db.transaction(async (tx) => {
+        const identity = await repo.identityByName(tx, event.username);
+        if (!identity)
+          throw new AppError(
+            404,
+            "identity_not_found",
+            "Нік не зареєстрований.",
+          );
+        await lockUser(tx, identity.userId);
+        if (!(await repo.recordBanEvent(tx, event.eventId, serverId)).length)
+          return;
+        const access = await repo.banAccess(
+          tx,
+          identity.userId,
+          identity.id,
+          event.reason,
+        );
+        for (const app of await repo.cancelPending(tx, identity.userId))
+          await enqueueMessage(tx, app.id, "decided");
+        await addCommand(
+          tx,
+          access.id,
+          serverId,
+          identity.username,
+          "whitelist_remove",
+        );
+        await addCommand(
+          tx,
+          access.id,
+          serverId,
+          identity.username,
+          "ban",
+          event.reason,
+        );
+        await audit(tx, {
+          actorType: "minecraft_server",
+          actorId: serverId,
+          eventType: "player_banned",
+          entityType: "player_access",
+          entityId: access.id,
+        });
+      });
+    },
+  };
+}

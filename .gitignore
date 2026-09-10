@@ -1,7 +1,29 @@
-node_modules
-.next
-out
-dist
-.env*.local
-.vercel
+# Installed dependencies and package caches
+node_modules/
+.pnpm-store/
+
+# Build output and test caches
+.next/
+out/
+dist/
+build/
+.gradle/
+.turbo/
+coverage/
+*.tsbuildinfo
 *.log
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+.vercel/
+
+# Temporary tools and unrelated generated exports
+/.tools/
+/output/
+
+# Operating system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
