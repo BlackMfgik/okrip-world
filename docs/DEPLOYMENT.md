@@ -8,7 +8,7 @@
 
 ## 2. Railway services
 
-Створіть три сервіси в одному проєкті/середовищі: postgres, api, web. Repository root для обох build — корінь monorepo. Вкажіть Config File Path окремо: `apps/api/railway.toml` і `apps/web/railway.toml`. Dockerfile paths уже задані в цих файлах. Не встановлюйте root directory на apps/api чи apps/web, інакше не буде shared contracts.
+Створіть три сервіси в одному проєкті/середовищі: Postgres, api, web (наявний сайт може називатися okrip-world). Сайт і API підключаються до одного репозиторію. Repository root для обох build — `/`, корінь monorepo. Для API задайте Dockerfile path `apps/api/Dockerfile` та змінну `RAILWAY_DOCKERFILE_PATH=apps/api/Dockerfile`; для сайту — відповідно `apps/web/Dockerfile`. Поточний Railway API відхиляє Config File Path як застарілий: застосовуйте параметри безпосередньо в налаштуваннях сервісів. Наявні TOML-файли самі по собі не налаштовують ці сервіси. Не встановлюйте root directory на apps/api чи apps/web, інакше не буде shared contracts.
 
 PostgreSQL: приватна мережа, volume, backups. Не створюйте публічний TCP proxy для runtime. API DATABASE_URL посилається на приватну змінну Postgres. Для ручних робіт використовуйте захищений Railway tunnel і вимикайте його після роботи.
 
@@ -24,7 +24,7 @@ Web variables: NODE_ENV=production, PORT=3000, API_INTERNAL_URL=`http://api.rail
 
 Додайте public domains для web і api (наприклад, world.example.com / api.example.com), застосуйте DNS-записи з Railway й дочекайтеся TLS. API public domain потрібен Telegram і Kinetic; браузер користується web origin. Після зміни web domain оновіть APP_BASE_URL, WEB_ORIGIN і Discord redirect разом.
 
-API pre-deploy: `pnpm --filter @okrip/api db:migrate`. Міграції не запускаються під час build. Deployment healthcheck — /ready; для web — /health. API одна репліка, без sleeping/serverless: внутрішній Telegram worker повинен доставляти збережені jobs. Restart policy прописано в TOML.
+API pre-deploy: `pnpm --filter @okrip/api db:migrate`. Міграції не запускаються під час build. Deployment healthcheck — /ready; для web — /health, timeout 60 секунд. API одна репліка, без sleeping/serverless: внутрішній Telegram worker повинен доставляти збережені jobs. У налаштуваннях сервісів задайте restart policy ON_FAILURE, максимум 10 повторів. Після зміни параметрів збірки запускайте нову збірку з source; повтор старого deployment може використати попередню конфігурацію.
 
 ## 3. Telegram webhook
 
@@ -34,7 +34,7 @@ API pre-deploy: `pnpm --filter @okrip/api db:migrate`. Міграції не з�
 $webhookBody = @{
   url = 'https://<api-domain>/v1/integrations/telegram/webhook'
   secret_token = $env:TELEGRAM_WEBHOOK_SECRET
-  allowed_updates = @('callback_query')
+  allowed_updates = @('message', 'callback_query')
 } | ConvertTo-Json
 Invoke-RestMethod -Method Post -Uri ('https://api.telegram.org/bot' + $env:TELEGRAM_BOT_TOKEN + '/setWebhook') -ContentType 'application/json' -Body $webhookBody
 ```
@@ -70,3 +70,8 @@ Invoke-RestMethod -Method Post -Uri ('https://api.telegram.org/bot' + $env:TELEG
 Перевіряйте в приватній БД старі pending/failed minecraft_commands і незавершені telegram_jobs. Backoff до 5 хвилин; постійна помилка потребує оператора. Після зміни секретів оновлюйте обидві сторони інтеграції. Не видаляйте outbox або користувачів для ремонту доступу; зберігайте історію й audit.
 
 Джерела: [Railway config](https://docs.railway.com/config-as-code/reference), [pre-deploy](https://docs.railway.com/deployments/pre-deploy-command), [healthcheck](https://docs.railway.com/deployments/healthchecks), [Paper setup](https://docs.papermc.io/paper/dev/project-setup/), [Telegram setWebhook](https://core.telegram.org/bots/api#setwebhook).
+
+## Тимчасове отримання Telegram ID
+
+TELEGRAM_ADMIN_CHAT_ID і TELEGRAM_ADMIN_USER_IDS можна пропустити або залишити порожніми. API запускається, але модерація й доставка заявок призупинені зі збереженням черги. Після реєстрації webhook із message та callback_query надішліть /ids@username_бота у групі від кожного майбутнього модератора: бот покаже ID чату й автора. Внесіть перевірені числові ID у Railway (користувачі через кому). Після перезапуску доставка відновиться, а команда отримання ID вимкнеться. Discord ID та токени залишаються обов'язковими.
+

@@ -17,6 +17,8 @@ export function moderationService(db: Database, env: Env) {
       chatId: string,
     ) {
       if (
+        !env.TELEGRAM_ADMIN_CHAT_ID ||
+        !env.TELEGRAM_ADMIN_USER_IDS ||
         !env.TELEGRAM_ADMIN_USER_IDS.split(",").includes(adminId) ||
         chatId !== env.TELEGRAM_ADMIN_CHAT_ID
       )

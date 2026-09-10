@@ -7,6 +7,11 @@ import type { moderationService } from "./moderation.service.js";
 import type { TelegramProvider } from "./telegram-message.service.js";
 const webhook = z.object({
   update_id: z.number().int(),
+  message: z.object({
+    text: z.string().optional(),
+    from: z.object({ id: z.number().int().safe(), is_bot: z.boolean().optional() }).optional(),
+    chat: z.object({ id: z.number().int().safe() }),
+  }).optional(),
   callback_query: z
     .object({
       id: z.string(),
@@ -36,7 +41,17 @@ export function telegramRoutes(
         )
       )
         throw new AppError(401, "unauthorized", "Unauthorized");
-      const callback = webhook.parse(req.body).callback_query;
+      const update = webhook.parse(req.body);
+      const message = update.message;
+      if ((!env.TELEGRAM_ADMIN_CHAT_ID || !env.TELEGRAM_ADMIN_USER_IDS) &&
+          message?.from && !message.from.is_bot &&
+          /^\/(?:start|ids)(?:@\w+)?\s*$/.test(message.text ?? "")) {
+        await telegram.call("sendMessage", {
+          chat_id: message.chat.id,
+          text: `Режим налаштування Okrip World\nTELEGRAM_ADMIN_CHAT_ID=${message.chat.id}\nВаш TELEGRAM_ADMIN_USER_IDS=${message.from.id}\nЦя команда не надає прав модератора.`,
+        });
+      }
+      const callback = update.callback_query;
       if (!callback) return { ok: true };
       const match = /^(approve|reject):([A-Za-z0-9_-]{16})$/.exec(
         callback.data,

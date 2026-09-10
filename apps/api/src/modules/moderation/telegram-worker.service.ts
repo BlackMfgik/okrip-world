@@ -10,7 +10,7 @@ export function telegramWorker(
   let running = false;
   return {
     async tick() {
-      if (running) return;
+      if (running || !env.TELEGRAM_ADMIN_CHAT_ID || !env.TELEGRAM_ADMIN_USER_IDS) return;
       running = true;
       try {
         const job = await db.transaction((tx) => repo.takeJob(tx));
