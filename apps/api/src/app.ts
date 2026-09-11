@@ -101,7 +101,12 @@ export async function buildApp(
   const auth = authService(db, env, discord),
     worker = telegramWorker(db, env, telegram);
   authRoutes(app, auth, env);
-  applicationRoutes(app, auth, applicationService(db, discord));
+  applicationRoutes(
+    app,
+    auth,
+    applicationService(db, discord, env.APPLICATION_REPEAT_DEBUG),
+    env.APPLICATION_REPEAT_DEBUG,
+  );
   telegramRoutes(
     app,
     env,

@@ -29,6 +29,10 @@ export const envSchema = z
     TELEGRAM_ADMIN_USER_IDS: z.string().regex(/^$|^\d+(,\d+)*$/).default(""),
     MINECRAFT_SERVER_ID: z.string().min(1),
     MINECRAFT_SERVER_TOKEN: secret,
+    APPLICATION_REPEAT_DEBUG: z
+      .union([z.boolean(), z.enum(["true", "false"])])
+      .default("true")
+      .transform((value) => value === true || value === "true"),
   })
   .superRefine((v, ctx) => {
     if (

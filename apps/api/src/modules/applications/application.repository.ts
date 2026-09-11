@@ -59,6 +59,15 @@ export async function createApplication(
       .returning()
   )[0]!;
 }
+export async function cancelPending(db: Executor, userId: string) {
+  return db
+    .update(applications)
+    .set({ status: "cancelled", updatedAt: new Date() })
+    .where(
+      and(eq(applications.userId, userId), eq(applications.status, "pending")),
+    )
+    .returning({ id: applications.id });
+}
 export const enqueueMessage = (
   db: Executor,
   applicationId: string,

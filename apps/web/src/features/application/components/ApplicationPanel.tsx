@@ -41,9 +41,15 @@ export function ApplicationPanel() {
       {data && (
         <>
           <ApplicationStatus data={data} />
-          {!data.access &&
-            (!data.application ||
-              ["rejected", "cancelled"].includes(data.application.status)) && (
+          {data.repeatSubmissionEnabled && (
+            <p role="status">Режим відладки: повторні заявки дозволені.</p>
+          )}
+          {(data.repeatSubmissionEnabled ||
+            (!data.access &&
+              (!data.application ||
+                ["rejected", "cancelled"].includes(
+                  data.application.status,
+                )))) && (
               <ApplicationForm />
             )}
         </>

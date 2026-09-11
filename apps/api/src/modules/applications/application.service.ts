@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { sql } from "drizzle-orm";
 import {
   submitApplicationSchema,
   currentApplicationSchema,
@@ -11,7 +12,11 @@ import {
 import { AppError } from "../../shared/errors.js";
 import { audit } from "../audit/audit.repository.js";
 import * as repo from "./application.repository.js";
-export function applicationService(db: Database, discord: DiscordProvider) {
+export function applicationService(
+  db: Database,
+  discord: DiscordProvider,
+  repeatSubmissionEnabled = false,
+) {
   return {
     async submit(user: { id: string; discordId: string }, input: unknown) {
       const { minecraftUsername } = submitApplicationSchema.parse(input);
@@ -20,23 +25,33 @@ export function applicationService(db: Database, discord: DiscordProvider) {
       }
       try {
         await db.transaction(async (tx) => {
+          if (repeatSubmissionEnabled)
+            await tx.execute(
+              sql`select set_config('okrip.allow_repeat_applications', 'on', true)`,
+            );
           await repo.lockUser(tx, user.id);
-          if (await repo.accessFor(tx, user.id))
+          if (!repeatSubmissionEnabled && (await repo.accessFor(tx, user.id)))
             throw new AppError(
               409,
               "access_exists",
               "Доступ уже розглянуто. Зверніться до адміністрації.",
             );
-          const current = await repo.latest(tx, user.id);
-          if (
-            current?.application.status === "pending" ||
-            current?.application.status === "approved"
-          )
-            throw new AppError(
-              409,
-              "application_exists",
-              "У вас уже є активна заявка.",
-            );
+          if (repeatSubmissionEnabled) {
+            const cancelled = await repo.cancelPending(tx, user.id);
+            for (const application of cancelled)
+              await repo.enqueueMessage(tx, application.id, "decided");
+          } else {
+            const current = await repo.latest(tx, user.id);
+            if (
+              current?.application.status === "pending" ||
+              current?.application.status === "approved"
+            )
+              throw new AppError(
+                409,
+                "application_exists",
+                "У вас уже є активна заявка.",
+              );
+          }
           const existing = await repo.identityFor(tx, user.id);
           if (
             existing &&
@@ -99,6 +114,7 @@ export function applicationService(db: Database, discord: DiscordProvider) {
               ? "completed"
               : "waiting"
             : null,
+        repeatSubmissionEnabled,
       });
     },
   };

@@ -1,5 +1,6 @@
 import type { Database } from "../../db/client.js";
 import type { Env } from "../../config/env.js";
+import { sql } from "drizzle-orm";
 import { AppError } from "../../shared/errors.js";
 import { audit } from "../audit/audit.repository.js";
 import {
@@ -54,13 +55,18 @@ export function moderationService(
         );
       let queued = false;
       const result = await db.transaction(async (tx) => {
+        if (env.APPLICATION_REPEAT_DEBUG)
+          await tx.execute(
+            sql`select set_config('okrip.allow_repeat_applications', 'on', true)`,
+          );
         const found = await repo.findApplication(tx, publicId);
         if (!found) throw new AppError(404, "not_found", "Заявку не знайдено.");
         await lockUser(tx, found.application.userId);
         const fresh = (await repo.findApplication(tx, publicId))!;
         if (fresh.application.status !== "pending")
           return fresh.application.status;
-        if (await accessFor(tx, fresh.application.userId))
+        const existingAccess = await accessFor(tx, fresh.application.userId);
+        if (existingAccess && !env.APPLICATION_REPEAT_DEBUG)
           throw new AppError(
             409,
             "access_exists",
@@ -76,7 +82,7 @@ export function moderationService(
         );
         if (!changed.length)
           return (await repo.findApplication(tx, publicId))!.application.status;
-        if (status === "approved") {
+        if (status === "approved" && !existingAccess) {
           const access = await repo.grant(
             tx,
             fresh.application.userId,

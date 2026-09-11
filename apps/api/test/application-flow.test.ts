@@ -160,6 +160,60 @@ it("asks for and saves a Telegram rejection reason", async () => {
     }),
   );
 });
+it("allows unlimited debug resubmissions and keeps only the newest one pending", async () => {
+  const { cookie } = await login(ctx);
+  const cookies = { okrip_session: cookie };
+  const submit = () =>
+    ctx.app.inject({
+      method: "POST",
+      url: "/v1/applications",
+      cookies,
+      headers: browserHeaders,
+      payload: { minecraftUsername: "Player_One" },
+    });
+
+  const first = await submit();
+  const second = await submit();
+  const third = await submit();
+
+  expect([first.statusCode, second.statusCode, third.statusCode]).toEqual([
+    201, 201, 201,
+  ]);
+  expect(third.json().repeatSubmissionEnabled).toBe(true);
+  const saved = await ctx.db.select().from(applications);
+  expect(saved).toHaveLength(3);
+  expect(
+    saved.filter((application) => application.status === "pending"),
+  ).toHaveLength(1);
+  expect(
+    saved.filter((application) => application.status === "cancelled"),
+  ).toHaveLength(2);
+
+  await ctx.app.inject({
+    method: "POST",
+    url: "/v1/integrations/telegram/webhook",
+    headers: {
+      "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET,
+    },
+    payload: telegramBody(third.json().application.publicId),
+  });
+  expect(await ctx.db.select().from(playerAccess)).toHaveLength(1);
+  expect(await ctx.db.select().from(commands)).toHaveLength(1);
+
+  const afterApproval = await submit();
+  expect(afterApproval.statusCode, afterApproval.body).toBe(201);
+  const repeatedId = afterApproval.json().application.publicId;
+  await ctx.app.inject({
+    method: "POST",
+    url: "/v1/integrations/telegram/webhook",
+    headers: {
+      "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET,
+    },
+    payload: telegramBody(repeatedId),
+  });
+  expect(await ctx.db.select().from(playerAccess)).toHaveLength(1);
+  expect(await ctx.db.select().from(commands)).toHaveLength(1);
+});
 it("rejects duplicates, forged identity, and unauthorized moderators", async () => {
   const { cookie } = await login(ctx);
   const user = (await ctx.db.select().from(users))[0]!;
