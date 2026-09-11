@@ -14,11 +14,15 @@ export function moderationService(
   env: Env,
   commandQueued: (serverId: string) => void = () => undefined,
 ) {
+  const moderatorIds = new Set(
+    [env.TELEGRAM_ADMIN_USER_IDS, env.TELEGRAM_EXTRA_ADMIN_USER_IDS]
+      .flatMap((ids) => ids.split(","))
+      .filter(Boolean),
+  );
   const assertModerator = (adminId: string, chatId: string) => {
     if (
       !env.TELEGRAM_ADMIN_CHAT_ID ||
-      !env.TELEGRAM_ADMIN_USER_IDS ||
-      !env.TELEGRAM_ADMIN_USER_IDS.split(",").includes(adminId) ||
+      !moderatorIds.has(adminId) ||
       chatId !== env.TELEGRAM_ADMIN_CHAT_ID
     )
       throw new AppError(403, "forbidden", "Недостатньо прав.");

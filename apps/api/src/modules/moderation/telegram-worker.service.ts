@@ -47,6 +47,17 @@ export function telegramWorker(
           db,
           job.applicationId,
         );
+        if (job.kind === "delete") {
+          if (app.telegramChatId && app.telegramMessageId) {
+            await telegram.call("deleteMessage", {
+              chat_id: app.telegramChatId,
+              message_id: app.telegramMessageId,
+            });
+            await repo.clearMessage(db, app.id);
+          }
+          await repo.finishJob(db, job.id);
+          return;
+        }
         const text = [
           "🧾Заявка №" + app.number,
           "🔵Discord: " + user.discordUsername,

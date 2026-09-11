@@ -15,6 +15,7 @@ import {
   users,
 } from "../src/db/schema.js";
 import { applicationService } from "../src/modules/applications/application.service.js";
+import { moderationService } from "../src/modules/moderation/moderation.service.js";
 import { minecraftUsernameSchema } from "@okrip/contracts";
 let ctx: Awaited<ReturnType<typeof setup>>;
 beforeEach(async () => {
@@ -160,7 +161,7 @@ it("asks for and saves a Telegram rejection reason", async () => {
     }),
   );
 });
-it("allows unlimited debug resubmissions and keeps only the newest one pending", async () => {
+it("blocks duplicate pending applications and removes an old Telegram notice after resubmission", async () => {
   const { cookie } = await login(ctx);
   const cookies = { okrip_session: cookie };
   const submit = () =>
@@ -174,54 +175,38 @@ it("allows unlimited debug resubmissions and keeps only the newest one pending",
 
   const first = await submit();
   const second = await submit();
-  const third = await submit();
+  expect(first.statusCode).toBe(201);
+  expect(first.json().repeatSubmissionEnabled).toBe(false);
+  expect(second.statusCode).toBe(409);
 
-  expect([first.statusCode, second.statusCode, third.statusCode]).toEqual([
-    201, 201, 201,
-  ]);
-  expect(third.json().repeatSubmissionEnabled).toBe(true);
-  const saved = await ctx.db.select().from(applications);
-  expect(saved).toHaveLength(3);
-  expect(
-    saved.filter((application) => application.status === "pending"),
-  ).toHaveLength(1);
-  expect(
-    saved.filter((application) => application.status === "cancelled"),
-  ).toHaveLength(2);
-
-  await ctx.app.inject({
-    method: "POST",
-    url: "/v1/integrations/telegram/webhook",
-    headers: {
-      "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET,
-    },
-    payload: telegramBody(third.json().application.publicId),
-  });
-  expect(await ctx.db.select().from(playerAccess)).toHaveLength(1);
-  expect(await ctx.db.select().from(commands)).toHaveLength(1);
-
-  const afterApproval = await ctx.app.inject({
-    method: "POST",
-    url: "/v1/applications",
-    cookies,
-    headers: browserHeaders,
-    payload: { minecraftUsername: "Another_Name" },
-  });
-  expect(afterApproval.statusCode, afterApproval.body).toBe(201);
-  expect(afterApproval.json().application.minecraftUsername).toBe(
-    "Another_Name",
+  await ctx.worker.tick();
+  await moderationService(ctx.db, env).decide(
+    first.json().application.publicId,
+    "reject",
+    "77",
+    "-100",
+    "Тестова відмова",
   );
-  const repeatedId = afterApproval.json().application.publicId;
-  await ctx.app.inject({
-    method: "POST",
-    url: "/v1/integrations/telegram/webhook",
-    headers: {
-      "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET,
-    },
-    payload: telegramBody(repeatedId),
+  await ctx.worker.tick();
+  ctx.telegram.call.mockClear();
+
+  const resubmitted = await submit();
+  expect(resubmitted.statusCode, resubmitted.body).toBe(201);
+  await ctx.worker.tick();
+  await ctx.worker.tick();
+  expect(ctx.telegram.call).toHaveBeenCalledWith("deleteMessage", {
+    chat_id: "-100",
+    message_id: 123,
   });
-  expect(await ctx.db.select().from(playerAccess)).toHaveLength(1);
-  expect(await ctx.db.select().from(commands)).toHaveLength(1);
+  expect(ctx.telegram.call).toHaveBeenCalledWith(
+    "sendMessage",
+    expect.objectContaining({ text: expect.stringContaining("🧾Заявка №2") }),
+  );
+  const saved = await ctx.db.select().from(applications);
+  expect(saved.map((application) => application.status)).toEqual([
+    "rejected",
+    "pending",
+  ]);
 });
 it("rejects duplicates, forged identity, and unauthorized moderators", async () => {
   const { cookie } = await login(ctx);
@@ -260,6 +245,29 @@ it("rejects duplicates, forged identity, and unauthorized moderators", async () 
       })
     ).statusCode,
   ).toBe(400);
+});
+it("allows a moderator from the additional Telegram ID list", async () => {
+  const { cookie } = await login(ctx);
+  const submitted = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/applications",
+    cookies: { okrip_session: cookie },
+    headers: browserHeaders,
+    payload: { minecraftUsername: "ExtraAdmin" },
+  });
+  const service = moderationService(ctx.db, {
+    ...env,
+    TELEGRAM_EXTRA_ADMIN_USER_IDS: "940017502",
+  });
+
+  await expect(
+    service.decide(
+      submitted.json().application.publicId,
+      "approve",
+      "940017502",
+      env.TELEGRAM_ADMIN_CHAT_ID,
+    ),
+  ).resolves.toBe("approved");
 });
 it.each(["ab", "has space", "somebody;op", "abcdefghijklmnopq", "Імя"])(
   "rejects nickname %s",

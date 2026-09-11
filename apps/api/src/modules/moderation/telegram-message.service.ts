@@ -39,6 +39,15 @@ export function telegramProvider(env: Env): TelegramProvider {
         result.data.description?.includes("message is not modified")
       )
         return {};
+      if (
+        result.success &&
+        !result.data.ok &&
+        method === "deleteMessage" &&
+        ["message to delete not found", "message can't be deleted"].some(
+          (reason) => result.data.description?.includes(reason),
+        )
+      )
+        return {};
       if (!response.ok || !result.success || !result.data.ok)
         throw new AppError(
           503,

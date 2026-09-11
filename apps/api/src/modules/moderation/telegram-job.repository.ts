@@ -17,7 +17,10 @@ export async function takeJob(db: Executor) {
           lte(telegramJobs.availableAt, new Date()),
         ),
       )
-      .orderBy(telegramJobs.availableAt)
+      .orderBy(
+        sql`CASE WHEN ${telegramJobs.kind} = 'delete' THEN 0 ELSE 1 END`,
+        telegramJobs.availableAt,
+      )
       .limit(1)
       .for("update", { skipLocked: true })
   )[0];
@@ -61,3 +64,8 @@ export const finishJob = (db: Executor, id: string) =>
     .update(telegramJobs)
     .set({ completedAt: new Date() })
     .where(eq(telegramJobs.id, id));
+export const clearMessage = (db: Executor, id: string) =>
+  db
+    .update(applications)
+    .set({ telegramChatId: null, telegramMessageId: null })
+    .where(eq(applications.id, id));
