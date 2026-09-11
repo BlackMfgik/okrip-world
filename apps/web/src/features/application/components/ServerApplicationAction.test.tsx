@@ -26,6 +26,9 @@ test("submitted application changes the action and opens a dismissible status di
   view.rerender(<ServerApplicationAction />);
   fireEvent.click(screen.getByRole("button", { name: "⏳ Заявка на розгляді" }));
   expect(screen.getByRole("dialog", { name: "Моя заявка" })).toBeTruthy();
+  expect(
+    screen.queryByRole("button", { name: "Закрити вікно" }),
+  ).toBeNull();
   expect(document.body.style.overflow).toBe("hidden");
   fireEvent(screen.getByRole("dialog"), new Event("cancel"));
   expect(screen.queryByRole("dialog")).toBeNull();

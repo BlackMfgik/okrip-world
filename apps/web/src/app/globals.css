@@ -973,19 +973,6 @@ body {
   font-weight: 700;
   line-height: 1.2;
 }
-.application-dialog-close {
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  background: var(--surface);
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-.application-dialog-close:hover {
-  background: var(--surface-hover);
-}
 .application-dialog > p {
   margin: 16px 0;
   color: var(--text-secondary);
@@ -1043,6 +1030,7 @@ body {
   font-size: 0.875rem;
 }
 .server-application .application-logout {
+  display: flex;
   width: fit-content;
   margin: 28px 0 0 auto;
   padding: 12px 18px;
