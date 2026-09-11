@@ -200,8 +200,17 @@ it("allows unlimited debug resubmissions and keeps only the newest one pending",
   expect(await ctx.db.select().from(playerAccess)).toHaveLength(1);
   expect(await ctx.db.select().from(commands)).toHaveLength(1);
 
-  const afterApproval = await submit();
+  const afterApproval = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/applications",
+    cookies,
+    headers: browserHeaders,
+    payload: { minecraftUsername: "Another_Name" },
+  });
   expect(afterApproval.statusCode, afterApproval.body).toBe(201);
+  expect(afterApproval.json().application.minecraftUsername).toBe(
+    "Another_Name",
+  );
   const repeatedId = afterApproval.json().application.publicId;
   await ctx.app.inject({
     method: "POST",

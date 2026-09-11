@@ -55,16 +55,23 @@ export function applicationService(
           const existing = await repo.identityFor(tx, user.id);
           if (
             existing &&
-            existing.normalizedUsername !== minecraftUsername.toLowerCase()
+            existing.normalizedUsername !== minecraftUsername.toLowerCase() &&
+            !repeatSubmissionEnabled
           )
             throw new AppError(
               409,
               "identity_locked",
               "Для зміни ніка зверніться до адміністрації.",
             );
-          const identity =
-            existing ??
-            (await repo.createIdentity(tx, user.id, minecraftUsername));
+          const identity = existing
+            ? existing.normalizedUsername === minecraftUsername.toLowerCase()
+              ? existing
+              : await repo.updateIdentityForDebug(
+                  tx,
+                  existing.id,
+                  minecraftUsername,
+                )
+            : await repo.createIdentity(tx, user.id, minecraftUsername);
           const app = await repo.createApplication(
             tx,
             user.id,

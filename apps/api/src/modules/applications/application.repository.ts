@@ -46,6 +46,23 @@ export async function createIdentity(
       .returning()
   )[0]!;
 }
+export async function updateIdentityForDebug(
+  db: Executor,
+  identityId: string,
+  username: string,
+) {
+  return (
+    await db
+      .update(identities)
+      .set({
+        username,
+        normalizedUsername: username.toLowerCase(),
+        updatedAt: new Date(),
+      })
+      .where(eq(identities.id, identityId))
+      .returning()
+  )[0]!;
+}
 export async function createApplication(
   db: Executor,
   userId: string,
