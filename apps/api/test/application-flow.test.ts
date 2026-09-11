@@ -32,7 +32,7 @@ it("submits, durably sends Telegram, approves exactly once, leases and completes
     payload: { minecraftUsername: "Player_One" },
   });
   expect(submitted.statusCode, submitted.body).toBe(201);
-  expect(ctx.discord.membership).not.toHaveBeenCalled();
+  expect(ctx.discord.membership).toHaveBeenCalledWith("111");
   const publicId = submitted.json().application.publicId;
   expect((await ctx.db.select().from(identities))[0]!.normalizedUsername).toBe(
     "player_one",
