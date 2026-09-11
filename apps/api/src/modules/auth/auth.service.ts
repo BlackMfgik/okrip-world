@@ -2,7 +2,10 @@ import type { Database } from "../../db/client.js";
 import type { Env } from "../../config/env.js";
 import { randomToken, tokenHash } from "../../shared/crypto.js";
 import { AppError } from "../../shared/errors.js";
-import type { DiscordProvider } from "./discord.service.js";
+import {
+  DISCORD_MEMBERSHIP_CHECK_ENABLED,
+  type DiscordProvider,
+} from "./discord.service.js";
 import * as repo from "./auth.repository.js";
 import { audit } from "../audit/audit.repository.js";
 export function authService(db: Database, env: Env, discord: DiscordProvider) {
@@ -30,7 +33,9 @@ export function authService(db: Database, env: Env, discord: DiscordProvider) {
           "Спробуйте увійти через Discord ще раз.",
         );
       const profile = await discord.identity(code);
-      await discord.membership(profile.id);
+      if (DISCORD_MEMBERSHIP_CHECK_ENABLED) {
+        await discord.membership(profile.id);
+      }
       const token = randomToken();
       await db.transaction(async (tx) => {
         const user = await repo.upsertUser(tx, profile);

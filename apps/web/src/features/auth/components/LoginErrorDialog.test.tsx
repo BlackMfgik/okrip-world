@@ -4,7 +4,7 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import { LoginErrorDialog } from "./LoginErrorDialog";
 vi.stubGlobal("React", React);
 afterEach(() => { cleanup(); vi.useRealTimers(); });
-test("error is non-blocking, has no buttons and disappears after eight seconds", () => {
+test("error is non-blocking and slides out before it disappears", () => {
   vi.useFakeTimers();
   render(<LoginErrorDialog />);
   expect(screen.getByRole("alert")).toBeTruthy();
@@ -12,6 +12,10 @@ test("error is non-blocking, has no buttons and disappears after eight seconds",
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(document.body.style.overflow).not.toBe("hidden");
   act(() => vi.advanceTimersByTime(7999));
+  expect(screen.getByRole("alert")).toBeTruthy();
+  act(() => vi.advanceTimersByTime(1));
+  expect(screen.getByRole("alert").classList.contains("is-exiting")).toBe(true);
+  act(() => vi.advanceTimersByTime(449));
   expect(screen.getByRole("alert")).toBeTruthy();
   act(() => vi.advanceTimersByTime(1));
   expect(screen.queryByRole("alert")).toBeNull();

@@ -22,6 +22,7 @@ describe("OAuth and sessions", () => {
     });
     expect(replay.headers.location).toContain("error=login_failed");
     expect(ctx.discord.identity).toHaveBeenCalledTimes(1);
+    expect(ctx.discord.membership).not.toHaveBeenCalled();
     expect(
       (
         await ctx.app.inject({

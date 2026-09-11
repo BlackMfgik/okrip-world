@@ -4,7 +4,10 @@ import {
   currentApplicationSchema,
 } from "@okrip/contracts";
 import type { Database } from "../../db/client.js";
-import type { DiscordProvider } from "../auth/discord.service.js";
+import {
+  DISCORD_MEMBERSHIP_CHECK_ENABLED,
+  type DiscordProvider,
+} from "../auth/discord.service.js";
 import { AppError } from "../../shared/errors.js";
 import { audit } from "../audit/audit.repository.js";
 import * as repo from "./application.repository.js";
@@ -12,7 +15,9 @@ export function applicationService(db: Database, discord: DiscordProvider) {
   return {
     async submit(user: { id: string; discordId: string }, input: unknown) {
       const { minecraftUsername } = submitApplicationSchema.parse(input);
-      await discord.membership(user.discordId);
+      if (DISCORD_MEMBERSHIP_CHECK_ENABLED) {
+        await discord.membership(user.discordId);
+      }
       try {
         await db.transaction(async (tx) => {
           await repo.lockUser(tx, user.id);

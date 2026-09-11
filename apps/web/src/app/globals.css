@@ -891,16 +891,19 @@ body {
 .server-coming-content p, .server-coming-footer { font-size: .85rem; color: var(--text-secondary); }
 .server-coming-footer { text-align: center; padding-top: 18px; border-top: 1px solid var(--border); }
 /* Non-blocking liquid glass login notification */
-.login-error-toast { position: fixed; z-index: 100; right: max(24px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom)); width: min(420px, calc(100vw - 32px)); display: grid; grid-template-columns: 36px 1fr; gap: 14px; padding: 24px 24px 28px; overflow: hidden; border: 1px solid var(--border-strong); border-radius: 22px; color: var(--text); background: rgba(24,24,30,.55); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); box-shadow: inset 0 1px 0 rgba(255,255,255,.15), 0 16px 48px rgba(0,0,0,.22); animation: fade-up .45s ease both; }
+.login-error-toast { position: fixed; z-index: 100; right: max(24px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom)); width: min(420px, calc(100vw - 32px)); display: grid; grid-template-columns: 36px 1fr; gap: 14px; padding: 24px 24px 28px; overflow: hidden; border: 1px solid var(--border-strong); border-radius: 22px; color: var(--text); background: rgba(24,24,30,.55); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); box-shadow: inset 0 1px 0 rgba(255,255,255,.15), 0 16px 48px rgba(0,0,0,.22); animation: login-toast-in .45s cubic-bezier(.22,1,.36,1) both; }
+.login-error-toast.is-exiting { animation: login-toast-out .45s cubic-bezier(.64,0,.78,0) forwards; }
 .light-theme .login-error-toast { background: rgba(255,255,255,.55); }
 .login-toast-icon { color: var(--warning); padding-top: 3px; }
 .login-error-toast h2 { font-size: 1rem; font-weight: 650; line-height: 1.4; margin-bottom: 8px; }
 .login-error-toast .application-eyebrow { font-size: .6rem; }
 .login-toast-description { font-size: .85rem; color: var(--text-secondary); line-height: 1.6; }
 .login-toast-progress { position: absolute; bottom: 0; left: 0; height: 3px; width: 100%; background: linear-gradient(90deg, var(--warning), #fcd79a); transform-origin: left; animation: toast-countdown 8s linear forwards; }
+@keyframes login-toast-in { from { opacity: 0; transform: translateX(calc(100% + 48px)); } to { opacity: 1; transform: translateX(0); } }
+@keyframes login-toast-out { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(calc(100% + 48px)); } }
 @keyframes toast-countdown { to { transform: scaleX(0); } }
 @media (max-width: 640px) { .servers-grid { grid-template-columns: 1fr; gap: 18px; } .login-error-toast { right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); padding: 20px 18px 24px; } }
-@media (prefers-reduced-motion: reduce) { .servers-wrap .page-title, .servers-wrap .page-description, .server-card-entry, .server-card-entry .server-card > *, .login-error-toast { animation: none; visibility: visible; } .login-toast-progress { animation-timing-function: steps(8, end); } }
+@media (prefers-reduced-motion: reduce) { .servers-wrap .page-title, .servers-wrap .page-description, .server-card-entry, .server-card-entry .server-card > *, .login-error-toast, .login-error-toast.is-exiting { animation: none; visibility: visible; } .login-toast-progress { animation-timing-function: steps(8, end); } }
 
 /* Consistent horizontal and vertical button alignment */
 button, .btn, .btn-map { text-align: center; }
