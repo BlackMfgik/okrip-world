@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ServerApplicationAction } from "@/features/application/components/ServerApplicationAction";
 import { IpRow } from "@/components/ip-row";
 import type { ServerConfig } from "@/lib/servers";
 
@@ -18,6 +19,7 @@ export function ServerCard({ server }: { server: ServerConfig }) {
           Мапа →
         </Link>
       </div>
+      {server.id === "vanilla" && <ServerApplicationAction />}
     </div>
   );
 }

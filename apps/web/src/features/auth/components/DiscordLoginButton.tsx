@@ -3,8 +3,9 @@ export function DiscordLoginButton() {
   return (
     <form action="/v1/auth/discord/start" method="get">
       <button type="submit" className="btn btn-primary">
-        Увійти через Discord
+        Авторизуватись через Discord
       </button>
     </form>
   );
 }
+

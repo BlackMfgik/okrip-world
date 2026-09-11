@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+
 import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentSession } from "@/features/auth/hooks/useCurrentSession";
 import { useCurrentApplication } from "../hooks/useCurrentApplication";
@@ -9,12 +9,10 @@ import { ApplicationStatus } from "./ApplicationStatus";
 export function ApplicationPanel() {
   const session = useCurrentSession(),
     application = useCurrentApplication(!!session.data?.user),
-    router = useRouter(),
+
     client = useQueryClient();
   const [logoutError, setLogoutError] = useState("");
-  useEffect(() => {
-    if (session.data && !session.data.user) router.replace("/");
-  }, [session.data, router]);
+
   if (session.isPending) return <p role="status">Перевіряємо вхід…</p>;
   if (session.error)
     return (
@@ -23,7 +21,7 @@ export function ApplicationPanel() {
         <button onClick={() => void session.refetch()}>Повторити</button>
       </p>
     );
-  if (!session.data?.user) return <p>Повертаємо на головну…</p>;
+  if (!session.data?.user) return null;
   const data = application.data;
   return (
     <>
@@ -58,7 +56,7 @@ export function ApplicationPanel() {
             const response = await fetch("/v1/auth/logout", { method: "POST" });
             if (!response.ok) throw new Error();
             client.clear();
-            router.replace("/");
+
           } catch {
             setLogoutError("Не вдалося вийти. Спробуйте ще раз.");
           }
@@ -69,3 +67,4 @@ export function ApplicationPanel() {
     </>
   );
 }
+

@@ -1,4 +1,4 @@
-import { DiscordLoginButton } from '@/features/auth/components/DiscordLoginButton';
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Nav } from "@/components/nav";
@@ -36,10 +36,9 @@ export default function HomePage() {
             <br />
             Ванільний сервер — один дім.
           </p>
-          <p className="home-verification">Увійдіть через Discord, вкажіть Minecraft-нік і дочекайтеся рішення адміністрації.</p>
           <div className="home-actions">
-            <DiscordLoginButton />
-            <Link href="/application" className="btn">Моя заявка</Link>
+
+
             <Link href="/servers" className="btn btn-primary">
               Обрати сервер →
             </Link>

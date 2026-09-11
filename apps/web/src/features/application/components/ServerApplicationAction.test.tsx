@@ -1,0 +1,30 @@
+import React from "react";
+import { afterEach, expect, test, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { ServerApplicationAction } from "./ServerApplicationAction";
+const state = vi.hoisted(() => ({ loggedIn: false, applied: false }));
+vi.stubGlobal("React", React);
+vi.mock("@/features/auth/hooks/useCurrentSession", () => ({ useCurrentSession: () => ({ data: { user: state.loggedIn ? { username: "Player" } : null } }) }));
+vi.mock("../hooks/useCurrentApplication", () => ({ useCurrentApplication: () => ({ data: { application: state.applied ? { status: "pending" } : null }, refetch: vi.fn() }) }));
+vi.mock("./ApplicationPanel", () => ({ ApplicationPanel: () => <p>Заявку передано адміністрації</p> }));
+HTMLDialogElement.prototype.showModal = function () { this.setAttribute("open", ""); };
+HTMLDialogElement.prototype.close = function () { this.removeAttribute("open"); };
+afterEach(() => { cleanup(); state.loggedIn = false; state.applied = false; });
+test("guest gets Discord login on the server card", () => {
+  render(<ServerApplicationAction />);
+  const button = screen.getByRole("button", { name: "Авторизуватись через Discord" });
+  expect(button.closest("form")?.getAttribute("action")).toBe("/v1/auth/discord/start");
+});
+test("submitted application changes the action and opens a dismissible status dialog", () => {
+  state.loggedIn = true;
+  const view = render(<ServerApplicationAction />);
+  expect(screen.getByRole("button", { name: "Подати заявку" })).toBeTruthy();
+  state.applied = true;
+  view.rerender(<ServerApplicationAction />);
+  fireEvent.click(screen.getByRole("button", { name: "Перевірити стан моєї заявки" }));
+  expect(screen.getByRole("dialog", { name: "Моя заявка" })).toBeTruthy();
+  expect(document.body.style.overflow).toBe("hidden");
+  fireEvent.click(screen.getByRole("button", { name: "Закрити вікно" }));
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(document.body.style.overflow).toBe("");
+});

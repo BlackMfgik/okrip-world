@@ -24,13 +24,15 @@ export default function ServersPage() {
             <h1 className="page-title">Сервери Minecraft</h1>
             <p className="page-description">
               Приєднуйтеся до української Minecraft-спільноти Okrip World.
-              Для гри на ванільному сервері скопіюйте IP-адресу та порт нижче.
+              Оберіть сервер, увійдіть через Discord і подайте заявку на гру.
             </p>
           </header>
 
           <div className="servers-grid">
-            {SERVERS.map((server) => (
-              <ServerCard key={server.id} server={server} />
+            {Array.from({ length: 2 }, (_, index) => (
+              <div className="server-card-entry" key={index}>
+                <ServerCard server={SERVERS[0]!} />
+              </div>
             ))}
           </div>
         </div>
@@ -38,3 +40,6 @@ export default function ServersPage() {
     </>
   );
 }
+
+
+
