@@ -103,9 +103,15 @@ it("ban cannot be bypassed by OAuth, resubmission, a stale approval or direct DB
 it("rejection is final, allows same-name resubmission, and never creates a command", async () => {
   const { user, service, publicId } = await pending();
   const moderation = moderationService(ctx.db, env);
-  expect(await moderation.decide(publicId, "reject", "77", "-100")).toBe(
-    "rejected",
-  );
+  expect(
+    await moderation.decide(
+      publicId,
+      "reject",
+      "77",
+      "-100",
+      "Невідповідна заявка",
+    ),
+  ).toBe("rejected");
   expect(await moderation.decide(publicId, "approve", "77", "-100")).toBe(
     "rejected",
   );

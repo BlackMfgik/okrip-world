@@ -2,6 +2,34 @@ import type { Database } from "../../db/client.js";
 import type { Env } from "../../config/env.js";
 import type { TelegramProvider } from "./telegram-message.service.js";
 import * as repo from "./telegram-job.repository.js";
+
+const dateFormatter = new Intl.DateTimeFormat("uk-UA", {
+  timeZone: "Europe/Kyiv",
+  day: "2-digit",
+  month: "2-digit",
+  year: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+function formattedDate(value: Date) {
+  const parts = Object.fromEntries(
+    dateFormatter
+      .formatToParts(value)
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value]),
+  );
+  return `${parts.day}.${parts.month}.${parts.year} ${parts.hour}:${parts.minute}`;
+}
+
+function formattedStatus(status: string) {
+  if (status === "approved") return "✅Статус: Схвалено";
+  if (status === "rejected") return "❌Статус: Відхилено";
+  if (status === "cancelled") return "❌Статус: Скасовано";
+  return "⏳Статус: Очікує рішення";
+}
+
 export function telegramWorker(
   db: Database,
   env: Env,
@@ -20,11 +48,14 @@ export function telegramWorker(
           job.applicationId,
         );
         const text = [
-          "Заявка " + app.publicId,
-          "Discord: " + user.discordUsername + " (" + user.discordId + ")",
-          "Minecraft: " + identity.username,
-          "Дата: " + app.createdAt.toISOString(),
-          "Статус: " + app.status,
+          "🧾Заявка №" + app.number,
+          "🔵Discord: " + user.discordUsername,
+          "💰Нікнейм: " + identity.username,
+          "🗓Дата: " + formattedDate(app.createdAt),
+          formattedStatus(app.status),
+          ...(app.status === "rejected" && app.rejectionReason
+            ? ["📝Причина: " + app.rejectionReason]
+            : []),
         ].join("\n");
         const buttons = {
           inline_keyboard:
@@ -32,11 +63,11 @@ export function telegramWorker(
               ? [
                   [
                     {
-                      text: "Схвалити",
+                      text: "✅ Схвалити",
                       callback_data: "approve:" + app.publicId,
                     },
                     {
-                      text: "Відхилити",
+                      text: "❌ Відхилити",
                       callback_data: "reject:" + app.publicId,
                     },
                   ],

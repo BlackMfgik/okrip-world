@@ -23,6 +23,7 @@ export const decide = (
   id: string,
   status: "approved" | "rejected",
   adminId: string,
+  rejectionReason?: string,
 ) =>
   db
     .update(applications)
@@ -31,10 +32,7 @@ export const decide = (
       reviewedByTelegramId: adminId,
       reviewedAt: new Date(),
       updatedAt: new Date(),
-      rejectionReason:
-        status === "rejected"
-          ? "Заявку відхилено адміністрацією. Зверніться до команди в Discord."
-          : null,
+      rejectionReason: status === "rejected" ? rejectionReason : null,
     })
     .where(and(eq(applications.id, id), eq(applications.status, "pending")))
     .returning();

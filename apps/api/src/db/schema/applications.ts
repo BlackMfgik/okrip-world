@@ -5,6 +5,7 @@ import {
   text,
   timestamp,
   integer,
+  bigserial,
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
@@ -16,6 +17,7 @@ export const applications = pgTable(
   "applications",
   {
     id: id(),
+    number: bigserial("number", { mode: "number" }).notNull().unique(),
     publicId: varchar("public_id").unique().notNull(),
     userId: uuid("user_id")
       .notNull()

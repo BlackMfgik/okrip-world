@@ -9,7 +9,11 @@ import {
 } from "../applications/application.repository.js";
 import { addCommand } from "../moderation/moderation.repository.js";
 import * as repo from "./minecraft-command.repository.js";
-export function minecraftService(db: Database, serverId: string) {
+export function minecraftService(
+  db: Database,
+  serverId: string,
+  commandQueued: (serverId: string) => void = () => undefined,
+) {
   return {
     async lease() {
       return db.transaction(async (tx) => {
@@ -35,7 +39,7 @@ export function minecraftService(db: Database, serverId: string) {
       });
     },
     async acknowledge(id: string, leaseToken: string, error?: string) {
-      return db.transaction(async (tx) => {
+      const retryAt = await db.transaction(async (tx) => {
         const command = await repo.find(tx, id, serverId);
         if (!command)
           throw new AppError(404, "not_found", "Команду не знайдено.");
@@ -52,8 +56,10 @@ export function minecraftService(db: Database, serverId: string) {
           command.leaseUntil <= new Date()
         )
           throw new AppError(409, "stale_lease", "Оренда команди завершилась.");
-        if (error) await repo.fail(tx, id, error, command.attempts);
-        else await repo.complete(tx, id);
+        const retryAt = error
+          ? await repo.fail(tx, id, error, command.attempts)
+          : undefined;
+        if (!error) await repo.complete(tx, id);
         await audit(tx, {
           actorType: "minecraft_server",
           actorId: serverId,
@@ -62,10 +68,18 @@ export function minecraftService(db: Database, serverId: string) {
           entityId: id,
           metadata: error ? { error } : {},
         });
+        return retryAt;
       });
+      if (retryAt) {
+        const timer = setTimeout(
+          () => commandQueued(serverId),
+          Math.max(0, retryAt.getTime() - Date.now()),
+        );
+        timer.unref();
+      }
     },
     async ban(event: { eventId: string; username: string; reason: string }) {
-      return db.transaction(async (tx) => {
+      const queued = await db.transaction(async (tx) => {
         const identity = await repo.identityByName(tx, event.username);
         if (!identity)
           throw new AppError(
@@ -75,7 +89,7 @@ export function minecraftService(db: Database, serverId: string) {
           );
         await lockUser(tx, identity.userId);
         if (!(await repo.recordBanEvent(tx, event.eventId, serverId)).length)
-          return;
+          return false;
         const access = await repo.banAccess(
           tx,
           identity.userId,
@@ -106,7 +120,9 @@ export function minecraftService(db: Database, serverId: string) {
           entityType: "player_access",
           entityId: access.id,
         });
+        return true;
       });
+      if (queued) commandQueued(serverId);
     },
   };
 }

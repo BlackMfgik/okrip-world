@@ -12,6 +12,7 @@ build/
 coverage/
 *.tsbuildinfo
 *.log
+*.jar
 
 # Local environment and secrets
 .env
@@ -22,6 +23,7 @@ coverage/
 # Temporary tools and unrelated generated exports
 /.tools/
 /output/
+/docs/
 
 # Operating system metadata
 .DS_Store

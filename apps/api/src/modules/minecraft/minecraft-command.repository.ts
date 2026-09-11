@@ -79,18 +79,21 @@ export const fail = (
   id: string,
   error: string,
   attempts: number,
-) =>
-  db
+) => {
+  const retryAt = new Date(
+    Date.now() + Math.min(300000, 1000 * 2 ** Math.min(attempts, 8)),
+  );
+  return db
     .update(commands)
     .set({
       status: "failed",
       leaseUntil: null,
       lastError: error,
-      availableAt: new Date(
-        Date.now() + Math.min(300000, 1000 * 2 ** Math.min(attempts, 8)),
-      ),
+      availableAt: retryAt,
     })
-    .where(eq(commands.id, id));
+    .where(eq(commands.id, id))
+    .then(() => retryAt);
+};
 export async function commandAccess(db: Executor, id: string) {
   return (
     await db.select().from(playerAccess).where(eq(playerAccess.id, id))

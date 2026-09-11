@@ -32,7 +32,7 @@ it("submits, durably sends Telegram, approves exactly once, leases and completes
     payload: { minecraftUsername: "Player_One" },
   });
   expect(submitted.statusCode, submitted.body).toBe(201);
-  expect(ctx.discord.membership).toHaveBeenCalledWith("111");
+  expect(ctx.discord.membership).not.toHaveBeenCalled();
   const publicId = submitted.json().application.publicId;
   expect((await ctx.db.select().from(identities))[0]!.normalizedUsername).toBe(
     "player_one",
@@ -40,7 +40,11 @@ it("submits, durably sends Telegram, approves exactly once, leases and completes
   await ctx.worker.tick();
   expect(ctx.telegram.call).toHaveBeenCalledWith(
     "sendMessage",
-    expect.objectContaining({ text: expect.stringContaining("Player_One") }),
+    expect.objectContaining({
+      text: expect.stringMatching(
+        /^🧾Заявка №1\n🔵Discord: DiscordName\n💰Нікнейм: Player_One\n🗓Дата: \d{2}\.\d{2}\.\d{2} \d{2}:\d{2}\n⏳Статус: Очікує рішення$/,
+      ),
+    }),
   );
   const approve = () =>
     ctx.app.inject({
@@ -83,7 +87,77 @@ it("submits, durably sends Telegram, approves exactly once, leases and completes
   await ctx.worker.tick();
   expect(ctx.telegram.call).toHaveBeenCalledWith(
     "editMessageText",
-    expect.objectContaining({ reply_markup: { inline_keyboard: [] } }),
+    expect.objectContaining({
+      text: expect.stringContaining("✅Статус: Схвалено"),
+      reply_markup: { inline_keyboard: [] },
+    }),
+  );
+});
+it("asks for and saves a Telegram rejection reason", async () => {
+  const { cookie } = await login(ctx);
+  const submitted = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/applications",
+    cookies: { okrip_session: cookie },
+    headers: browserHeaders,
+    payload: { minecraftUsername: "Player_One" },
+  });
+  const publicId = submitted.json().application.publicId;
+  await ctx.worker.tick();
+  ctx.telegram.call.mockClear();
+
+  const prompt = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/integrations/telegram/webhook",
+    headers: {
+      "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET,
+    },
+    payload: telegramBody(publicId, "reject"),
+  });
+  expect(prompt.statusCode).toBe(200);
+  expect((await ctx.db.select().from(applications))[0]!.status).toBe("pending");
+  expect(ctx.telegram.call).toHaveBeenCalledWith(
+    "sendMessage",
+    expect.objectContaining({
+      text: expect.stringContaining("причину відмови для заявки №1"),
+      reply_markup: expect.objectContaining({ force_reply: true }),
+    }),
+  );
+
+  const rejected = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/integrations/telegram/webhook",
+    headers: {
+      "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET,
+    },
+    payload: {
+      update_id: 2,
+      message: {
+        message_id: 456,
+        text: "Нік не відповідає правилам",
+        from: { id: 77, is_bot: false },
+        chat: { id: -100 },
+        reply_to_message: {
+          text: `❌ Введіть причину відмови для заявки №1.\nНадішліть причину відповіддю на це повідомлення.\n#reject:${publicId}`,
+          from: { is_bot: true },
+        },
+      },
+    },
+  });
+  expect(rejected.statusCode, rejected.body).toBe(200);
+  const application = (await ctx.db.select().from(applications))[0]!;
+  expect(application.status).toBe("rejected");
+  expect(application.rejectionReason).toBe("Нік не відповідає правилам");
+
+  await ctx.worker.tick();
+  expect(ctx.telegram.call).toHaveBeenCalledWith(
+    "editMessageText",
+    expect.objectContaining({
+      text: expect.stringContaining(
+        "❌Статус: Відхилено\n📝Причина: Нік не відповідає правилам",
+      ),
+      reply_markup: { inline_keyboard: [] },
+    }),
   );
 });
 it("rejects duplicates, forged identity, and unauthorized moderators", async () => {

@@ -10,8 +10,9 @@ import world.okrip.whitelist.commands.DeliveryJournal;
 public final class PlayerBanListener implements Listener {
     private final DeliveryJournal journal;
     private final ScheduledExecutorService worker;
+    private final Runnable synchronizationRequested;
     private final Set<String> observed = ConcurrentHashMap.newKeySet();
-    public PlayerBanListener(DeliveryJournal journal, ScheduledExecutorService worker) { this.journal = journal; this.worker = worker; }
+    public PlayerBanListener(DeliveryJournal journal, ScheduledExecutorService worker, Runnable synchronizationRequested) { this.journal = journal; this.worker = worker; this.synchronizationRequested = synchronizationRequested; }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void kicked(PlayerKickEvent event) { scan(); }
     // Polling also catches vanilla bans of offline players; Paper has no universal ban event.
@@ -32,7 +33,7 @@ public final class PlayerBanListener implements Listener {
         worker.execute(() -> {
             String id = UUID.randomUUID().toString();
             JsonObject event = new JsonObject(); event.addProperty("eventId", id); event.addProperty("username", username); event.addProperty("reason", reason);
-            try { journal.put("ban:" + id, "/v1/minecraft/events/ban", event); }
+            try { journal.put("ban:" + id, "/v1/minecraft/events/ban", event); synchronizationRequested.run(); }
             catch (Exception error) { observed.remove(key); }
         });
     }

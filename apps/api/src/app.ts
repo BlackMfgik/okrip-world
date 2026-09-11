@@ -3,6 +3,7 @@ import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
+import websocket from "@fastify/websocket";
 import { ZodError } from "zod";
 import { sql } from "drizzle-orm";
 import type { Database } from "./db/client.js";
@@ -25,6 +26,7 @@ import { telegramRoutes } from "./modules/moderation/telegram.routes.js";
 import { telegramWorker } from "./modules/moderation/telegram-worker.service.js";
 import { minecraftService } from "./modules/minecraft/minecraft-command.service.js";
 import { minecraftRoutes } from "./modules/minecraft/minecraft.routes.js";
+import { MinecraftCommandSignals } from "./modules/minecraft/minecraft-command.signal.js";
 export async function buildApp(
   env: Env,
   db: Database,
@@ -44,6 +46,9 @@ export async function buildApp(
             ],
           }
         : false,
+  });
+  await app.register(websocket, {
+    options: { maxPayload: 1024, perMessageDeflate: false },
   });
   await app.register(cookie);
   await app.register(cors, { origin: [env.WEB_ORIGIN], credentials: true });
@@ -91,13 +96,26 @@ export async function buildApp(
     });
   });
   const discord = providers.discord ?? discordProvider(env),
-    telegram = providers.telegram ?? telegramProvider(env);
+    telegram = providers.telegram ?? telegramProvider(env),
+    commandSignals = new MinecraftCommandSignals();
   const auth = authService(db, env, discord),
     worker = telegramWorker(db, env, telegram);
   authRoutes(app, auth, env);
   applicationRoutes(app, auth, applicationService(db, discord));
-  telegramRoutes(app, env, moderationService(db, env), telegram);
-  minecraftRoutes(app, env, minecraftService(db, env.MINECRAFT_SERVER_ID));
+  telegramRoutes(
+    app,
+    env,
+    moderationService(db, env, (serverId) => commandSignals.notify(serverId)),
+    telegram,
+  );
+  minecraftRoutes(
+    app,
+    env,
+    minecraftService(db, env.MINECRAFT_SERVER_ID, (serverId) =>
+      commandSignals.notify(serverId),
+    ),
+    commandSignals,
+  );
   app.get("/health", async () => ({ ok: true }));
   app.get("/ready", async () => {
     await db.execute(sql`select 1`);

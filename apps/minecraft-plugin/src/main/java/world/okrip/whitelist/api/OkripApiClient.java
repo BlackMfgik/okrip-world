@@ -1,8 +1,10 @@
 package world.okrip.whitelist.api;
 import com.google.gson.*;
 import java.net.http.*;
+import java.net.URI;
 import java.time.Duration;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import world.okrip.whitelist.config.PluginConfig;
 public final class OkripApiClient {
     private final PluginConfig config;
@@ -20,5 +22,14 @@ public final class OkripApiClient {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         JsonObject json = response.body().isBlank() ? new JsonObject() : JsonParser.parseString(response.body()).getAsJsonObject();
         return new Result(response.statusCode(), json);
+    }
+    public CompletableFuture<WebSocket> watch(WebSocket.Listener listener) {
+        URI httpUri = config.apiUrl().resolve("/v1/minecraft/commands/watch");
+        URI websocketUri = URI.create("wss" + httpUri.toString().substring("https".length()));
+        return client.newWebSocketBuilder()
+            .connectTimeout(Duration.ofSeconds(config.timeout()))
+            .header("Authorization", "Bearer " + config.token())
+            .header("X-Server-Id", config.serverId())
+            .buildAsync(websocketUri, listener);
     }
 }

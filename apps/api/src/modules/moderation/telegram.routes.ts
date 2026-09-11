@@ -8,9 +8,16 @@ import type { TelegramProvider } from "./telegram-message.service.js";
 const webhook = z.object({
   update_id: z.number().int(),
   message: z.object({
+    message_id: z.number().int().optional(),
     text: z.string().optional(),
     from: z.object({ id: z.number().int().safe(), is_bot: z.boolean().optional() }).optional(),
     chat: z.object({ id: z.number().int().safe() }),
+    reply_to_message: z
+      .object({
+        text: z.string().optional(),
+        from: z.object({ is_bot: z.boolean().optional() }).optional(),
+      })
+      .optional(),
   }).optional(),
   callback_query: z
     .object({
@@ -51,6 +58,35 @@ export function telegramRoutes(
           text: `Режим налаштування Okrip World\nTELEGRAM_ADMIN_CHAT_ID=${message.chat.id}\nВаш TELEGRAM_ADMIN_USER_IDS=${message.from.id}\nЦя команда не надає прав модератора.`,
         });
       }
+      const rejectionId = /(?:^|\n)#reject:([A-Za-z0-9_-]{16})$/.exec(
+        message?.reply_to_message?.text ?? "",
+      )?.[1];
+      if (
+        rejectionId &&
+        message?.text &&
+        message.from &&
+        !message.from.is_bot &&
+        message.reply_to_message?.from?.is_bot === true
+      ) {
+        const result = await service.decide(
+          rejectionId,
+          "reject",
+          String(message.from.id),
+          String(message.chat.id),
+          message.text,
+        );
+        await telegram.call("sendMessage", {
+          chat_id: message.chat.id,
+          text:
+            result === "rejected"
+              ? "❌ Причину збережено. Заявку відхилено."
+              : "Заявку вже було розглянуто: " + result,
+          ...(message.message_id
+            ? { reply_parameters: { message_id: message.message_id } }
+            : {}),
+        });
+        return { ok: true };
+      }
       const callback = update.callback_query;
       if (!callback) return { ok: true };
       const match = /^(approve|reject):([A-Za-z0-9_-]{16})$/.exec(
@@ -58,9 +94,39 @@ export function telegramRoutes(
       );
       if (!match)
         throw new AppError(400, "invalid_callback", "Invalid callback");
+      if (match[1] === "reject") {
+        const application = await service.prepareRejection(
+          match[2]!,
+          String(callback.from.id),
+          String(callback.message.chat.id),
+        );
+        if (application.status === "pending") {
+          await telegram.call("sendMessage", {
+            chat_id: callback.message.chat.id,
+            text:
+              `❌ Введіть причину відмови для заявки №${application.number}.\n` +
+              `Надішліть причину відповіддю на це повідомлення.\n#reject:${match[2]}`,
+            reply_parameters: { message_id: callback.message.message_id },
+            reply_markup: {
+              force_reply: true,
+              input_field_placeholder: "Причина відмови",
+            },
+          });
+        }
+        await telegram
+          .call("answerCallbackQuery", {
+            callback_query_id: callback.id,
+            text:
+              application.status === "pending"
+                ? "Введіть причину відмови"
+                : "Заявку вже розглянуто: " + application.status,
+          })
+          .catch(() => undefined);
+        return { ok: true };
+      }
       const result = await service.decide(
         match[2]!,
-        match[1] as "approve" | "reject",
+        "approve",
         String(callback.from.id),
         String(callback.message.chat.id),
       );

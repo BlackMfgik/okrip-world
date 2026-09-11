@@ -6,18 +6,21 @@ public final class CommandPoller {
     private final CommandExecutor executor;
     private final CommandAcknowledger acknowledger;
     public CommandPoller(OkripApiClient api, CommandExecutor executor, CommandAcknowledger acknowledger) { this.api = api; this.executor = executor; this.acknowledger = acknowledger; }
-    public void tick() throws Exception {
-        if (!acknowledger.flush()) return;
+    public boolean tick() throws Exception {
+        if (!acknowledger.flush()) throw new IllegalStateException("Acknowledgement delivery failed");
         JsonObject request = new JsonObject(); request.addProperty("limit", 1);
         long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(45);
         var response = api.post("/v1/minecraft/commands/lease", request);
         if (response.status() != 200) throw new IllegalStateException("Lease request failed");
+        boolean processed = false;
         for (var value : response.body().getAsJsonArray("commands")) {
+            processed = true;
             Command command = Command.parse(value.getAsJsonObject());
             String failure;
             try { failure = executor.execute(command, deadline); } catch (Exception error) { failure = "execution_failed"; }
             acknowledger.record(command, failure);
-            if (!acknowledger.flush()) return;
+            if (!acknowledger.flush()) throw new IllegalStateException("Acknowledgement delivery failed");
         }
+        return processed;
     }
 }

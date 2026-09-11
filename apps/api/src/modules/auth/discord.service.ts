@@ -9,7 +9,7 @@ const identitySchema = z.object({
   avatar: z.string().nullable(),
 });
 export type DiscordIdentity = z.infer<typeof identitySchema>;
-export const DISCORD_MEMBERSHIP_CHECK_ENABLED = true;
+export const DISCORD_MEMBERSHIP_CHECK_ENABLED = false;
 
 export interface DiscordProvider {
   identity(code: string): Promise<DiscordIdentity>;

@@ -46,7 +46,7 @@ Invoke-RestMethod -Method Post -Uri ('https://api.telegram.org/bot' + $env:TELEG
 1. Ціль цієї збірки — Paper/Purpur 1.21.11, Java 21. Для інших версій API спочатку перебудуйте й перевірте сумісність. Folia не підтримується.
 2. Зберіть `apps/minecraft-plugin` через Gradle wrapper; завантажте `build/libs/OkripWhitelist.jar` у /plugins.
 3. Запустіть один раз, щоб створити plugins/OkripWhitelist/config.yml. При placeholder token плагін відключиться до налаштування.
-4. Укажіть HTTPS public API URL, server-id, той самий MINECRAFT_SERVER_TOKEN, poll interval 5 секунд, timeout 8 секунд. Перезапустіть сервер.
+4. Укажіть HTTPS public API URL, server-id, той самий MINECRAFT_SERVER_TOKEN і timeout 8 секунд. Переконайтеся, що public domain/proxy API пропускає WebSocket upgrade, і перезапустіть сервер.
 5. У server.properties встановіть white-list=true. Для offline-mode встановіть і налаштуйте AuthMe/аналог; користувачі мають вводити нік із первісним регістром.
 6. Збережіть plugins/OkripWhitelist/delivery-journal.json у backup, не видаляйте його при оновленні JAR. Запускайте один екземпляр плагіна на serverId.
 
@@ -57,9 +57,9 @@ Invoke-RestMethod -Method Post -Uri ('https://api.telegram.org/bot' + $env:TELEG
 1. /health і /ready повертають 200. Web відкриває старі сторінки, /application, Discord login.
 2. Discord учасник входить, неучасник не отримує сесію; створення заявки з валідним ніком дає pending. Перевірте неправильний нік і регістронезалежний дубль.
 3. Повідомлення приходить у закриту Telegram-групу. Неавторизований адміністратор не може змінити стан.
-4. Схваліть заявку; повторіть callback — у БД одна whitelist_add. Спочатку сайт показує syncing, після plugin complete — доступ відкрито. Перевірте реальний вхід Minecraft.
+4. Схваліть заявку; повторіть callback — у БД одна whitelist_add. Плагін має отримати WebSocket-сигнал без очікування інтервалу. Спочатку сайт показує syncing, після plugin complete — доступ відкрито. Перевірте реальний вхід Minecraft.
 5. Тимчасово відключіть API від Minecraft; схваліть другу заявку; відновіть мережу — команда виконується. Перезапустіть плагін між виконанням і ack — журнал відновлює доставку.
-6. Відхилення показує безпечну причину. Бан забороняє повторну заявку навіть після виходу й нового Discord OAuth.
+6. Натисніть «Відхилити», введіть причину через Telegram ForceReply і переконайтеся, що повідомлення та сайт показують саме цю причину. Бан забороняє повторну заявку навіть після виходу й нового Discord OAuth.
 
 Автоматичні API-тести мокають Discord/Telegram, Java-тести перевіряють журнал. Вони не доводять роботу TLS, сторонніх bot permissions, Kinetic scheduler або входу реального клієнта. Виконайте ці кроки з вашими обліковими даними.
 

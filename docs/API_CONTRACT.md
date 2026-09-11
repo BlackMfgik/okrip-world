@@ -21,11 +21,15 @@ application.status: pending / approved / rejected / cancelled. Відсутні�
 
 ## Telegram: публічна адреса API
 
-POST /v1/integrations/telegram/webhook. Заголовок X-Telegram-Bot-Api-Secret-Token, callback_query.from.id з allowlist і правильний chat.id обов'язкові. Callback data: `approve:<publicId>` / `reject:<publicId>`; publicId — 16 випадкових URL-safe символів. Повторне рішення — 200 без повторного створення доступу/команд. Рішення зберігається до косметичного answerCallbackQuery; редагування повідомлення доставляється через DB-job.
+POST /v1/integrations/telegram/webhook. Заголовок X-Telegram-Bot-Api-Secret-Token, callback_query.from.id з allowlist і правильний chat.id обов'язкові. Callback data: `approve:<publicId>` / `reject:<publicId>`; publicId — 16 випадкових URL-safe символів. Кнопка approve одразу зберігає рішення. Кнопка reject надсилає ForceReply-запит; відмова зберігається лише після відповіді дозволеного адміністратора з причиною від 1 до 256 символів. Повторне рішення — 200 без повторного створення доступу/команд. Рішення зберігається до косметичного answerCallbackQuery; редагування повідомлення доставляється через DB-job.
+
+Повідомлення модерації містить послідовний номер заявки, Discord username, Minecraft-нік, дату за `Europe/Kyiv` у форматі `DD.MM.YY HH:mm` і локалізований статус. Після відмови до повідомлення додається збережена причина.
 
 ## Minecraft: публічна адреса API
 
 Для всіх маршрутів: `Authorization: Bearer <server token>`, `X-Server-Id: vanilla` (або налаштований ID).
+
+`GET /v1/minecraft/commands/watch` оновлюється до WebSocket. Після підключення та після фіксації нової команди API надсилає `{type:"commands_available"}`. Це лише сигнал: команда залишається в PostgreSQL і забирається через lease. API надсилає WebSocket ping кожні 45 секунд і закриває з'єднання, яке не відповідає.
 
 | Маршрут POST | Тіло | Відповідь |
 | --- | --- | --- |
