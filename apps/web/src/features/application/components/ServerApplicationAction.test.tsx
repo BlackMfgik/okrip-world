@@ -22,8 +22,14 @@ test("submitted application changes the action and opens a dismissible status di
   state.loggedIn = true;
   const view = render(<ServerApplicationAction />);
   expect(screen.getByRole("button", { name: "Подати заявку" })).toBeTruthy();
+  expect(
+    screen.getByText("Вхід на сервер — після схвалення заявки."),
+  ).toBeTruthy();
   state.status = "pending";
   view.rerender(<ServerApplicationAction />);
+  expect(
+    screen.queryByText("Вхід на сервер — після схвалення заявки."),
+  ).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "⏳ Заявка на розгляді" }));
   expect(screen.getByRole("dialog", { name: "Моя заявка" })).toBeTruthy();
   expect(

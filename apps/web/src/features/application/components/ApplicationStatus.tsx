@@ -2,7 +2,7 @@ import type { CurrentApplication } from "@okrip/contracts";
 export function ApplicationStatus({ data }: { data: CurrentApplication }) {
   let title = "Заявки ще немає",
     description: string | null =
-      "Вкажіть свій Minecraft Java нік, щоб приєднатися.";
+      "Вкажіть свій Minecraft нік, щоб приєднатися.";
   if (data.access === "banned") {
     title = "Доступ заблокований";
     description =

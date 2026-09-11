@@ -12,7 +12,7 @@ export function ApplicationForm() {
         submit.mutate({ minecraftUsername });
       }}
     >
-      <label htmlFor="minecraft-username">Minecraft Java нік</label>
+      <label htmlFor="minecraft-username">Minecraft нік</label>
       <input
         id="minecraft-username"
         value={minecraftUsername}

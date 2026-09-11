@@ -43,7 +43,11 @@ export function ServerApplicationAction() {
   }, [session.data]);
   return (
     <div className="server-application">
-      <p className="server-application-hint">Вхід на сервер — після схвалення заявки.</p>
+      {!hasApplication && (
+        <p className="server-application-hint">
+          Вхід на сервер — після схвалення заявки.
+        </p>
+      )}
       {session.isPending ? <p role="status">Перевіряємо вхід…</p> : session.error ? (
         <div role="alert"><p>{session.error.message}</p><button className="btn" onClick={() => void session.refetch()}>Спробувати ще раз</button></div>
       ) : !session.data?.user ? <DiscordLoginButton /> : (
