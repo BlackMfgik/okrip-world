@@ -23,8 +23,12 @@ function formattedDate(value: Date) {
   return `${parts.day}.${parts.month}.${parts.year} ${parts.hour}:${parts.minute}`;
 }
 
-function formattedStatus(status: string) {
-  if (status === "approved") return "✅Статус: Схвалено";
+function formattedStatus(status: string, moderatorName: string | null) {
+  if (status === "approved")
+    return [
+      "✅Статус: Схвалено",
+      ...(moderatorName ? ["👤Схвалив: " + moderatorName] : []),
+    ].join("\n");
   if (status === "rejected") return "❌Статус: Відхилено";
   if (status === "cancelled") return "❌Статус: Скасовано";
   return "⏳Статус: Очікує рішення";
@@ -48,13 +52,6 @@ export function telegramWorker(
           job.applicationId,
         );
         if (job.kind === "delete") {
-          if (app.telegramChatId && app.telegramMessageId) {
-            await telegram.call("deleteMessage", {
-              chat_id: app.telegramChatId,
-              message_id: app.telegramMessageId,
-            });
-            await repo.clearMessage(db, app.id);
-          }
           await repo.finishJob(db, job.id);
           return;
         }
@@ -63,7 +60,7 @@ export function telegramWorker(
           "🔵Discord: " + user.discordUsername,
           "💰Нікнейм: " + identity.username,
           "🗓Дата: " + formattedDate(app.createdAt),
-          formattedStatus(app.status),
+          formattedStatus(app.status, app.reviewedByTelegramName),
           ...(app.status === "rejected" && app.rejectionReason
             ? ["📝Причина: " + app.rejectionReason]
             : []),

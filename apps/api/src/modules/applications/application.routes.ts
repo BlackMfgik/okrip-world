@@ -7,15 +7,12 @@ export function applicationRoutes(
   app: FastifyInstance,
   auth: AuthService,
   service: ReturnType<typeof applicationService>,
-  repeatSubmissionEnabled: boolean,
 ) {
   app.post(
     "/v1/applications",
     {
       config: {
-        rateLimit: repeatSubmissionEnabled
-          ? false
-          : { max: 5, timeWindow: "1 minute" },
+        rateLimit: { max: 2, timeWindow: "1 minute" },
       },
     },
     async (req, reply) =>

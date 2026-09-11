@@ -30,6 +30,7 @@ export const applications = pgTable(
     telegramChatId: varchar("telegram_chat_id"),
     telegramMessageId: integer("telegram_message_id"),
     reviewedByTelegramId: varchar("reviewed_by_telegram_id"),
+    reviewedByTelegramName: varchar("reviewed_by_telegram_name"),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

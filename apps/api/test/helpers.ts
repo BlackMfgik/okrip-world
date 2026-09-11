@@ -76,7 +76,7 @@ export function telegramBody(
     update_id: 1,
     callback_query: {
       id: "callback",
-      from: { id: adminId },
+      from: { id: adminId, username: "Moderator" },
       data: action + ":" + publicId,
       message: { message_id: 123, chat: { id: -100 } },
     },

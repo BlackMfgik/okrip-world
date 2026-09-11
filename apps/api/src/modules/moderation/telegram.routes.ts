@@ -5,12 +5,26 @@ import { equalSecret } from "../../shared/crypto.js";
 import { AppError } from "../../shared/errors.js";
 import type { moderationService } from "./moderation.service.js";
 import type { TelegramProvider } from "./telegram-message.service.js";
+const telegramUser = z.object({
+  id: z.number().int().safe(),
+  is_bot: z.boolean().optional(),
+  username: z.string().max(64).optional(),
+  first_name: z.string().max(64).optional(),
+  last_name: z.string().max(64).optional(),
+});
+type TelegramUser = z.infer<typeof telegramUser>;
+function moderatorName(user: TelegramUser) {
+  if (user.username) return "@" + user.username;
+  return (
+    [user.first_name, user.last_name].filter(Boolean).join(" ") || String(user.id)
+  );
+}
 const webhook = z.object({
   update_id: z.number().int(),
   message: z.object({
     message_id: z.number().int().optional(),
     text: z.string().optional(),
-    from: z.object({ id: z.number().int().safe(), is_bot: z.boolean().optional() }).optional(),
+    from: telegramUser.optional(),
     chat: z.object({ id: z.number().int().safe() }),
     reply_to_message: z
       .object({
@@ -22,7 +36,7 @@ const webhook = z.object({
   callback_query: z
     .object({
       id: z.string(),
-      from: z.object({ id: z.number().int().safe() }),
+      from: telegramUser,
       data: z.string().max(64),
       message: z.object({
         message_id: z.number().int(),
@@ -74,6 +88,7 @@ export function telegramRoutes(
           String(message.from.id),
           String(message.chat.id),
           message.text,
+          moderatorName(message.from),
         );
         await telegram.call("sendMessage", {
           chat_id: message.chat.id,
@@ -103,9 +118,7 @@ export function telegramRoutes(
         if (application.status === "pending") {
           await telegram.call("sendMessage", {
             chat_id: callback.message.chat.id,
-            text:
-              `❌ Введіть причину відмови для заявки №${application.number}.\n` +
-              `Надішліть причину відповіддю на це повідомлення.\n#reject:${match[2]}`,
+            text: `Схуялє відхилити заявку №${application.number}?\n#reject:${match[2]}`,
             reply_parameters: { message_id: callback.message.message_id },
             reply_markup: {
               force_reply: true,
@@ -129,6 +142,8 @@ export function telegramRoutes(
         "approve",
         String(callback.from.id),
         String(callback.message.chat.id),
+        undefined,
+        moderatorName(callback.from),
       );
       // Acknowledgement is cosmetic; the durable decision/message job already committed.
       await telegram

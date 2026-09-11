@@ -23,6 +23,7 @@ export const decide = (
   id: string,
   status: "approved" | "rejected",
   adminId: string,
+  adminName: string,
   rejectionReason?: string,
 ) =>
   db
@@ -30,6 +31,7 @@ export const decide = (
     .set({
       status,
       reviewedByTelegramId: adminId,
+      reviewedByTelegramName: adminName,
       reviewedAt: new Date(),
       updatedAt: new Date(),
       rejectionReason: status === "rejected" ? rejectionReason : null,

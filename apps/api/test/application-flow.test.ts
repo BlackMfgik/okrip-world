@@ -93,6 +93,12 @@ it("submits, durably sends Telegram, approves exactly once, leases and completes
       reply_markup: { inline_keyboard: [] },
     }),
   );
+  expect(ctx.telegram.call).toHaveBeenCalledWith(
+    "editMessageText",
+    expect.objectContaining({
+      text: expect.stringContaining("👤Схвалив: @Moderator"),
+    }),
+  );
 });
 it("asks for and saves a Telegram rejection reason", async () => {
   const { cookie } = await login(ctx);
@@ -120,7 +126,7 @@ it("asks for and saves a Telegram rejection reason", async () => {
   expect(ctx.telegram.call).toHaveBeenCalledWith(
     "sendMessage",
     expect.objectContaining({
-      text: expect.stringContaining("причину відмови для заявки №1"),
+      text: expect.stringContaining("Схуялє відхилити заявку №1?"),
       reply_markup: expect.objectContaining({ force_reply: true }),
     }),
   );
@@ -139,7 +145,7 @@ it("asks for and saves a Telegram rejection reason", async () => {
         from: { id: 77, is_bot: false },
         chat: { id: -100 },
         reply_to_message: {
-          text: `❌ Введіть причину відмови для заявки №1.\nНадішліть причину відповіддю на це повідомлення.\n#reject:${publicId}`,
+          text: `Схуялє відхилити заявку №1?\n#reject:${publicId}`,
           from: { is_bot: true },
         },
       },
@@ -161,7 +167,7 @@ it("asks for and saves a Telegram rejection reason", async () => {
     }),
   );
 });
-it("blocks duplicate pending applications and removes an old Telegram notice after resubmission", async () => {
+it("allows two submissions per minute after rejection and keeps the old Telegram notice", async () => {
   const { cookie } = await login(ctx);
   const cookies = { okrip_session: cookie };
   const submit = () =>
@@ -174,10 +180,8 @@ it("blocks duplicate pending applications and removes an old Telegram notice aft
     });
 
   const first = await submit();
-  const second = await submit();
   expect(first.statusCode).toBe(201);
   expect(first.json().repeatSubmissionEnabled).toBe(false);
-  expect(second.statusCode).toBe(409);
 
   await ctx.worker.tick();
   await moderationService(ctx.db, env).decide(
@@ -193,15 +197,16 @@ it("blocks duplicate pending applications and removes an old Telegram notice aft
   const resubmitted = await submit();
   expect(resubmitted.statusCode, resubmitted.body).toBe(201);
   await ctx.worker.tick();
-  await ctx.worker.tick();
-  expect(ctx.telegram.call).toHaveBeenCalledWith("deleteMessage", {
-    chat_id: "-100",
-    message_id: 123,
-  });
+  expect(ctx.telegram.call).not.toHaveBeenCalledWith(
+    "deleteMessage",
+    expect.anything(),
+  );
   expect(ctx.telegram.call).toHaveBeenCalledWith(
     "sendMessage",
     expect.objectContaining({ text: expect.stringContaining("🧾Заявка №2") }),
   );
+  const rateLimited = await submit();
+  expect(rateLimited.statusCode).toBe(429);
   const saved = await ctx.db.select().from(applications);
   expect(saved.map((application) => application.status)).toEqual([
     "rejected",

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { Executor } from "../../db/client.js";
 import {
   users,
@@ -91,30 +91,6 @@ export const enqueueMessage = (
   kind: string,
 ) =>
   db.insert(telegramJobs).values({ applicationId, kind }).onConflictDoNothing();
-export async function schedulePreviousTelegramCleanup(
-  db: Executor,
-  userId: string,
-) {
-  const previous = await db
-    .select({ id: applications.id, messageId: applications.telegramMessageId })
-    .from(applications)
-    .where(eq(applications.userId, userId));
-  if (!previous.length) return;
-  const applicationIds = previous.map((application) => application.id);
-  await db
-    .update(telegramJobs)
-    .set({ completedAt: new Date() })
-    .where(
-      and(
-        inArray(telegramJobs.applicationId, applicationIds),
-        inArray(telegramJobs.kind, ["created", "decided"]),
-        isNull(telegramJobs.completedAt),
-      ),
-    );
-  for (const application of previous)
-    if (application.messageId)
-      await enqueueMessage(db, application.id, "delete");
-}
 export async function lastAdd(db: Executor, accessId: string) {
   return (
     await db

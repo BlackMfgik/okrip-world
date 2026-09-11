@@ -72,7 +72,6 @@ export function applicationService(
                   minecraftUsername,
                 )
             : await repo.createIdentity(tx, user.id, minecraftUsername);
-          await repo.schedulePreviousTelegramCleanup(tx, user.id);
           const app = await repo.createApplication(
             tx,
             user.id,

@@ -105,7 +105,6 @@ export async function buildApp(
     app,
     auth,
     applicationService(db, discord, env.APPLICATION_REPEAT_DEBUG),
-    env.APPLICATION_REPEAT_DEBUG,
   );
   telegramRoutes(
     app,

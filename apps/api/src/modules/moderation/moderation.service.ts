@@ -48,6 +48,7 @@ export function moderationService(
       adminId: string,
       chatId: string,
       rejectionReason?: string,
+      adminName?: string,
     ) {
       assertModerator(adminId, chatId);
       const reason = rejectionReason?.trim();
@@ -82,6 +83,7 @@ export function moderationService(
           fresh.application.id,
           status,
           adminId,
+          adminName?.trim() || adminId,
           reason,
         );
         if (!changed.length)
