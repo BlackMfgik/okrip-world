@@ -200,6 +200,10 @@ body {
 }
 .light-theme .nav-online {
   background: rgba(0, 0, 0, 0.04);
+  color: #000;
+}
+.light-theme .nav-online::before {
+  background: #000;
 }
 .nav-online::before {
   content: "";
@@ -243,6 +247,10 @@ body {
 }
 .light-theme .theme-toggle-btn:hover {
   background: rgba(0, 0, 0, 0.05);
+}
+.light-theme .theme-toggle-btn,
+.light-theme .theme-toggle-btn:hover {
+  color: #000;
 }
 .theme-toggle-btn::after {
   content: "☀";
@@ -749,7 +757,7 @@ body {
   border-radius: 16px;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text);
+  color: #fff;
   white-space: nowrap;
   opacity: 0;
   transform: translateY(10px);
