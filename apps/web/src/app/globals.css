@@ -879,7 +879,6 @@ body {
   from { visibility: visible; transform: translateY(24px); }
   to { visibility: visible; transform: translateY(0); }
 }
-.server-card-entry:nth-child(2) { animation-delay: .4s; }
 .server-card-entry .server-card { height: 100%; padding: 24px; }
 .server-card-entry .server-name { font-size: 1.35rem; }
 .server-card-entry .server-application { margin-top: 18px; padding-top: 18px; }
