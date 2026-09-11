@@ -1,7 +1,8 @@
 import type { CurrentApplication } from "@okrip/contracts";
 export function ApplicationStatus({ data }: { data: CurrentApplication }) {
   let title = "Заявки ще немає",
-    description = "Вкажіть свій Minecraft Java нік, щоб приєднатися.";
+    description: string | null =
+      "Вкажіть свій Minecraft Java нік, щоб приєднатися.";
   if (data.access === "banned") {
     title = "Доступ заблокований";
     description =
@@ -17,7 +18,7 @@ export function ApplicationStatus({ data }: { data: CurrentApplication }) {
     description =
       data.synchronization === "completed"
         ? "Можна приєднуватися до сервера зі своїм ніком."
-        : "Сервер отримає зміни автоматично. Сторінка оновлюється сама.";
+        : null;
   } else if (data.application?.status === "pending") {
     title = "Заявку передано адміністрації";
     description = "Очікуйте рішення. Статус оновлюється автоматично.";
@@ -35,7 +36,7 @@ export function ApplicationStatus({ data }: { data: CurrentApplication }) {
   return (
     <section aria-live="polite">
       <h2>{title}</h2>
-      <p>{description}</p>
+      {description && <p>{description}</p>}
       {data.application && (
         <p>
           Нік: <strong>{data.application.minecraftUsername}</strong>

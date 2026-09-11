@@ -858,20 +858,23 @@ body {
 .server-application-hint, .server-account { color: var(--text-secondary); font-size: .875rem; margin-bottom: 12px; }
 .server-account { overflow-wrap: anywhere; }
 .server-application button:disabled { opacity: .6; cursor: wait; }
-.application-dialog { position: fixed; margin: auto; width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; padding: 32px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--bg); color: var(--text); box-shadow: var(--shadow); }
-.application-dialog::backdrop { background: rgba(0,0,0,.7); backdrop-filter: blur(8px); }
+.application-dialog { position: fixed; margin: auto; width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; padding: 32px; border: 1px solid rgba(255,255,255,.16); border-radius: 28px; background: linear-gradient(135deg, rgba(255,255,255,.1), rgba(255,255,255,.025) 42%, rgba(72,119,190,.1)), rgba(7,12,20,.68); color: var(--text); backdrop-filter: blur(30px) saturate(170%); -webkit-backdrop-filter: blur(30px) saturate(170%); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), inset 0 -1px 0 rgba(255,255,255,.04), 0 24px 80px rgba(0,0,0,.42); }
+.application-dialog::backdrop { background: rgba(2,6,12,.58); backdrop-filter: blur(12px) saturate(120%); -webkit-backdrop-filter: blur(12px) saturate(120%); }
+.light-theme .application-dialog { border-color: rgba(255,255,255,.68); background: linear-gradient(135deg, rgba(255,255,255,.72), rgba(255,255,255,.34) 48%, rgba(184,210,244,.34)), rgba(244,248,255,.48); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(255,255,255,.3), 0 24px 70px rgba(24,45,72,.2); }
 .application-dialog-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 24px; }
 .application-eyebrow { color: var(--text-secondary); font-size: .7rem; letter-spacing: .16em; margin-bottom: 8px; }
 .application-dialog-header h2 { font-size: 1.75rem; font-weight: 700; line-height: 1.2; }
-.application-dialog-close { flex-shrink: 0; width: 44px; height: 44px; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); font-size: 1.5rem; cursor: pointer; }
-.application-dialog-close:hover { background: var(--surface-hover); }
 .application-dialog > p { margin: 16px 0; color: var(--text-secondary); }
-.application-dialog section { margin: 24px 0; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); }
+.application-dialog section { margin: 24px 0; padding: 20px; border: 1px solid rgba(255,255,255,.13); border-radius: 20px; background: linear-gradient(135deg, rgba(255,255,255,.085), rgba(255,255,255,.025)); box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 12px 32px rgba(0,0,0,.12); }
+.light-theme .application-dialog section { border-color: rgba(255,255,255,.7); background: linear-gradient(135deg, rgba(255,255,255,.58), rgba(255,255,255,.24)); box-shadow: inset 0 1px 0 rgba(255,255,255,.85), 0 12px 32px rgba(35,62,92,.1); }
 .application-dialog section h2 { font-size: 1.15rem; font-weight: 600; margin-bottom: 10px; }
 .application-dialog section p { margin-top: 10px; line-height: 1.6; }
 .application-dialog .verification-form { margin: 24px 0; }
-.application-dialog .verification-form input { border-color: var(--border-strong); background: var(--surface); }
+.application-dialog .verification-form input { border-color: rgba(255,255,255,.16); background: rgba(255,255,255,.065); box-shadow: inset 0 1px 0 rgba(255,255,255,.08); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.light-theme .application-dialog .verification-form input { border-color: rgba(255,255,255,.72); background: rgba(255,255,255,.42); }
 .application-dialog .verification-form p { color: var(--text-secondary); font-size: .875rem; }
+.server-application .application-logout { width: fit-content; margin: 28px 0 0 auto; padding: 12px 18px; border: 1px solid rgba(255,91,91,.42); background: rgba(190,35,46,.78); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 8px 24px rgba(130,15,25,.24); }
+.server-application .application-logout:hover { background: rgba(218,42,54,.92); box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 10px 30px rgba(150,18,30,.32); }
 .application-dialog [role="alert"] { color: var(--error); }
 .application-dialog :focus-visible { outline: 2px solid var(--text); outline-offset: 4px; }
 @media (max-width: 480px) { .application-dialog { padding: 24px 20px; } .application-dialog-header h2 { font-size: 1.45rem; } }

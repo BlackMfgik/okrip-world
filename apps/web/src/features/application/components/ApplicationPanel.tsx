@@ -56,7 +56,7 @@ export function ApplicationPanel() {
       )}
       {logoutError && <p role="alert">{logoutError}</p>}
       <button
-        className="btn"
+        className="btn application-logout"
         onClick={async () => {
           try {
             const response = await fetch("/v1/auth/logout", { method: "POST" });
@@ -68,7 +68,7 @@ export function ApplicationPanel() {
           }
         }}
       >
-        Вийти
+        Вийти з акаунта
       </button>
     </>
   );
