@@ -11,6 +11,11 @@ public final class CommandExecutor {
     private final JavaPlugin plugin;
     private final boolean onlineMode;
     public CommandExecutor(JavaPlugin plugin) { this.plugin = plugin; onlineMode = Bukkit.getOnlineMode(); }
+    public void ensureWhitelisted(String username) throws Exception {
+        Command command = new Command("reconcile", "reconcile", "whitelist_add", username, "");
+        String failure = execute(command, System.nanoTime() + TimeUnit.SECONDS.toNanos(30));
+        if (failure != null) throw new IllegalStateException(failure);
+    }
     public String execute(Command command, long deadline) throws Exception {
         // Profile completion may perform HTTPS; this method is invoked by the dedicated worker.
         PlayerProfile profile;
@@ -30,7 +35,10 @@ public final class CommandExecutor {
         catch (TimeoutException error) { mutation.cancel(false); throw error; }
     }
     private String mutate(Command command, PlayerProfile profile) {
-        OfflinePlayer player = Bukkit.getOfflinePlayer(profile.getUniqueId());
+        // Resolve by name so Paper keeps both the UUID and username when it
+        // serializes whitelist.json. Resolving only by UUID creates a nameless
+        // entry that hosting panels classify as an unverified player.
+        OfflinePlayer player = Bukkit.getOfflinePlayer(command.username());
         ProfileBanList bans = Bukkit.getBanList(BanList.Type.PROFILE);
         switch (command.type()) {
             case "whitelist_add" -> { if (bans.isBanned(profile)) return "local_ban"; if (!player.isWhitelisted()) player.setWhitelisted(true); }

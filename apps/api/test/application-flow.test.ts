@@ -60,6 +60,14 @@ it("submits, durably sends Telegram, approves exactly once, leases and completes
   expect((await approve()).statusCode).toBe(200);
   expect(await ctx.db.select().from(playerAccess)).toHaveLength(1);
   expect(await ctx.db.select().from(commands)).toHaveLength(1);
+  const whitelistSnapshot = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/minecraft/whitelist/snapshot",
+    headers: serverHeaders,
+    payload: {},
+  });
+  expect(whitelistSnapshot.statusCode).toBe(200);
+  expect(whitelistSnapshot.json().usernames).toEqual(["Player_One"]);
   expect(
     (await ctx.app.inject({ url: "/v1/applications/current", cookies })).json()
       .synchronization,

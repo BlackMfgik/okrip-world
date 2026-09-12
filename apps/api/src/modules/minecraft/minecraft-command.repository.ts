@@ -99,6 +99,13 @@ export async function commandAccess(db: Executor, id: string) {
     await db.select().from(playerAccess).where(eq(playerAccess.id, id))
   )[0]!;
 }
+export async function activeUsernames(db: Executor) {
+  return db
+    .select({ username: identities.username })
+    .from(playerAccess)
+    .innerJoin(identities, eq(identities.id, playerAccess.minecraftIdentityId))
+    .where(eq(playerAccess.status, "active"));
+}
 export async function identityByName(db: Executor, username: string) {
   return (
     await db

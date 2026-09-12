@@ -17,7 +17,8 @@ public final class OkripWhitelistPlugin extends JavaPlugin {
             PluginConfig config = PluginConfig.load(getConfig());
             DeliveryJournal journal = new DeliveryJournal(getDataFolder().toPath().resolve("delivery-journal.json"));
             OkripApiClient api = new OkripApiClient(config);
-            CommandPoller poller = new CommandPoller(api, new CommandExecutor(this), new CommandAcknowledger(journal, api));
+            CommandExecutor executor = new CommandExecutor(this);
+            CommandPoller poller = new CommandPoller(api, executor, new CommandAcknowledger(journal, api));
             worker = Executors.newSingleThreadScheduledExecutor(r -> { Thread t = new Thread(r, "OkripWhitelist-worker"); t.setDaemon(true); return t; });
             watcher = new CommandWatcher(api, poller, worker, error -> {
                 if (System.currentTimeMillis() - lastWarning > 60000) { getLogger().warning("Synchronization deferred; check API availability and configuration."); lastWarning = System.currentTimeMillis(); }
@@ -33,6 +34,16 @@ public final class OkripWhitelistPlugin extends JavaPlugin {
                 sender.sendMessage("Ban queued for API synchronization. Check console if access is not updated."); return true;
             });
             watcher.start();
+            worker.scheduleWithFixedDelay(() -> {
+                try {
+                    for (String username : api.activeWhitelist()) executor.ensureWhitelisted(username);
+                } catch (Exception error) {
+                    if (System.currentTimeMillis() - lastWarning > 60000) {
+                        getLogger().warning("Whitelist reconciliation deferred; check API availability and configuration.");
+                        lastWarning = System.currentTimeMillis();
+                    }
+                }
+            }, 0, 5, TimeUnit.MINUTES);
         } catch (Exception error) { getLogger().severe("Plugin disabled: invalid configuration or unreadable delivery journal."); Bukkit.getPluginManager().disablePlugin(this); }
     }
     @Override public void onDisable() { Bukkit.getScheduler().cancelTasks(this); if (watcher != null) watcher.close(); if (worker != null) worker.shutdownNow(); }

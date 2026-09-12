@@ -15,6 +15,11 @@ export function minecraftService(
   commandQueued: (serverId: string) => void = () => undefined,
 ) {
   return {
+    async whitelistSnapshot() {
+      return {
+        usernames: (await repo.activeUsernames(db)).map((row) => row.username),
+      };
+    },
     async lease() {
       return db.transaction(async (tx) => {
         await repo.lockQueue(tx, serverId);

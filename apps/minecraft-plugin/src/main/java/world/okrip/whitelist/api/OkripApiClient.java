@@ -4,6 +4,8 @@ import java.net.http.*;
 import java.net.URI;
 import java.time.Duration;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import world.okrip.whitelist.config.PluginConfig;
 public final class OkripApiClient {
@@ -22,6 +24,19 @@ public final class OkripApiClient {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         JsonObject json = response.body().isBlank() ? new JsonObject() : JsonParser.parseString(response.body()).getAsJsonObject();
         return new Result(response.statusCode(), json);
+    }
+    public List<String> activeWhitelist() throws IOException, InterruptedException {
+        Result response = post("/v1/minecraft/whitelist/snapshot", new JsonObject());
+        if (response.status() != 200 || !response.body().has("usernames"))
+            throw new IOException("Whitelist snapshot request failed");
+        List<String> usernames = new ArrayList<>();
+        for (JsonElement value : response.body().getAsJsonArray("usernames")) {
+            String username = value.getAsString();
+            if (!username.matches("[A-Za-z0-9_]{3,16}"))
+                throw new IOException("Invalid username in whitelist snapshot");
+            usernames.add(username);
+        }
+        return usernames;
     }
     public CompletableFuture<WebSocket> watch(WebSocket.Listener listener) {
         URI httpUri = config.apiUrl().resolve("/v1/minecraft/commands/watch");

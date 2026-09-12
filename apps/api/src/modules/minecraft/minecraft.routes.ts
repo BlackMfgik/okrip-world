@@ -71,6 +71,9 @@ export function minecraftRoutes(
     leaseRequestSchema.parse(req.body);
     return service.lease();
   });
+  app.post("/v1/minecraft/whitelist/snapshot", options, async () =>
+    service.whitelistSnapshot(),
+  );
   app.post(
     "/v1/minecraft/commands/:id/complete",
     options,

@@ -1,7 +1,7 @@
 name: OkripWhitelist
-version: 1.2.0
+version: 1.2.1
 main: world.okrip.whitelist.OkripWhitelistPlugin
-api-version: '26.2'
+api-version: '1.21.11'
 description: Durable Okrip World whitelist synchronization
 commands:
   okripban:
