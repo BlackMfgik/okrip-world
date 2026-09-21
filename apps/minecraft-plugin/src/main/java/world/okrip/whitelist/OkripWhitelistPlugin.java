@@ -5,6 +5,7 @@ import world.okrip.whitelist.config.PluginConfig;
 import world.okrip.whitelist.api.OkripApiClient;
 import world.okrip.whitelist.commands.*;
 import world.okrip.whitelist.listeners.PlayerBanListener;
+import java.nio.file.Path;
 import java.util.concurrent.*;
 import java.util.Arrays;
 public final class OkripWhitelistPlugin extends JavaPlugin {
@@ -13,15 +14,37 @@ public final class OkripWhitelistPlugin extends JavaPlugin {
     private long lastWarning;
     @Override public void onEnable() {
         saveDefaultConfig();
+        PluginConfig config;
         try {
-            PluginConfig config = PluginConfig.load(getConfig());
-            DeliveryJournal journal = new DeliveryJournal(getDataFolder().toPath().resolve("delivery-journal.json"));
+            config = PluginConfig.load(getConfig());
+            getLogger().info("Configuration valid: api-url=" + config.apiUrl() + ", server-id=" + config.serverId()
+                + ", timeout-seconds=" + config.timeout() + ", server-token=[hidden].");
+        } catch (Exception error) {
+            disable("Configuration error: " + detail(error));
+            return;
+        }
+
+        Path journalPath = getDataFolder().toPath().resolve("delivery-journal.json");
+        DeliveryJournal journal;
+        try {
+            journal = new DeliveryJournal(journalPath);
+            getLogger().info("Delivery journal valid: " + journalPath + " (" + journal.snapshot().size() + " pending entries).");
+        } catch (Exception error) {
+            disable("Delivery journal error: " + detail(error)
+                + ". Check that plugins/OkripWhitelist is readable and writable.");
+            return;
+        }
+
+        try {
             OkripApiClient api = new OkripApiClient(config);
             CommandExecutor executor = new CommandExecutor(this);
-            CommandPoller poller = new CommandPoller(api, executor, new CommandAcknowledger(journal, api));
+            CommandPoller poller = new CommandPoller(api, executor, new CommandAcknowledger(journal, api), getLogger());
             worker = Executors.newSingleThreadScheduledExecutor(r -> { Thread t = new Thread(r, "OkripWhitelist-worker"); t.setDaemon(true); return t; });
             watcher = new CommandWatcher(api, poller, worker, error -> {
-                if (System.currentTimeMillis() - lastWarning > 60000) { getLogger().warning("Synchronization deferred; check API availability and configuration."); lastWarning = System.currentTimeMillis(); }
+                if (System.currentTimeMillis() - lastWarning > 60000) {
+                    getLogger().warning("Synchronization deferred: " + detail(error));
+                    lastWarning = System.currentTimeMillis();
+                }
             });
             PlayerBanListener bans = new PlayerBanListener(journal, worker, watcher::signal);
             Bukkit.getPluginManager().registerEvents(bans, this);
@@ -33,18 +56,54 @@ public final class OkripWhitelistPlugin extends JavaPlugin {
                 bans.enqueue(args[0], reason, args[0].toLowerCase(java.util.Locale.ROOT));
                 sender.sendMessage("Ban queued for API synchronization. Check console if access is not updated."); return true;
             });
+            getCommand("okripwhitelist").setExecutor((sender, command, label, args) -> {
+                if (args.length != 1 || !"validate".equalsIgnoreCase(args[0])) return false;
+                try {
+                    reloadConfig();
+                    PluginConfig checked = PluginConfig.load(getConfig());
+                    DeliveryJournal checkedJournal = new DeliveryJournal(journalPath);
+                    int localCount = Bukkit.getWhitelistedPlayers().size();
+                    sender.sendMessage("OkripWhitelist: local checks passed; checking API snapshot...");
+                    worker.execute(() -> {
+                        try {
+                            int apiCount = new OkripApiClient(checked).activeWhitelist().size();
+                            Bukkit.getScheduler().runTask(this, () -> sender.sendMessage(
+                                "OkripWhitelist validation passed: API=" + checked.apiUrl() + ", server=" + checked.serverId()
+                                    + ", journal-pending=" + checkedJournal.snapshot().size() + ", snapshot=" + apiCount
+                                    + ", local-whitelist=" + localCount + ", difference=" + (apiCount - localCount) + "."));
+                        } catch (Exception error) {
+                            Bukkit.getScheduler().runTask(this, () -> sender.sendMessage(
+                                "OkripWhitelist API validation failed: " + detail(error)));
+                        }
+                    });
+                } catch (Exception error) {
+                    sender.sendMessage("OkripWhitelist validation failed: " + detail(error));
+                }
+                return true;
+            });
             watcher.start();
             worker.scheduleWithFixedDelay(() -> {
                 try {
                     for (String username : api.activeWhitelist()) executor.ensureWhitelisted(username);
                 } catch (Exception error) {
                     if (System.currentTimeMillis() - lastWarning > 60000) {
-                        getLogger().warning("Whitelist reconciliation deferred; check API availability and configuration.");
+                        getLogger().warning("Whitelist reconciliation deferred: " + detail(error));
                         lastWarning = System.currentTimeMillis();
                     }
                 }
             }, 0, 5, TimeUnit.MINUTES);
-        } catch (Exception error) { getLogger().severe("Plugin disabled: invalid configuration or unreadable delivery journal."); Bukkit.getPluginManager().disablePlugin(this); }
+        } catch (Exception error) {
+            disable("Plugin startup error: " + detail(error));
+        }
     }
     @Override public void onDisable() { Bukkit.getScheduler().cancelTasks(this); if (watcher != null) watcher.close(); if (worker != null) worker.shutdownNow(); }
+    private void disable(String message) {
+        getLogger().severe(message);
+        Bukkit.getPluginManager().disablePlugin(this);
+    }
+    private static String detail(Throwable error) {
+        Throwable current = error;
+        while (current.getCause() != null) current = current.getCause();
+        return current.getMessage() == null ? current.getClass().getSimpleName() : current.getMessage();
+    }
 }

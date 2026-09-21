@@ -15,14 +15,13 @@ public final class CommandAcknowledger {
         if (failure != null) body.addProperty("error", failure);
         journal.put(command.id(), "/v1/minecraft/commands/" + command.id() + (failure == null ? "/complete" : "/fail"), body);
     }
-    public boolean flush() throws Exception {
+    public void flush() throws Exception {
         for (var entry : journal.snapshot().entrySet()) {
             String endpoint = entry.getValue().get("endpoint").getAsString();
             var response = api.post(endpoint, entry.getValue().getAsJsonObject("body"));
             if (response.status() >= 200 && response.status() < 300 || response.status() == 409 && endpoint.contains("/commands/")
                 || response.status() == 404 && endpoint.endsWith("/events/ban")) journal.remove(entry.getKey());
-            else return false;
+            else throw new java.io.IOException("Delivery to " + endpoint + " failed: " + response.describe());
         }
-        return true;
     }
 }

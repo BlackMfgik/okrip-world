@@ -21,9 +21,10 @@ export const env = envSchema.parse({
   MINECRAFT_SERVER_ID: "vanilla",
   MINECRAFT_SERVER_TOKEN: "m".repeat(32),
 });
-export async function setup() {
+export async function setup(overrides: Partial<typeof env> = {}) {
   const database = await testDatabase();
   const db = database.db;
+  const activeEnv = { ...env, ...overrides };
   const discord = {
     identity: vi.fn(async () => ({
       id: "111",
@@ -34,7 +35,7 @@ export async function setup() {
     membership: vi.fn(async () => {}),
   };
   const telegram = { call: vi.fn(async () => ({ message_id: 123 })) };
-  const { app, worker } = await buildApp(env, db, { discord, telegram });
+  const { app, worker } = await buildApp(activeEnv, db, { discord, telegram });
   return {
     db,
     app,

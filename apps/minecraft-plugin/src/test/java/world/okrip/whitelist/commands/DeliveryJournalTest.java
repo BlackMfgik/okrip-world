@@ -1,6 +1,7 @@
 package world.okrip.whitelist.commands;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import java.io.IOException;
 import java.nio.file.*;
 import com.google.gson.JsonObject;
 import static org.junit.jupiter.api.Assertions.*;
@@ -17,6 +18,8 @@ class DeliveryJournalTest {
     }
     @Test void refusesCorruptJournalInsteadOfLosingAcknowledgements() throws Exception {
         Path path = directory.resolve("journal.json"); Files.writeString(path, "{broken");
-        assertThrows(RuntimeException.class, () -> new DeliveryJournal(path));
+        IOException error = assertThrows(IOException.class, () -> new DeliveryJournal(path));
+        assertTrue(error.getMessage().contains("invalid JSON"));
+        assertTrue(error.getMessage().contains(path.toString()));
     }
 }

@@ -19,6 +19,7 @@ API variables — усі API-поля з .env.example, з production значе�
 - DISCORD_REDIRECT_URI — адреса web callback вище.
 - SESSION_SECRET, WEB_PROXY_SECRET, TELEGRAM_WEBHOOK_SECRET, MINECRAFT_SERVER_TOKEN — різні криптографічно випадкові значення, не коротші 32 символів. Telegram secret тільки A–Z/a–z/0–9/_/-.
 - Discord/Telegram IDs і tokens; MINECRAFT_SERVER_ID=vanilla.
+- `APPLICATION_AUTO_APPROVE=false` залишає ручну Telegram-модерацію. `true` одразу схвалює нову заявку, створює active access і `whitelist_add`; це поточний перемикач режиму, окремої адмін-панелі немає.
 
 Web variables: NODE_ENV=production, PORT=3000, API_INTERNAL_URL=`http://api.railway.internal:3001` і той самий WEB_PROXY_SECRET. Використайте фактичне private DNS ім'я вашого API. RAILWAY_ENVIRONMENT_ID надає платформа. Web не отримує DB, Discord або Telegram secrets.
 
@@ -44,7 +45,7 @@ Invoke-RestMethod -Method Post -Uri ('https://api.telegram.org/bot' + $env:TELEG
 ## 4. Kinetic Hosting
 
 1. Ціль цієї збірки — Paper/Purpur 1.21.11, Java 21. Для інших версій API спочатку перебудуйте й перевірте сумісність. Folia не підтримується.
-2. Зберіть `apps/minecraft-plugin` через Gradle wrapper; завантажте `build/libs/OkripWhitelist.jar` у /plugins.
+2. Зберіть `apps/minecraft-plugin` через Gradle wrapper; завантажте `build/libs/OkripWhitelist-1.3.0.jar` у /plugins.
 3. Запустіть один раз, щоб створити plugins/OkripWhitelist/config.yml. При placeholder token плагін відключиться до налаштування.
 4. Укажіть HTTPS public API URL, server-id, той самий MINECRAFT_SERVER_TOKEN і timeout 8 секунд. Переконайтеся, що public domain/proxy API пропускає WebSocket upgrade, і перезапустіть сервер.
 5. У server.properties встановіть white-list=true. Для offline-mode встановіть і налаштуйте AuthMe/аналог; користувачі мають вводити нік із первісним регістром.
@@ -55,7 +56,7 @@ Invoke-RestMethod -Method Post -Uri ('https://api.telegram.org/bot' + $env:TELEG
 ## 5. Обов'язковий smoke test перед відкриттям
 
 1. /health і /ready повертають 200. Web відкриває старі сторінки, /application, Discord login.
-2. Discord учасник входить, неучасник не отримує сесію; створення заявки з валідним ніком дає pending. Перевірте неправильний нік і регістронезалежний дубль.
+2. Discord учасник входить, неучасник не отримує сесію. При ручній модерації створення заявки дає pending; при авто-схваленні — approved/active і одразу з'являється у whitelist snapshot. Перевірте неправильний нік і регістронезалежний дубль.
 3. Повідомлення приходить у закриту Telegram-групу. Неавторизований адміністратор не може змінити стан.
 4. Схваліть заявку; повторіть callback — у БД одна whitelist_add. Плагін має отримати WebSocket-сигнал без очікування інтервалу. Спочатку сайт показує syncing, після plugin complete — доступ відкрито. Перевірте реальний вхід Minecraft.
 5. Тимчасово відключіть API від Minecraft; схваліть другу заявку; відновіть мережу — команда виконується. Перезапустіть плагін між виконанням і ack — журнал відновлює доставку.

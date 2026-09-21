@@ -1,0 +1,28 @@
+# OkripWhitelist 1.3.0
+
+Плагін синхронізує whitelist Paper/Purpur 1.21.11 з Okrip API.
+
+## Налаштування
+
+Після першого запуску відкрийте `plugins/OkripWhitelist/config.yml` і задайте:
+
+- `api-url` — публічна HTTPS-адреса сервісу `api` в Railway. Для production: `https://api-production-e783.up.railway.app`. URL не може містити userinfo, query або fragment.
+- `server-id` — точне значення Railway `responsible-solace` → `api` → `Variables` → `MINECRAFT_SERVER_ID`. У шаблоні встановлено `vanilla`; звірте його зі значенням у Railway.
+- `server-token` — точне значення `MINECRAFT_SERVER_TOKEN` із тієї самої вкладки. Мінімум 32 символи; значення не може починатися з `REPLACE`. Не публікуйте цей секрет.
+- `timeout-seconds` — таймаут API-запиту від 1 до 15 секунд.
+
+Перезапустіть сервер після зміни параметрів. На запущеному плагіні оператор може виконати `/okripwhitelist validate`, щоб перевірити конфіг і `delivery-journal.json`.
+
+Команда `/okripwhitelist validate` також звертається до API й показує кількість ніків у серверному snapshot, кількість у локальному whitelist і різницю між ними. Кожна отримана команда записується в консоль із типом, ніком та результатом; мережеві помилки містять HTTP-код або конкретну причину.
+
+## Цикл заявки
+
+1. Користувач входить через Discord і реєструє Minecraft-нік.
+2. При `APPLICATION_AUTO_APPROVE=false` заявка отримує статус `pending`; адміністратор схвалює або відхиляє її в Telegram.
+3. При `APPLICATION_AUTO_APPROVE=true` API в одній транзакції одразу встановлює `approved`, створює активний доступ і команду `whitelist_add`; ручне рішення не потрібне.
+4. Активний нік одразу входить до `/v1/minecraft/whitelist/snapshot`.
+5. Плагін отримує `whitelist_add`, виконує її на сервері та підтверджує API. Після підтвердження сайт показує завершену синхронізацію.
+
+У `server.properties` обов'язково встановіть `white-list=true`. Інакше запис у whitelist створиться, але сервер фактично не обмежуватиме вхід.
+
+Відсутній `delivery-journal.json` є нормальним станом. Якщо файл існує, але не читається або містить пошкоджений JSON, плагін виведе окрему помилку з назвою файлу та першопричиною. У такому разі також перевірте права читання/запису для `plugins/OkripWhitelist`.

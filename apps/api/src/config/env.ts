@@ -37,6 +37,10 @@ export const envSchema = z
       .union([z.boolean(), z.enum(["true", "false"])])
       .default("false")
       .transform((value) => value === true || value === "true"),
+    APPLICATION_AUTO_APPROVE: z
+      .union([z.boolean(), z.enum(["true", "false"])])
+      .default("false")
+      .transform((value) => value === true || value === "true"),
   })
   .superRefine((v, ctx) => {
     if (

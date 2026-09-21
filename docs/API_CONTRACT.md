@@ -10,7 +10,7 @@
 | GET /v1/auth/discord/callback | code, state | 302 на /application; при помилці на /auth/callback?error=login_failed |
 | GET /v1/me | session cookie | `{user:null}` або `{user:{username,displayName}}` |
 | POST /v1/auth/logout | session cookie, точний Origin | 204, сесію видалено |
-| POST /v1/applications | session cookie, Origin, `{minecraftUsername}` | 201, поточний стан |
+| POST /v1/applications | session cookie, Origin, `{minecraftUsername}` | 201, поточний стан; при `APPLICATION_AUTO_APPROVE=true` одразу `approved` + active access + `whitelist_add` |
 | GET /v1/applications/current | session cookie | 200, поточний стан; 401 без сесії |
 
 Поточний стан:

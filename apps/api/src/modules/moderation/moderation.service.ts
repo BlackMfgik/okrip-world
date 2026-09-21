@@ -88,12 +88,14 @@ export function moderationService(
         );
         if (!changed.length)
           return (await repo.findApplication(tx, publicId))!.application.status;
-        if (status === "approved" && !existingAccess) {
-          const access = await repo.grant(
-            tx,
-            fresh.application.userId,
-            fresh.identity.id,
-          );
+        if (status === "approved" && (!existingAccess || env.APPLICATION_REPEAT_DEBUG)) {
+          const access =
+            existingAccess ??
+            (await repo.grant(
+              tx,
+              fresh.application.userId,
+              fresh.identity.id,
+            ));
           await repo.addCommand(
             tx,
             access.id,

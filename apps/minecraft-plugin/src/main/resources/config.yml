@@ -1,4 +1,15 @@
-api-url: "https://api.example.com"
+# Public root URL of the Okrip API. Railway: api service -> Settings -> Networking.
+# Requirements: HTTPS only; no username/password, query string, or #fragment.
+api-url: "https://api-production-e783.up.railway.app"
+
+# Server identifier. It must exactly match MINECRAFT_SERVER_ID in Railway:
+# project responsible-solace -> api service -> Variables.
 server-id: "vanilla"
+
+# Secret shared with the API. Copy MINECRAFT_SERVER_TOKEN from the same Variables tab.
+# Requirements: at least 32 characters and not the REPLACE... placeholder.
+# Never send this value in chat, screenshots, logs, or commit it to source control.
 server-token: "REPLACE_WITH_AT_LEAST_32_RANDOM_CHARACTERS"
+
+# Maximum time for one API request. Allowed range: 1-15 seconds.
 timeout-seconds: 8

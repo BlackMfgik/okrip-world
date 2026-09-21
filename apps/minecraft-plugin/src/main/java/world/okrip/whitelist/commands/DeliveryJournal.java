@@ -12,8 +12,23 @@ public final class DeliveryJournal {
     public DeliveryJournal(Path path) throws IOException {
         this.path = path;
         if (Files.exists(path)) {
-            JsonObject saved = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
-            saved.entrySet().forEach(entry -> entries.put(entry.getKey(), entry.getValue().getAsJsonObject()));
+            try {
+                JsonElement root = JsonParser.parseString(Files.readString(path));
+                if (!root.isJsonObject()) throw new JsonParseException("root value must be a JSON object");
+                JsonObject saved = root.getAsJsonObject();
+                for (Map.Entry<String, JsonElement> entry : saved.entrySet()) {
+                    if (!entry.getValue().isJsonObject()) {
+                        throw new JsonParseException("entry '" + entry.getKey() + "' must be a JSON object");
+                    }
+                    entries.put(entry.getKey(), entry.getValue().getAsJsonObject());
+                }
+            } catch (JsonParseException | IllegalStateException error) {
+                throw new IOException("invalid JSON in " + path + ": " + detail(error), error);
+            } catch (SecurityException error) {
+                throw new IOException("cannot read " + path + ": " + detail(error), error);
+            } catch (IOException error) {
+                throw new IOException("cannot read " + path + ": " + detail(error), error);
+            }
         }
     }
     public synchronized void put(String key, String endpoint, JsonObject body) throws IOException {
@@ -29,5 +44,8 @@ public final class DeliveryJournal {
             ByteBuffer buffer = ByteBuffer.wrap(bytes); while (buffer.hasRemaining()) channel.write(buffer); channel.force(true);
         }
         Files.move(temp, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+    }
+    private static String detail(Exception error) {
+        return error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage();
     }
 }

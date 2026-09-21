@@ -108,6 +108,50 @@ it("submits, durably sends Telegram, approves exactly once, leases and completes
     }),
   );
 });
+it("auto-approves a submission, queues whitelist_add, and includes it in snapshot", async () => {
+  await ctx.close();
+  ctx = await setup({ APPLICATION_AUTO_APPROVE: true });
+  const { cookie } = await login(ctx);
+  const submitted = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/applications",
+    cookies: { okrip_session: cookie },
+    headers: browserHeaders,
+    payload: { minecraftUsername: "Auto_Player" },
+  });
+
+  expect(submitted.statusCode, submitted.body).toBe(201);
+  expect(submitted.json()).toMatchObject({
+    application: { status: "approved", minecraftUsername: "Auto_Player" },
+    access: "active",
+    synchronization: "waiting",
+  });
+  expect((await ctx.db.select().from(playerAccess))[0]!.status).toBe("active");
+  expect(await ctx.db.select().from(commands)).toHaveLength(1);
+
+  const snapshot = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/minecraft/whitelist/snapshot",
+    headers: serverHeaders,
+    payload: {},
+  });
+  expect(snapshot.statusCode, snapshot.body).toBe(200);
+  expect(snapshot.json().usernames).toEqual(["Auto_Player"]);
+
+  const leased = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/minecraft/commands/lease",
+    headers: serverHeaders,
+    payload: { limit: 1 },
+  });
+  expect(leased.statusCode, leased.body).toBe(200);
+  expect(leased.json().commands).toEqual([
+    expect.objectContaining({
+      type: "whitelist_add",
+      payload: { username: "Auto_Player" },
+    }),
+  ]);
+});
 it("asks for and saves a Telegram rejection reason", async () => {
   const { cookie } = await login(ctx);
   const submitted = await ctx.app.inject({
@@ -220,6 +264,47 @@ it("allows two submissions per minute after rejection and keeps the old Telegram
     "rejected",
     "pending",
   ]);
+});
+it("queues a fresh whitelist_add when debug mode reuses existing access", async () => {
+  await ctx.close();
+  ctx = await setup({ APPLICATION_REPEAT_DEBUG: true });
+  const { cookie } = await login(ctx);
+  const cookies = { okrip_session: cookie };
+  const submit = (minecraftUsername: string) =>
+    ctx.app.inject({
+      method: "POST",
+      url: "/v1/applications",
+      cookies,
+      headers: browserHeaders,
+      payload: { minecraftUsername },
+    });
+
+  const first = await submit("First_Player");
+  await moderationService(ctx.db, {
+    ...env,
+    APPLICATION_REPEAT_DEBUG: true,
+  }).decide(first.json().application.publicId, "approve", "77", "-100");
+  expect(await ctx.db.select().from(commands)).toHaveLength(1);
+
+  const second = await submit("Second_Player");
+  await moderationService(ctx.db, {
+    ...env,
+    APPLICATION_REPEAT_DEBUG: true,
+  }).decide(second.json().application.publicId, "approve", "77", "-100");
+
+  const savedCommands = await ctx.db.select().from(commands);
+  expect(savedCommands).toHaveLength(2);
+  expect(savedCommands[1]!.type).toBe("whitelist_add");
+  expect(savedCommands[1]!.payload).toEqual({ username: "Second_Player" });
+
+  const snapshot = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/minecraft/whitelist/snapshot",
+    headers: serverHeaders,
+    payload: {},
+  });
+  expect(snapshot.statusCode, snapshot.body).toBe(200);
+  expect(snapshot.json().usernames).toEqual(["Second_Player"]);
 });
 it("rejects duplicates, forged identity, and unauthorized moderators", async () => {
   const { cookie } = await login(ctx);

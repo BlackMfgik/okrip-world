@@ -104,7 +104,14 @@ export async function buildApp(
   applicationRoutes(
     app,
     auth,
-    applicationService(db, discord, env.APPLICATION_REPEAT_DEBUG),
+    applicationService(
+      db,
+      discord,
+      env.APPLICATION_REPEAT_DEBUG,
+      env.APPLICATION_AUTO_APPROVE,
+      env.MINECRAFT_SERVER_ID,
+      (serverId) => commandSignals.notify(serverId),
+    ),
   );
   telegramRoutes(
     app,
