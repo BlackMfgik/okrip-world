@@ -57,6 +57,13 @@
       "when": 1790001000000,
       "tag": "0007_reset_application_data",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790002000000,
+      "tag": "0008_web_admins",
+      "breakpoints": true
     }
   ]
 }

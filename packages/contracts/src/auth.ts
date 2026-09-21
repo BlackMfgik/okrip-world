@@ -1,7 +1,11 @@
 import { z } from "zod";
 export const sessionSchema = z.object({
   user: z
-    .object({ username: z.string(), displayName: z.string().nullable() })
+    .object({
+      username: z.string(),
+      displayName: z.string().nullable(),
+      isAdmin: z.boolean(),
+    })
     .nullable(),
 });
 export type Session = z.infer<typeof sessionSchema>;

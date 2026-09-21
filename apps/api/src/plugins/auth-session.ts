@@ -7,3 +7,10 @@ export async function requireUser(auth: AuthService, request: FastifyRequest) {
   if (!user) throw new AppError(401, "unauthorized", "Увійдіть через Discord.");
   return user;
 }
+
+export async function requireAdmin(auth: AuthService, request: FastifyRequest) {
+  const user = await requireUser(auth, request);
+  if (!(await auth.isAdmin(user.discordId)))
+    throw new AppError(403, "forbidden", "Недостатньо прав.");
+  return user;
+}

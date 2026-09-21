@@ -63,6 +63,7 @@ export function authRoutes(app: FastifyInstance, auth: AuthService, env: Env) {
         ? {
             username: user.discordUsername,
             displayName: user.discordGlobalName,
+            isAdmin: await auth.isAdmin(user.discordId),
           }
         : null,
     };

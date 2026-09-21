@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NavOnline } from "@/components/nav-online";
+import { AdminNavLink } from "@/features/admin/components/AdminNavLink";
 
 interface NavProps {
   staticOnline?: string;
@@ -17,6 +18,7 @@ export function Nav({ staticOnline }: NavProps) {
       ) : (
         <NavOnline />
       )}
+      <AdminNavLink />
       <ThemeToggle />
     </nav>
   );

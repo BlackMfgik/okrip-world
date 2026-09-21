@@ -53,6 +53,9 @@ export function authService(db: Database, env: Env, discord: DiscordProvider) {
     async current(token?: string) {
       return token ? repo.findSession(db, hash(token)) : undefined;
     },
+    async isAdmin(discordId: string) {
+      return repo.isAdmin(db, discordId);
+    },
     async logout(token?: string) {
       if (token) await repo.deleteSession(db, hash(token));
     },

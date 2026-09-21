@@ -27,6 +27,8 @@ import { telegramWorker } from "./modules/moderation/telegram-worker.service.js"
 import { minecraftService } from "./modules/minecraft/minecraft-command.service.js";
 import { minecraftRoutes } from "./modules/minecraft/minecraft.routes.js";
 import { MinecraftCommandSignals } from "./modules/minecraft/minecraft-command.signal.js";
+import { adminService } from "./modules/admin/admin.service.js";
+import { adminRoutes } from "./modules/admin/admin.routes.js";
 export async function buildApp(
   env: Env,
   db: Database,
@@ -62,7 +64,8 @@ export async function buildApp(
     if (
       req.method === "POST" &&
       (req.routeOptions.url === "/v1/applications" ||
-        req.routeOptions.url === "/v1/auth/logout") &&
+        req.routeOptions.url === "/v1/auth/logout" ||
+        req.routeOptions.url === "/v1/admin/applications/decision") &&
       req.headers.origin !== env.WEB_ORIGIN
     )
       throw new AppError(403, "invalid_origin", "Запит заблоковано.");
@@ -99,7 +102,10 @@ export async function buildApp(
     telegram = providers.telegram ?? telegramProvider(env),
     commandSignals = new MinecraftCommandSignals();
   const auth = authService(db, env, discord),
-    worker = telegramWorker(db, env, telegram);
+    worker = telegramWorker(db, env, telegram),
+    moderation = moderationService(db, env, (serverId) =>
+      commandSignals.notify(serverId),
+    );
   authRoutes(app, auth, env);
   applicationRoutes(
     app,
@@ -116,9 +122,10 @@ export async function buildApp(
   telegramRoutes(
     app,
     env,
-    moderationService(db, env, (serverId) => commandSignals.notify(serverId)),
+    moderation,
     telegram,
   );
+  adminRoutes(app, auth, adminService(db, moderation));
   minecraftRoutes(
     app,
     env,

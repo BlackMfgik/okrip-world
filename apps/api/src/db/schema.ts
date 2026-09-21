@@ -9,3 +9,4 @@ export * from "./schema/minecraft-commands.js";
 export * from "./schema/audit-events.js";
 export * from "./schema/telegram-jobs.js";
 export * from "./schema/ban-events.js";
+export * from "./schema/admin-accounts.js";

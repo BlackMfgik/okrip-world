@@ -9,6 +9,8 @@ const allowed = new Set([
   "me",
   "applications",
   "applications/current",
+  "admin/applications",
+  "admin/applications/decision",
 ]);
 async function proxy(
   request: NextRequest,
