@@ -43,7 +43,7 @@ it("exposes the admin panel API only to Discord IDs stored as admins", async () 
   ).toBe(false);
 
   ctx.discord.identity.mockResolvedValue({
-    id: "554465791358140417",
+    id: "876509255308541977",
     username: "WebAdmin",
     global_name: null,
     avatar: null,

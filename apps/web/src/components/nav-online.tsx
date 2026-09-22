@@ -6,7 +6,7 @@ export function NavOnline() {
   const { data } = useTotalOnline();
   return (
     <span className="nav-online" id="nav-total-online">
-      ОНЛАЙН {data ?? "—"}
+      Онлайн {data ?? "—"}
     </span>
   );
 }
