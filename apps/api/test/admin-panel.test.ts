@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, expect, it } from "vitest";
-import { applications, commands, playerAccess } from "../src/db/schema.js";
+import { eq } from "drizzle-orm";
+import {
+  applications,
+  commands,
+  playerAccess,
+  users,
+} from "../src/db/schema.js";
 import { browserHeaders, login, serverHeaders, setup } from "./helpers.js";
 
 let ctx: Awaited<ReturnType<typeof setup>>;
@@ -150,6 +156,11 @@ it("adds, lists and removes whitelist players through the plugin command queue",
     synchronization: "waiting",
   });
 
+  await ctx.db
+    .update(users)
+    .set({ discordAvatar: "a_ab3b37253e5fa49be449780b10c9e0e0" })
+    .where(eq(users.discordId, "123456789012345678"));
+
   const listed = await ctx.app.inject({
     url: "/v1/admin/whitelist",
     cookies,
@@ -162,6 +173,8 @@ it("adds, lists and removes whitelist players through the plugin command queue",
         minecraftUsername: "Manual_Player",
         discordUsername: "manual.user",
         discordId: "123456789012345678",
+        discordAvatarUrl:
+          "https://cdn.discordapp.com/avatars/123456789012345678/a_ab3b37253e5fa49be449780b10c9e0e0.gif?size=64",
       },
     ],
   });

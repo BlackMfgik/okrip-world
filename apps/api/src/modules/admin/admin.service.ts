@@ -19,6 +19,12 @@ interface WebAdmin {
   discordGlobalName: string | null;
 }
 
+function discordAvatarUrl(discordId: string, avatar: string | null) {
+  if (!avatar) return null;
+  const extension = avatar.startsWith("a_") ? "gif" : "webp";
+  return `https://cdn.discordapp.com/avatars/${encodeURIComponent(discordId)}/${encodeURIComponent(avatar)}.${extension}?size=64`;
+}
+
 export function adminService(
   db: Database,
   moderation: ReturnType<typeof moderationService>,
@@ -67,6 +73,10 @@ export function adminService(
           discordUsername: user.discordUsername,
           discordDisplayName: user.discordGlobalName,
           discordId: user.discordId,
+          discordAvatarUrl: discordAvatarUrl(
+            user.discordId,
+            user.discordAvatar,
+          ),
           addedAt: access.createdAt.toISOString(),
         })),
         count: rows.length,

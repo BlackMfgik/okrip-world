@@ -64,6 +64,7 @@ export const adminWhitelistPlayerSchema = z.object({
   discordUsername: z.string(),
   discordDisplayName: z.string().nullable(),
   discordId: z.string(),
+  discordAvatarUrl: z.string().url().nullable(),
   addedAt: z.string().datetime(),
 });
 

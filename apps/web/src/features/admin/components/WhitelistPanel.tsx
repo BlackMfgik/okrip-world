@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -172,7 +173,22 @@ export function WhitelistPanel() {
         {whitelist.data?.players.map((player) => (
           <article className="admin-player-row" key={player.accessId}>
             <div className="admin-player-main">
-              <span className="admin-player-indicator" aria-hidden="true" />
+              <div className="admin-player-avatar" aria-hidden="true">
+                {player.discordAvatarUrl ? (
+                  <Image
+                    alt=""
+                    height={38}
+                    src={player.discordAvatarUrl}
+                    unoptimized
+                    width={38}
+                  />
+                ) : (
+                  <span className="admin-player-avatar-fallback">
+                    {player.minecraftUsername.charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span className="admin-player-indicator" />
+              </div>
               <div>
                 <strong>{player.minecraftUsername}</strong>
                 <small>Додано {formatDate(player.addedAt)}</small>

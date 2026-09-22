@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "res.cloudinary.com",
       },
+      {
+        protocol: "https",
+        hostname: "cdn.discordapp.com",
+        pathname: "/avatars/**",
+      },
     ],
   },
   async rewrites() {

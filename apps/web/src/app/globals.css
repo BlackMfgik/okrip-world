@@ -185,7 +185,8 @@ body {
   background: rgba(0, 0, 0, 0.05);
 }
 
-.nav-online {
+.nav-online,
+.nav-admin-link {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-secondary);
@@ -198,14 +199,20 @@ body {
   gap: 6px;
   white-space: nowrap;
 }
-.light-theme .nav-online {
+.nav-admin-link {
+  text-decoration: none;
+}
+.light-theme .nav-online,
+.light-theme .nav-admin-link {
   background: rgba(0, 0, 0, 0.04);
   color: #000;
 }
-.light-theme .nav-online::before {
+.light-theme .nav-online::before,
+.light-theme .nav-admin-link::before {
   background: #000;
 }
-.nav-online::before {
+.nav-online::before,
+.nav-admin-link::before {
   content: "";
   width: 6px;
   height: 6px;
@@ -1273,20 +1280,6 @@ button,
 }
 
 /* Admin panel */
-.nav-admin-link {
-  color: var(--text);
-  text-decoration: none;
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 7px 13px;
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  background: rgba(255, 255, 255, 0.05);
-  white-space: nowrap;
-  transition:
-    background 0.2s,
-    border-color 0.2s;
-}
 .nav-admin-link:hover {
   background: var(--surface-hover);
   border-color: var(--border-strong);
@@ -1749,6 +1742,33 @@ button,
 .admin-player-main > div {
   min-width: 0;
 }
+.admin-player-avatar {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+.admin-player-avatar img,
+.admin-player-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+.admin-player-avatar img {
+  object-fit: cover;
+}
+.admin-player-avatar-fallback {
+  display: grid;
+  place-items: center;
+}
 .admin-player-main strong,
 .admin-player-main small {
   display: block;
@@ -1761,12 +1781,19 @@ button,
   font-size: 0.7rem;
 }
 .admin-player-indicator {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
   width: 9px;
   height: 9px;
   flex: 0 0 auto;
+  border: 2px solid #111a2a;
   border-radius: 50%;
   background: var(--success);
   box-shadow: 0 0 12px rgba(34, 197, 94, 0.55);
+}
+.light-theme .admin-player-indicator {
+  border-color: #f3f6fb;
 }
 .admin-player-discord,
 .admin-player-id {
