@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { applicationStatusSchema } from "./applications.js";
+import {
+  accessStatusSchema,
+  applicationStatusSchema,
+  minecraftUsernameSchema,
+} from "./applications.js";
 
 export const adminApplicationFilterSchema = z.enum([
   "all",
@@ -54,10 +58,48 @@ export const adminDecisionResultSchema = z.object({
   status: applicationStatusSchema,
 });
 
+export const adminWhitelistPlayerSchema = z.object({
+  accessId: z.string().uuid(),
+  minecraftUsername: minecraftUsernameSchema,
+  discordUsername: z.string(),
+  discordDisplayName: z.string().nullable(),
+  discordId: z.string(),
+  addedAt: z.string().datetime(),
+});
+
+export const adminWhitelistSchema = z.object({
+  players: z.array(adminWhitelistPlayerSchema),
+  count: z.number().int().nonnegative(),
+});
+
+export const adminWhitelistAddSchema = z
+  .object({
+    minecraftUsername: minecraftUsernameSchema,
+    discordUsername: z
+      .string()
+      .trim()
+      .min(1)
+      .max(64)
+      .refine((value) => value !== "@"),
+    discordId: z.string().regex(/^\d{17,20}$/),
+  })
+  .strict();
+
+export const adminWhitelistRemoveSchema = z
+  .object({ accessId: z.string().uuid() })
+  .strict();
+
+export const adminWhitelistMutationResultSchema = z.object({
+  accessId: z.string().uuid(),
+  status: accessStatusSchema,
+  synchronization: z.literal("waiting"),
+});
+
 export type AdminApplicationFilter = z.infer<
   typeof adminApplicationFilterSchema
 >;
-export type AdminApplicationList = z.infer<
-  typeof adminApplicationListSchema
->;
+export type AdminApplicationList = z.infer<typeof adminApplicationListSchema>;
 export type AdminDecision = z.infer<typeof adminDecisionSchema>;
+export type AdminWhitelist = z.infer<typeof adminWhitelistSchema>;
+export type AdminWhitelistAdd = z.infer<typeof adminWhitelistAddSchema>;
+export type AdminWhitelistRemove = z.infer<typeof adminWhitelistRemoveSchema>;

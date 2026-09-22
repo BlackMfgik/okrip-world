@@ -64,6 +64,13 @@
       "when": 1790002000000,
       "tag": "0008_web_admins",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790100000000,
+      "tag": "0009_admin_access_restoration",
+      "breakpoints": true
     }
   ]
 }

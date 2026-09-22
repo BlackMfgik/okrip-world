@@ -11,6 +11,9 @@ const allowed = new Set([
   "applications/current",
   "admin/applications",
   "admin/applications/decision",
+  "admin/whitelist",
+  "admin/whitelist/add",
+  "admin/whitelist/remove",
 ]);
 async function proxy(
   request: NextRequest,

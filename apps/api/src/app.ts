@@ -65,7 +65,9 @@ export async function buildApp(
       req.method === "POST" &&
       (req.routeOptions.url === "/v1/applications" ||
         req.routeOptions.url === "/v1/auth/logout" ||
-        req.routeOptions.url === "/v1/admin/applications/decision") &&
+        req.routeOptions.url === "/v1/admin/applications/decision" ||
+        req.routeOptions.url === "/v1/admin/whitelist/add" ||
+        req.routeOptions.url === "/v1/admin/whitelist/remove") &&
       req.headers.origin !== env.WEB_ORIGIN
     )
       throw new AppError(403, "invalid_origin", "Запит заблоковано.");
@@ -119,13 +121,14 @@ export async function buildApp(
       (serverId) => commandSignals.notify(serverId),
     ),
   );
-  telegramRoutes(
+  telegramRoutes(app, env, moderation, telegram);
+  adminRoutes(
     app,
-    env,
-    moderation,
-    telegram,
+    auth,
+    adminService(db, moderation, env.MINECRAFT_SERVER_ID, (serverId) =>
+      commandSignals.notify(serverId),
+    ),
   );
-  adminRoutes(app, auth, adminService(db, moderation));
   minecraftRoutes(
     app,
     env,

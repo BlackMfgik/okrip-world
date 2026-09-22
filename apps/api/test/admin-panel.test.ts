@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { applications, commands, playerAccess } from "../src/db/schema.js";
-import { browserHeaders, login, setup } from "./helpers.js";
+import { browserHeaders, login, serverHeaders, setup } from "./helpers.js";
 
 let ctx: Awaited<ReturnType<typeof setup>>;
 
@@ -45,9 +45,8 @@ it("exposes the admin panel API only to Discord IDs stored as admins", async () 
   const adminLogin = await login(ctx);
   const adminCookies = { okrip_session: adminLogin.cookie };
   expect(
-    (
-      await ctx.app.inject({ url: "/v1/me", cookies: adminCookies })
-    ).json().user.isAdmin,
+    (await ctx.app.inject({ url: "/v1/me", cookies: adminCookies })).json().user
+      .isAdmin,
   ).toBe(true);
 
   const list = await ctx.app.inject({
@@ -95,9 +94,8 @@ it("requires a rejection reason and applies origin protection", async () => {
   const adminLogin = await login(ctx);
   const adminCookies = { okrip_session: adminLogin.cookie };
   expect(
-    (
-      await ctx.app.inject({ url: "/v1/me", cookies: adminCookies })
-    ).json().user.isAdmin,
+    (await ctx.app.inject({ url: "/v1/me", cookies: adminCookies })).json().user
+      .isAdmin,
   ).toBe(true);
 
   const missingReason = await ctx.app.inject({
@@ -123,4 +121,116 @@ it("requires a rejection reason and applies origin protection", async () => {
     },
   });
   expect(response.statusCode).toBe(403);
+});
+
+it("adds, lists and removes whitelist players through the plugin command queue", async () => {
+  ctx.discord.identity.mockResolvedValue({
+    id: "554465791358140417",
+    username: "WebAdmin",
+    global_name: null,
+    avatar: null,
+  });
+  const { cookie } = await login(ctx);
+  const cookies = { okrip_session: cookie };
+
+  const added = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/admin/whitelist/add",
+    cookies,
+    headers: browserHeaders,
+    payload: {
+      minecraftUsername: "Manual_Player",
+      discordUsername: "manual.user",
+      discordId: "123456789012345678",
+    },
+  });
+  expect(added.statusCode, added.body).toBe(200);
+  expect(added.json()).toMatchObject({
+    status: "active",
+    synchronization: "waiting",
+  });
+
+  const listed = await ctx.app.inject({
+    url: "/v1/admin/whitelist",
+    cookies,
+  });
+  expect(listed.statusCode, listed.body).toBe(200);
+  expect(listed.json()).toMatchObject({
+    count: 1,
+    players: [
+      {
+        minecraftUsername: "Manual_Player",
+        discordUsername: "manual.user",
+        discordId: "123456789012345678",
+      },
+    ],
+  });
+
+  const addLease = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/minecraft/commands/lease",
+    headers: serverHeaders,
+    payload: { limit: 1 },
+  });
+  expect(addLease.json().commands[0]).toMatchObject({
+    type: "whitelist_add",
+    payload: { username: "Manual_Player" },
+  });
+  await ctx.app.inject({
+    method: "POST",
+    url: `/v1/minecraft/commands/${addLease.json().commands[0].id}/complete`,
+    headers: serverHeaders,
+    payload: { leaseToken: addLease.json().commands[0].leaseToken },
+  });
+
+  const removed = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/admin/whitelist/remove",
+    cookies,
+    headers: browserHeaders,
+    payload: { accessId: added.json().accessId },
+  });
+  expect(removed.statusCode, removed.body).toBe(200);
+  expect(removed.json()).toMatchObject({
+    status: "revoked",
+    synchronization: "waiting",
+  });
+  expect((await ctx.db.select().from(playerAccess))[0]!.status).toBe("revoked");
+  expect(await ctx.db.select().from(commands)).toHaveLength(2);
+
+  const removeLease = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/minecraft/commands/lease",
+    headers: serverHeaders,
+    payload: { limit: 1 },
+  });
+  expect(removeLease.json().commands[0]).toMatchObject({
+    type: "whitelist_remove",
+    payload: { username: "Manual_Player" },
+  });
+  await ctx.app.inject({
+    method: "POST",
+    url: `/v1/minecraft/commands/${removeLease.json().commands[0].id}/complete`,
+    headers: serverHeaders,
+    payload: { leaseToken: removeLease.json().commands[0].leaseToken },
+  });
+  expect(
+    (await ctx.app.inject({ url: "/v1/admin/whitelist", cookies })).json()
+      .count,
+  ).toBe(0);
+
+  const restored = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/admin/whitelist/add",
+    cookies,
+    headers: browserHeaders,
+    payload: {
+      minecraftUsername: "Manual_Player",
+      discordUsername: "manual.user",
+      discordId: "123456789012345678",
+    },
+  });
+  expect(restored.statusCode, restored.body).toBe(200);
+  expect(restored.json().status).toBe("active");
+  expect(await ctx.db.select().from(commands)).toHaveLength(3);
 });
