@@ -18,6 +18,7 @@ export const adminApplicationSchema = z.object({
   number: z.number().int().positive(),
   discordUsername: z.string(),
   discordDisplayName: z.string().nullable(),
+  discordAvatarUrl: z.string().url().nullable(),
   minecraftUsername: z.string(),
   status: applicationStatusSchema,
   rejectionReason: z.string().nullable(),

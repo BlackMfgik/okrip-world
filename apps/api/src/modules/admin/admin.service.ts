@@ -54,6 +54,10 @@ export function adminService(
           number: application.number,
           discordUsername: user.discordUsername,
           discordDisplayName: user.discordGlobalName,
+          discordAvatarUrl: discordAvatarUrl(
+            user.discordId,
+            user.discordAvatar,
+          ),
           minecraftUsername: identity.username,
           status: application.status,
           rejectionReason: application.rejectionReason,

@@ -18,6 +18,10 @@ afterEach(async () => ctx.close());
 
 it("exposes the admin panel API only to Discord IDs stored as admins", async () => {
   const applicantLogin = await login(ctx);
+  await ctx.db
+    .update(users)
+    .set({ discordAvatar: "a_applicationavatar" })
+    .where(eq(users.discordId, "111"));
   const applicantCookies = { okrip_session: applicantLogin.cookie };
   const submitted = await ctx.app.inject({
     method: "POST",
@@ -66,6 +70,8 @@ it("exposes the admin panel API only to Discord IDs stored as admins", async () 
       {
         minecraftUsername: "Panel_Player",
         discordUsername: "DiscordName",
+        discordAvatarUrl:
+          "https://cdn.discordapp.com/avatars/111/a_applicationavatar.gif?size=64",
         status: "pending",
       },
     ],

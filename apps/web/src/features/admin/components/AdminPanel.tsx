@@ -13,6 +13,7 @@ import {
 import { apiRequest } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
 import { useCurrentSession } from "@/features/auth/hooks/useCurrentSession";
+import { DiscordAvatar } from "./DiscordAvatar";
 import { WhitelistPanel } from "./WhitelistPanel";
 
 const filters: Array<{ value: AdminApplicationFilter; label: string }> = [
@@ -180,11 +181,17 @@ export function AdminPanel() {
                 key={application.publicId}
               >
                 <header>
-                  <div>
-                    <span className="admin-application-number">
-                      Заявка №{application.number}
-                    </span>
-                    <h2>{application.minecraftUsername}</h2>
+                  <div className="admin-application-player">
+                    <DiscordAvatar
+                      name={application.minecraftUsername}
+                      url={application.discordAvatarUrl}
+                    />
+                    <div>
+                      <span className="admin-application-number">
+                        Заявка №{application.number}
+                      </span>
+                      <h2>{application.minecraftUsername}</h2>
+                    </div>
                   </div>
                   <span
                     className={`admin-status admin-status-${application.status}`}
