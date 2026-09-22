@@ -13,9 +13,10 @@ import { queryKeys } from "@/lib/query-keys";
 import { DiscordAvatar } from "./DiscordAvatar";
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("uk-UA", { dateStyle: "medium" }).format(
-    new Date(value),
-  );
+  return new Intl.DateTimeFormat("uk-UA", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
 }
 
 export function WhitelistPanel() {
