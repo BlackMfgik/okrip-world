@@ -1,7 +1,8 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import type { Executor } from "../../db/client.js";
 import {
   applications,
+  adminAccounts,
   identities,
   playerAccess,
   users,
@@ -34,6 +35,69 @@ export function applicationCounts(db: Executor) {
     })
     .from(applications)
     .groupBy(applications.status);
+}
+
+export async function applicationUserByPublicId(
+  db: Executor,
+  publicId: string,
+) {
+  return (
+    await db
+      .select({ application: applications, user: users })
+      .from(applications)
+      .innerJoin(users, eq(users.id, applications.userId))
+      .where(eq(applications.publicId, publicId))
+      .limit(1)
+  )[0];
+}
+
+export async function setApplicationBlocked(
+  db: Executor,
+  userId: string,
+  blockedByDiscordId: string | null,
+) {
+  return (
+    await db
+      .update(users)
+      .set({
+        applicationBlockedAt: blockedByDiscordId ? new Date() : null,
+        applicationBlockedByDiscordId: blockedByDiscordId,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning()
+  )[0]!;
+}
+
+export function listAdminAccounts(db: Executor) {
+  return db
+    .select({ account: adminAccounts, user: users })
+    .from(adminAccounts)
+    .leftJoin(users, eq(users.discordId, adminAccounts.discordId))
+    .orderBy(desc(adminAccounts.canManageAdmins), asc(adminAccounts.createdAt));
+}
+
+export async function adminAccountByDiscordId(db: Executor, discordId: string) {
+  return (
+    await db
+      .select()
+      .from(adminAccounts)
+      .where(eq(adminAccounts.discordId, discordId))
+      .limit(1)
+  )[0];
+}
+
+export async function createAdminAccount(db: Executor, discordId: string) {
+  return (await db.insert(adminAccounts).values({ discordId }).returning())[0]!;
+}
+
+export async function deleteAdminAccount(db: Executor, discordId: string) {
+  return (
+    await db
+      .delete(adminAccounts)
+      .where(eq(adminAccounts.discordId, discordId))
+      .returning()
+  )[0];
 }
 
 export function listWhitelistPlayers(db: Executor) {

@@ -1,6 +1,11 @@
 import { and, eq, gt } from "drizzle-orm";
 import type { Executor } from "../../db/client.js";
-import { adminAccounts, oauthStates, sessions, users } from "../../db/schema.js";
+import {
+  adminAccounts,
+  oauthStates,
+  sessions,
+  users,
+} from "../../db/schema.js";
 import type { DiscordIdentity } from "./discord.service.js";
 export const saveState = (
   db: Executor,
@@ -69,14 +74,12 @@ export async function findSession(db: Executor, tokenHash: string) {
 export const deleteSession = (db: Executor, tokenHash: string) =>
   db.delete(sessions).where(eq(sessions.tokenHash, tokenHash));
 
-export async function isAdmin(db: Executor, discordId: string) {
-  return Boolean(
-    (
-      await db
-        .select({ discordId: adminAccounts.discordId })
-        .from(adminAccounts)
-        .where(eq(adminAccounts.discordId, discordId))
-        .limit(1)
-    )[0],
-  );
+export async function adminAccess(db: Executor, discordId: string) {
+  return (
+    await db
+      .select()
+      .from(adminAccounts)
+      .where(eq(adminAccounts.discordId, discordId))
+      .limit(1)
+  )[0];
 }

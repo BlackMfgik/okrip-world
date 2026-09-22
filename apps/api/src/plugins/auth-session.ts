@@ -14,3 +14,14 @@ export async function requireAdmin(auth: AuthService, request: FastifyRequest) {
     throw new AppError(403, "forbidden", "Недостатньо прав.");
   return user;
 }
+
+export async function requireAdminManager(
+  auth: AuthService,
+  request: FastifyRequest,
+) {
+  const user = await requireUser(auth, request);
+  const access = await auth.adminAccess(user.discordId);
+  if (!access?.canManageAdmins)
+    throw new AppError(403, "forbidden", "Недостатньо прав.");
+  return user;
+}

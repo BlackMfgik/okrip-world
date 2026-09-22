@@ -5,6 +5,7 @@ export const sessionSchema = z.object({
       username: z.string(),
       displayName: z.string().nullable(),
       isAdmin: z.boolean(),
+      canManageAdmins: z.boolean(),
     })
     .nullable(),
 });

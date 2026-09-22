@@ -207,12 +207,10 @@ body {
   background: rgba(0, 0, 0, 0.04);
   color: #000;
 }
-.light-theme .nav-online::before,
-.light-theme .nav-admin-link::before {
+.light-theme .nav-online::before {
   background: #000;
 }
-.nav-online::before,
-.nav-admin-link::before {
+.nav-online::before {
   content: "";
   width: 6px;
   height: 6px;
@@ -1461,6 +1459,23 @@ button,
 .admin-status-cancelled {
   color: var(--text-secondary);
 }
+.admin-card-statuses {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+}
+.admin-user-blocked,
+.admin-owner-badge {
+  padding: 6px 10px;
+  border: 1px solid rgba(239, 68, 68, 0.38);
+  border-radius: 100px;
+  background: rgba(239, 68, 68, 0.09);
+  color: #ff7777;
+  font-size: 0.68rem;
+  font-weight: 750;
+}
 .admin-application-details {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1499,6 +1514,15 @@ button,
   gap: 10px;
   padding-top: 18px;
   border-top: 1px solid var(--border);
+}
+.admin-user-controls {
+  display: flex;
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.admin-user-controls .admin-button {
+  flex: 0 1 auto;
 }
 .admin-button {
   flex: 1;
@@ -1728,6 +1752,86 @@ button,
 .admin-player-list {
   display: grid;
 }
+.admin-accounts-section .admin-whitelist-header > p {
+  max-width: 420px;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  text-align: right;
+}
+.admin-account-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+}
+.admin-account-form label > span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.admin-account-form input {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text);
+  font: inherit;
+}
+.light-theme .admin-account-form input {
+  background: rgba(255, 255, 255, 0.5);
+}
+.admin-account-form .admin-button {
+  min-width: 170px;
+}
+.admin-account-list {
+  display: grid;
+}
+.admin-account-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, auto) 100px;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.admin-account-row:last-child {
+  border-bottom: 0;
+}
+.admin-account-person {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.admin-account-person strong,
+.admin-account-person small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-account-person small {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+.admin-account-row code {
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.76rem;
+}
+.admin-owner-badge {
+  justify-self: end;
+  border-color: rgba(79, 132, 255, 0.4);
+  background: rgba(79, 132, 255, 0.1);
+  color: #8dabff;
+}
 .admin-player-row {
   display: grid;
   grid-template-columns:
@@ -1869,6 +1973,19 @@ button,
     grid-column: 2;
     grid-row: 1 / span 2;
   }
+  .admin-account-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 16px;
+  }
+  .admin-account-row code {
+    grid-column: 1;
+    padding-left: 50px;
+  }
+  .admin-account-row > .admin-remove-player,
+  .admin-account-row > .admin-owner-badge {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
 }
 
 @media (max-width: 460px) {
@@ -1913,6 +2030,12 @@ button,
   }
   .admin-add-player-form {
     grid-template-columns: 1fr;
+  }
+  .admin-account-form {
+    grid-template-columns: 1fr;
+  }
+  .admin-accounts-section .admin-whitelist-header > p {
+    text-align: left;
   }
   .admin-player-row {
     grid-template-columns: 1fr;

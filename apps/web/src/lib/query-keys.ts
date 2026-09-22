@@ -5,4 +5,5 @@ export const queryKeys = {
   adminApplications: (filter: string) =>
     ["admin", "applications", filter] as const,
   adminWhitelist: ["admin", "whitelist"] as const,
+  adminAccounts: ["admin", "accounts"] as const,
 };

@@ -20,6 +20,7 @@ export const adminApplicationSchema = z.object({
   discordDisplayName: z.string().nullable(),
   discordAvatarUrl: z.string().url().nullable(),
   minecraftUsername: z.string(),
+  applicationBlocked: z.boolean(),
   status: applicationStatusSchema,
   rejectionReason: z.string().nullable(),
   reviewerName: z.string().nullable(),
@@ -57,6 +58,40 @@ export const adminDecisionSchema = z
 
 export const adminDecisionResultSchema = z.object({
   status: applicationStatusSchema,
+});
+
+export const adminApplicationBlockSchema = z
+  .object({
+    publicId: z.string().regex(/^[A-Za-z0-9_-]{16}$/),
+    blocked: z.boolean(),
+  })
+  .strict();
+
+export const adminApplicationBlockResultSchema = z.object({
+  publicId: z.string(),
+  applicationBlocked: z.boolean(),
+});
+
+export const adminAccountSchema = z.object({
+  discordId: z.string(),
+  discordUsername: z.string().nullable(),
+  discordDisplayName: z.string().nullable(),
+  discordAvatarUrl: z.string().url().nullable(),
+  canManageAdmins: z.boolean(),
+  createdAt: z.string().datetime(),
+});
+
+export const adminAccountListSchema = z.object({
+  accounts: z.array(adminAccountSchema),
+  count: z.number().int().nonnegative(),
+});
+
+export const adminAccountMutationSchema = z
+  .object({ discordId: z.string().regex(/^\d{17,20}$/) })
+  .strict();
+
+export const adminAccountMutationResultSchema = z.object({
+  discordId: z.string(),
 });
 
 export const adminWhitelistPlayerSchema = z.object({
@@ -102,6 +137,8 @@ export type AdminApplicationFilter = z.infer<
 >;
 export type AdminApplicationList = z.infer<typeof adminApplicationListSchema>;
 export type AdminDecision = z.infer<typeof adminDecisionSchema>;
+export type AdminApplicationBlock = z.infer<typeof adminApplicationBlockSchema>;
+export type AdminAccountMutation = z.infer<typeof adminAccountMutationSchema>;
 export type AdminWhitelist = z.infer<typeof adminWhitelistSchema>;
 export type AdminWhitelistAdd = z.infer<typeof adminWhitelistAddSchema>;
 export type AdminWhitelistRemove = z.infer<typeof adminWhitelistRemoveSchema>;

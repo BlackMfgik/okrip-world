@@ -4,16 +4,19 @@ import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  adminApplicationBlockResultSchema,
   adminApplicationListSchema,
   adminDecisionResultSchema,
   type AdminApplicationFilter,
   type AdminApplicationList,
+  type AdminApplicationBlock,
   type AdminDecision,
 } from "@okrip/contracts";
 import { apiRequest } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
 import { useCurrentSession } from "@/features/auth/hooks/useCurrentSession";
 import { DiscordAvatar } from "./DiscordAvatar";
+import { AdminAccountsPanel } from "./AdminAccountsPanel";
 import { WhitelistPanel } from "./WhitelistPanel";
 
 const filters: Array<{ value: AdminApplicationFilter; label: string }> = [
@@ -44,9 +47,9 @@ export function AdminPanel() {
   const [filter, setFilter] = useState<AdminApplicationFilter>("pending");
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [reason, setReason] = useState("");
-  const [section, setSection] = useState<"applications" | "whitelist">(
-    "applications",
-  );
+  const [section, setSection] = useState<
+    "applications" | "whitelist" | "accounts"
+  >("applications");
 
   const applications = useQuery({
     queryKey: queryKeys.adminApplications(filter),
@@ -72,6 +75,19 @@ export function AdminPanel() {
         queryKey: queryKeys.adminApplicationsRoot,
       });
     },
+  });
+
+  const applicationBlock = useMutation({
+    mutationFn: (body: AdminApplicationBlock) =>
+      apiRequest(
+        "/admin/applications/block",
+        adminApplicationBlockResultSchema,
+        body,
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.adminApplicationsRoot,
+      }),
   });
 
   if (session.isPending)
@@ -117,6 +133,15 @@ export function AdminPanel() {
           >
             Вайтліст
           </button>
+          {session.data.user.canManageAdmins && (
+            <button
+              className={section === "accounts" ? "is-active" : undefined}
+              onClick={() => setSection("accounts")}
+              type="button"
+            >
+              Адміни
+            </button>
+          )}
         </nav>
         <div className="admin-identity">
           <span>Адміністратор</span>
@@ -128,6 +153,8 @@ export function AdminPanel() {
 
       {section === "whitelist" ? (
         <WhitelistPanel />
+      ) : section === "accounts" && session.data.user.canManageAdmins ? (
+        <AdminAccountsPanel />
       ) : (
         <>
           <nav className="admin-filters" aria-label="Фільтр заявок">
@@ -165,6 +192,11 @@ export function AdminPanel() {
               {decision.error.message}
             </p>
           )}
+          {applicationBlock.error && (
+            <p className="admin-action-error" role="alert">
+              {applicationBlock.error.message}
+            </p>
+          )}
 
           {data?.applications.length === 0 && (
             <div className="admin-empty">
@@ -193,11 +225,16 @@ export function AdminPanel() {
                       <h2>{application.minecraftUsername}</h2>
                     </div>
                   </div>
-                  <span
-                    className={`admin-status admin-status-${application.status}`}
-                  >
-                    {statusLabels[application.status]}
-                  </span>
+                  <div className="admin-card-statuses">
+                    <span
+                      className={`admin-status admin-status-${application.status}`}
+                    >
+                      {statusLabels[application.status]}
+                    </span>
+                    {application.applicationBlocked && (
+                      <span className="admin-user-blocked">Заблоковано</span>
+                    )}
+                  </div>
                 </header>
 
                 <dl className="admin-application-details">
@@ -311,6 +348,35 @@ export function AdminPanel() {
                     )}
                   </div>
                 )}
+                <div className="admin-user-controls">
+                  <button
+                    className={`admin-button ${
+                      application.applicationBlocked
+                        ? "admin-button-ghost"
+                        : "admin-button-danger"
+                    }`}
+                    disabled={applicationBlock.isPending}
+                    onClick={() => {
+                      const blocked = !application.applicationBlocked;
+                      if (
+                        window.confirm(
+                          blocked
+                            ? `Заборонити ${application.minecraftUsername} надсилати заявки?`
+                            : `Дозволити ${application.minecraftUsername} знову надсилати заявки?`,
+                        )
+                      )
+                        applicationBlock.mutate({
+                          publicId: application.publicId,
+                          blocked,
+                        });
+                    }}
+                    type="button"
+                  >
+                    {application.applicationBlocked
+                      ? "Розблокувати заявки"
+                      : "Заблокувати користувача"}
+                  </button>
+                </div>
               </article>
             ))}
           </div>

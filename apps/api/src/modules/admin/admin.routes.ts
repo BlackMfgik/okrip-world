@@ -1,11 +1,16 @@
 import type { FastifyInstance } from "fastify";
 import {
+  adminAccountMutationSchema,
+  adminApplicationBlockSchema,
   adminApplicationFilterSchema,
   adminDecisionSchema,
   adminWhitelistAddSchema,
   adminWhitelistRemoveSchema,
 } from "@okrip/contracts";
-import { requireAdmin } from "../../plugins/auth-session.js";
+import {
+  requireAdmin,
+  requireAdminManager,
+} from "../../plugins/auth-session.js";
 import type { AuthService } from "../auth/auth.service.js";
 import type { adminService } from "./admin.service.js";
 
@@ -25,6 +30,31 @@ export function adminRoutes(
     await requireAdmin(auth, req);
     return service.whitelist();
   });
+
+  app.get("/v1/admin/accounts", async (req) => {
+    await requireAdminManager(auth, req);
+    return service.accounts();
+  });
+
+  app.post(
+    "/v1/admin/accounts/add",
+    { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
+    async (req) =>
+      service.addAdmin(
+        adminAccountMutationSchema.parse(req.body),
+        await requireAdminManager(auth, req),
+      ),
+  );
+
+  app.post(
+    "/v1/admin/accounts/remove",
+    { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
+    async (req) =>
+      service.removeAdmin(
+        adminAccountMutationSchema.parse(req.body),
+        await requireAdminManager(auth, req),
+      ),
+  );
 
   app.post(
     "/v1/admin/whitelist/add",
@@ -46,6 +76,16 @@ export function adminRoutes(
       const input = adminWhitelistRemoveSchema.parse(req.body);
       return service.removeFromWhitelist(input.accessId, admin);
     },
+  );
+
+  app.post(
+    "/v1/admin/applications/block",
+    { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } },
+    async (req) =>
+      service.setApplicationBlocked(
+        adminApplicationBlockSchema.parse(req.body),
+        await requireAdmin(auth, req),
+      ),
   );
 
   app.post(

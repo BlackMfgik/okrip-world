@@ -38,7 +38,13 @@ export function applicationService(
             await tx.execute(
               sql`select set_config('okrip.allow_repeat_applications', 'on', true)`,
             );
-          await repo.lockUser(tx, user.id);
+          const [lockedUser] = await repo.lockUser(tx, user.id);
+          if (lockedUser?.applicationBlockedAt)
+            throw new AppError(
+              403,
+              "application_blocked",
+              "Адміністратор заборонив вам надсилати заявки.",
+            );
           const existingAccess = await repo.accessFor(tx, user.id);
           if (!repeatSubmissionEnabled && existingAccess)
             throw new AppError(
@@ -109,7 +115,9 @@ export function applicationService(
               "Автоматично",
             );
             if (!approved.length)
-              throw new Error("Automatic approval lost its pending application");
+              throw new Error(
+                "Automatic approval lost its pending application",
+              );
             const access =
               existingAccess ?? (await grant(tx, user.id, identity.id));
             await addCommand(

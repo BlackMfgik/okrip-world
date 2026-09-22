@@ -58,12 +58,14 @@ export function authRoutes(app: FastifyInstance, auth: AuthService, env: Env) {
   );
   app.get("/v1/me", async (req) => {
     const user = await auth.current(req.cookies[sessionCookie]);
+    const admin = user ? await auth.adminAccess(user.discordId) : undefined;
     return {
       user: user
         ? {
             username: user.discordUsername,
             displayName: user.discordGlobalName,
-            isAdmin: await auth.isAdmin(user.discordId),
+            isAdmin: Boolean(admin),
+            canManageAdmins: admin?.canManageAdmins ?? false,
           }
         : null,
     };

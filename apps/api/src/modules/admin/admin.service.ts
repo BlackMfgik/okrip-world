@@ -1,8 +1,13 @@
 import {
+  adminAccountListSchema,
+  adminAccountMutationResultSchema,
+  adminApplicationBlockResultSchema,
   adminApplicationListSchema,
   adminWhitelistSchema,
   type AdminWhitelistAdd,
   type AdminApplicationFilter,
+  type AdminAccountMutation,
+  type AdminApplicationBlock,
 } from "@okrip/contracts";
 import type { Database } from "../../db/client.js";
 import { AppError } from "../../shared/errors.js";
@@ -59,6 +64,7 @@ export function adminService(
             user.discordAvatar,
           ),
           minecraftUsername: identity.username,
+          applicationBlocked: Boolean(user.applicationBlockedAt),
           status: application.status,
           rejectionReason: application.rejectionReason,
           reviewerName: application.reviewedByTelegramName,
@@ -84,6 +90,116 @@ export function adminService(
           addedAt: access.createdAt.toISOString(),
         })),
         count: rows.length,
+      });
+    },
+    async accounts() {
+      const rows = await repo.listAdminAccounts(db);
+      return adminAccountListSchema.parse({
+        accounts: rows.map(({ account, user }) => ({
+          discordId: account.discordId,
+          discordUsername: user?.discordUsername ?? null,
+          discordDisplayName: user?.discordGlobalName ?? null,
+          discordAvatarUrl: discordAvatarUrl(
+            account.discordId,
+            user?.discordAvatar ?? null,
+          ),
+          canManageAdmins: account.canManageAdmins,
+          createdAt: account.createdAt.toISOString(),
+        })),
+        count: rows.length,
+      });
+    },
+    async addAdmin(input: AdminAccountMutation, admin: WebAdmin) {
+      if (await repo.adminAccountByDiscordId(db, input.discordId))
+        throw new AppError(
+          409,
+          "admin_exists",
+          "Цей Discord уже має права адміністратора.",
+        );
+      try {
+        await db.transaction(async (tx) => {
+          await repo.createAdminAccount(tx, input.discordId);
+          await audit(tx, {
+            actorType: "user",
+            actorId: admin.id,
+            eventType: "web_admin_added",
+            entityType: "admin_account",
+            entityId: admin.id,
+            metadata: {
+              targetDiscordId: input.discordId,
+              actorDiscordId: admin.discordId,
+            },
+          });
+        });
+      } catch (error) {
+        const cause = error as { code?: string; cause?: { code?: string } };
+        if (cause.code === "23505" || cause.cause?.code === "23505")
+          throw new AppError(
+            409,
+            "admin_exists",
+            "Цей Discord уже має права адміністратора.",
+          );
+        throw error;
+      }
+      return adminAccountMutationResultSchema.parse({
+        discordId: input.discordId,
+      });
+    },
+    async removeAdmin(input: AdminAccountMutation, admin: WebAdmin) {
+      const target = await repo.adminAccountByDiscordId(db, input.discordId);
+      if (!target)
+        throw new AppError(404, "not_found", "Адміністратора не знайдено.");
+      if (target.canManageAdmins)
+        throw new AppError(
+          403,
+          "protected_admin",
+          "Власника адмін-панелі не можна видалити.",
+        );
+      await db.transaction(async (tx) => {
+        await repo.deleteAdminAccount(tx, input.discordId);
+        await audit(tx, {
+          actorType: "user",
+          actorId: admin.id,
+          eventType: "web_admin_removed",
+          entityType: "admin_account",
+          entityId: admin.id,
+          metadata: {
+            targetDiscordId: input.discordId,
+            actorDiscordId: admin.discordId,
+          },
+        });
+      });
+      return adminAccountMutationResultSchema.parse({
+        discordId: input.discordId,
+      });
+    },
+    async setApplicationBlocked(input: AdminApplicationBlock, admin: WebAdmin) {
+      await db.transaction(async (tx) => {
+        const found = await repo.applicationUserByPublicId(tx, input.publicId);
+        if (!found) throw new AppError(404, "not_found", "Заявку не знайдено.");
+        await lockUser(tx, found.user.id);
+        await repo.setApplicationBlocked(
+          tx,
+          found.user.id,
+          input.blocked ? admin.discordId : null,
+        );
+        await audit(tx, {
+          actorType: "user",
+          actorId: admin.id,
+          eventType: input.blocked
+            ? "application_user_blocked"
+            : "application_user_unblocked",
+          entityType: "user",
+          entityId: found.user.id,
+          metadata: {
+            applicationPublicId: input.publicId,
+            actorDiscordId: admin.discordId,
+          },
+        });
+      });
+      return adminApplicationBlockResultSchema.parse({
+        publicId: input.publicId,
+        applicationBlocked: input.blocked,
       });
     },
     async addToWhitelist(input: AdminWhitelistAdd, admin: WebAdmin) {

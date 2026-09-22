@@ -78,6 +78,13 @@
       "when": 1790101000000,
       "tag": "0010_add_web_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790187400000,
+      "tag": "0011_admin_management_and_application_blocks",
+      "breakpoints": true
     }
   ]
 }
