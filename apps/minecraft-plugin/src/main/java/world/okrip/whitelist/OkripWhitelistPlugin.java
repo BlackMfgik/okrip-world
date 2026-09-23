@@ -50,7 +50,7 @@ public final class OkripWhitelistPlugin extends JavaPlugin {
             PlayerBanListener bans = new PlayerBanListener(journal, worker, watcher::signal);
             Bukkit.getPluginManager().registerEvents(bans, this);
             Bukkit.getScheduler().runTaskTimer(this, bans::scan, 20L, 200L);
-            getCommand("okripban").setExecutor((sender, command, label, args) -> {
+            getCommand("wlban").setExecutor((sender, command, label, args) -> {
                 if (args.length < 2 || !args[0].matches("[A-Za-z0-9_]{3,16}")) return false;
                 String reason = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
                 if (reason.length() > 256) { sender.sendMessage("Reason must be at most 256 characters."); return true; }
@@ -85,6 +85,17 @@ public final class OkripWhitelistPlugin extends JavaPlugin {
             WhitelistMenuController menu = new WhitelistMenuController(this, api, OkripWhitelistPlugin::detail);
             Bukkit.getPluginManager().registerEvents(menu, this);
             getCommand("wlmenu").setExecutor((sender, command, label, args) -> menu.onCommand(sender, args));
+            WhitelistRemoveCommand remove = new WhitelistRemoveCommand(this, api, OkripWhitelistPlugin::detail);
+            getCommand("wldel").setExecutor((sender, command, label, args) -> remove.onCommand(sender, args));
+            // Підказки ніків із вайтліста сервера для /wldel і /wlban (перший аргумент).
+            org.bukkit.command.TabCompleter whitelistNames = (sender, command, label, args) -> {
+                if (args.length != 1) return java.util.List.of();
+                String prefix = args[0].toLowerCase(java.util.Locale.ROOT);
+                return Bukkit.getWhitelistedPlayers().stream().map(org.bukkit.OfflinePlayer::getName)
+                    .filter(name -> name != null && name.toLowerCase(java.util.Locale.ROOT).startsWith(prefix)).sorted().toList();
+            };
+            getCommand("wldel").setTabCompleter(whitelistNames);
+            getCommand("wlban").setTabCompleter(whitelistNames);
             watcher.start();
             worker.scheduleWithFixedDelay(() -> {
                 try {

@@ -115,6 +115,20 @@ export async function activePlayers(db: Executor) {
     .where(eq(playerAccess.status, "active"))
     .orderBy(desc(playerAccess.createdAt));
 }
+export async function accessByIdentity(db: Executor, identityId: string) {
+  return (
+    await db
+      .select()
+      .from(playerAccess)
+      .where(eq(playerAccess.minecraftIdentityId, identityId))
+      .limit(1)
+  )[0];
+}
+export const revokeAccess = (db: Executor, accessId: string) =>
+  db
+    .update(playerAccess)
+    .set({ status: "revoked", updatedAt: new Date() })
+    .where(eq(playerAccess.id, accessId));
 export async function identityByName(db: Executor, username: string) {
   return (
     await db

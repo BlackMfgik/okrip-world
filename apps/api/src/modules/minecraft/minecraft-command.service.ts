@@ -136,5 +136,38 @@ export function minecraftService(
       });
       if (queued) commandQueued(serverId);
     },
+    /** /wldel у грі: те саме, що «Видалити» в адмін-панелі сайту. */
+    async removeFromWhitelist(event: { username: string; actor?: string }) {
+      const result = await db.transaction(async (tx) => {
+        const identity = await repo.identityByName(tx, event.username);
+        if (!identity) return { status: "not_registered" as const };
+        await lockUser(tx, identity.userId);
+        const access = await repo.accessByIdentity(tx, identity.id);
+        if (!access || access.status !== "active")
+          return {
+            status: "not_active" as const,
+            username: identity.username,
+          };
+        await repo.revokeAccess(tx, access.id);
+        await addCommand(
+          tx,
+          access.id,
+          serverId,
+          identity.username,
+          "whitelist_remove",
+        );
+        await audit(tx, {
+          actorType: "minecraft_server",
+          actorId: serverId,
+          eventType: "whitelist_player_removed",
+          entityType: "player_access",
+          entityId: access.id,
+          metadata: { source: "minecraft_command", actor: event.actor ?? null },
+        });
+        return { status: "removed" as const, username: identity.username };
+      });
+      if (result.status === "removed") commandQueued(serverId);
+      return result;
+    },
   };
 }

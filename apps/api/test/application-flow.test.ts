@@ -165,6 +165,58 @@ it("auto-approves a submission, queues whitelist_add, and includes it in snapsho
     }),
   ]);
 });
+it("removes a player from the whitelist via the in-game /wldel command", async () => {
+  await ctx.close();
+  ctx = await setup({ APPLICATION_AUTO_APPROVE: true });
+  const { cookie } = await login(ctx);
+  await ctx.app.inject({
+    method: "POST",
+    url: "/v1/applications",
+    cookies: { okrip_session: cookie },
+    headers: browserHeaders,
+    payload: { minecraftUsername: "Auto_Player" },
+  });
+  const remove = (username: string) =>
+    ctx.app.inject({
+      method: "POST",
+      url: "/v1/minecraft/whitelist/remove",
+      headers: serverHeaders,
+      payload: { username, actor: "Admin" },
+    });
+
+  const unauthorized = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/minecraft/whitelist/remove",
+    payload: { username: "Auto_Player" },
+  });
+  expect(unauthorized.statusCode).toBe(401);
+
+  // Регістр ніка не важливий, у відповіді — нік як зареєстровано.
+  const removed = await remove("auto_player");
+  expect(removed.statusCode, removed.body).toBe(200);
+  expect(removed.json()).toEqual({ status: "removed", username: "Auto_Player" });
+  expect((await ctx.db.select().from(playerAccess))[0]!.status).toBe("revoked");
+  expect(
+    (await ctx.db.select().from(commands)).map((command) => command.type),
+  ).toEqual(["whitelist_add", "whitelist_remove"]);
+
+  const snapshot = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/minecraft/whitelist/snapshot",
+    headers: serverHeaders,
+    payload: {},
+  });
+  expect(snapshot.json().usernames).toEqual([]);
+
+  expect((await remove("Auto_Player")).json()).toEqual({
+    status: "not_active",
+    username: "Auto_Player",
+  });
+  expect((await remove("Nobody_Here")).json()).toEqual({
+    status: "not_registered",
+  });
+  expect(await ctx.db.select().from(commands)).toHaveLength(2);
+});
 it("asks for and saves a Telegram rejection reason", async () => {
   const { cookie } = await login(ctx);
   const submitted = await ctx.app.inject({

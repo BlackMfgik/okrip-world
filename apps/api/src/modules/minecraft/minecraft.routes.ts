@@ -5,6 +5,7 @@ import {
   acknowledgementSchema,
   failureSchema,
   banEventSchema,
+  whitelistRemoveEventSchema,
 } from "@okrip/contracts";
 import type { Env } from "../../config/env.js";
 import { equalSecret } from "../../shared/crypto.js";
@@ -90,6 +91,9 @@ export function minecraftRoutes(
     await service.acknowledge(id, body.leaseToken, body.error);
     return reply.code(204).send();
   });
+  app.post("/v1/minecraft/whitelist/remove", options, async (req) =>
+    service.removeFromWhitelist(whitelistRemoveEventSchema.parse(req.body)),
+  );
   app.post("/v1/minecraft/events/ban", options, async (req, reply) => {
     await service.ban(banEventSchema.parse(req.body));
     return reply.code(204).send();

@@ -49,6 +49,19 @@ public final class OkripApiClient {
             throw new IOException("Whitelist snapshot request failed: " + response.describe());
         return response.body();
     }
+    /** Результат /wldel: removed, not_active (доступ уже скасовано) або not_registered (ніка немає на сайті). */
+    public record RemoveResult(String status, String username) {}
+    public RemoveResult removeFromWhitelist(String username, String actor) throws IOException, InterruptedException {
+        JsonObject body = new JsonObject(); body.addProperty("username", username); body.addProperty("actor", actor);
+        Result response = post("/v1/minecraft/whitelist/remove", body);
+        if (response.status() == 404)
+            throw new IOException("API does not support whitelist removal yet; update the API service");
+        if (response.status() != 200 || !response.body().has("status"))
+            throw new IOException("Whitelist removal failed: " + response.describe());
+        JsonElement registered = response.body().get("username");
+        return new RemoveResult(response.body().get("status").getAsString(),
+            registered == null || registered.isJsonNull() ? username : registered.getAsString());
+    }
     public List<String> activeWhitelist() throws IOException, InterruptedException {
         JsonObject snapshot = snapshot();
         List<String> usernames = new ArrayList<>();

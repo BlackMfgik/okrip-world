@@ -20,7 +20,7 @@
 
 HTTP, WebSocket callbacks, online profile resolution і запис локального журналу виконуються поза Minecraft thread. Bukkit mutations повертаються на server thread. Перед зміною перевіряється локальний 45-секундний deadline, менший за lease; після успішної зміни пишеться журнал підтвердження. При розриві мережі він відправляється повторно, у тому числі після перезапуску. Аварія між зміною whitelist і записом журналу спричиняє ідемпотентне повторне виконання.
 
-Локальний ban при whitelist_add надсилає ban event, щоб не лишити сайт у syncing назавжди. Polling ProfileBanList також бачить стандартні offline-бани. Плагіни з власним сховищем банів потребують окремого адаптера або команди /okripban. Unban із Minecraft не відновлює web-доступ автоматично.
+Локальний ban при whitelist_add надсилає ban event, щоб не лишити сайт у syncing назавжди. Polling ProfileBanList також бачить стандартні offline-бани. Плагіни з власним сховищем банів потребують окремого адаптера або команди /wlban. Unban із Minecraft не відновлює web-доступ автоматично.
 
 ## Telegram delivery
 

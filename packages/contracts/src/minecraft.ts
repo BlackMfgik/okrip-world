@@ -37,4 +37,11 @@ export const banEventSchema = z
     reason: z.string().min(1).max(256),
   })
   .strict();
+export const whitelistRemoveEventSchema = z
+  .object({
+    username: minecraftUsernameSchema,
+    // Нік адміністратора в грі — лише для аудиту.
+    actor: z.string().min(1).max(64).optional(),
+  })
+  .strict();
 export type MinecraftCommand = z.infer<typeof commandSchema>;
