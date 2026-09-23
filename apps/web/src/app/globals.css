@@ -2166,6 +2166,7 @@ button,
   border-color: rgba(79, 132, 255, 0.4);
   background: rgba(79, 132, 255, 0.1);
   color: #8dabff;
+  white-space: nowrap;
 }
 .admin-player-row {
   display: grid;
