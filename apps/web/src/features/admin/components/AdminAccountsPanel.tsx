@@ -122,7 +122,11 @@ export function AdminAccountsPanel() {
               </div>
               <code>{account.discordId}</code>
               {account.canManageAdmins ? (
-                <span className="admin-owner-badge">Власник</span>
+                <span className="admin-owner-badge">
+                  {account.discordId === "554465791358140417"
+                    ? "ахуєвший"
+                    : "Власник"}
+                </span>
               ) : (
                 <button
                   className="admin-remove-player"

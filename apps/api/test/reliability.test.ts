@@ -10,7 +10,10 @@ import {
   telegramJobs,
   identities,
 } from "../src/db/schema.js";
-import { applicationService } from "../src/modules/applications/application.service.js";
+import {
+  APPLICATION_SUBMISSION_COOLDOWN_MS,
+  applicationService,
+} from "../src/modules/applications/application.service.js";
 import { moderationService } from "../src/modules/moderation/moderation.service.js";
 import { minecraftService } from "../src/modules/minecraft/minecraft-command.service.js";
 let ctx: Awaited<ReturnType<typeof setup>>;
@@ -100,7 +103,7 @@ it("ban cannot be bypassed by OAuth, resubmission, a stale approval or direct DB
   ).rejects.toThrow();
   expect((await service.current(user.id)).access).toBe("banned");
 });
-it("rejection is final, allows same-name resubmission, and never creates a command", async () => {
+it("rejection is final, delays same-name resubmission, and never creates a command", async () => {
   const { user, service, publicId } = await pending();
   const moderation = moderationService(ctx.db, env);
   expect(
@@ -116,6 +119,17 @@ it("rejection is final, allows same-name resubmission, and never creates a comma
     "rejected",
   );
   expect(await ctx.db.select().from(commands)).toHaveLength(0);
+  await expect(
+    service.submit(user, { minecraftUsername: "Player_One" }),
+  ).rejects.toMatchObject({ code: "application_cooldown" });
+  await ctx.db
+    .update(applications)
+    .set({
+      createdAt: new Date(
+        Date.now() - APPLICATION_SUBMISSION_COOLDOWN_MS - 1_000,
+      ),
+    })
+    .where(eq(applications.publicId, publicId));
   expect(
     (await service.submit(user, { minecraftUsername: "Player_One" }))
       .application!.status,

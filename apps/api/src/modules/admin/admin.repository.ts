@@ -55,12 +55,14 @@ export async function setApplicationBlocked(
   db: Executor,
   userId: string,
   blockedByDiscordId: string | null,
+  blockedUntil: Date | null,
 ) {
   return (
     await db
       .update(users)
       .set({
         applicationBlockedAt: blockedByDiscordId ? new Date() : null,
+        applicationBlockedUntil: blockedUntil,
         applicationBlockedByDiscordId: blockedByDiscordId,
         updatedAt: new Date(),
       })

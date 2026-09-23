@@ -2,6 +2,7 @@
 import { useCurrentSession } from "@/features/auth/hooks/useCurrentSession";
 import { useCurrentApplication } from "../hooks/useCurrentApplication";
 import { ApplicationForm } from "./ApplicationForm";
+import { ApplicationCooldown } from "./ApplicationCooldown";
 import { ApplicationStatus } from "./ApplicationStatus";
 export function ApplicationPanel() {
   const session = useCurrentSession();
@@ -35,15 +36,19 @@ export function ApplicationPanel() {
       {data && (
         <>
           <ApplicationStatus data={data} />
+          {data.nextSubmissionAt && (
+            <ApplicationCooldown until={data.nextSubmissionAt} />
+          )}
           {data.repeatSubmissionEnabled && (
             <p role="status">Режим відладки: повторні заявки дозволені.</p>
           )}
-          {(data.repeatSubmissionEnabled ||
-            (!data.access &&
-              (!data.application ||
-                ["rejected", "cancelled"].includes(
-                  data.application.status,
-                )))) && <ApplicationForm />}
+          {!data.nextSubmissionAt &&
+            (data.repeatSubmissionEnabled ||
+              (!data.access &&
+                (!data.application ||
+                  ["rejected", "cancelled"].includes(
+                    data.application.status,
+                  )))) && <ApplicationForm />}
         </>
       )}
     </>

@@ -234,7 +234,12 @@ export function AdminPanel() {
                       {statusLabels[application.status]}
                     </span>
                     {application.applicationBlocked && (
-                      <span className="admin-user-blocked">Заблоковано</span>
+                      <span className="admin-user-blocked">
+                        {application.applicationBlockedUntil
+                          ? "Блок до " +
+                            formatDate(application.applicationBlockedUntil)
+                          : "Заблоковано"}
+                      </span>
                     )}
                   </div>
                 </header>
@@ -377,6 +382,30 @@ export function AdminPanel() {
                     {application.applicationBlocked
                       ? "Розблокувати заявки"
                       : "Заблокувати користувача"}
+                  </button>
+                  <button
+                    className="admin-button admin-button-hour"
+                    disabled={
+                      applicationBlock.isPending ||
+                      application.applicationBlocked
+                    }
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          "Заблокувати " +
+                            application.minecraftUsername +
+                            " на одну годину?",
+                        )
+                      )
+                        applicationBlock.mutate({
+                          publicId: application.publicId,
+                          blocked: true,
+                          durationMinutes: 60,
+                        });
+                    }}
+                    type="button"
+                  >
+                    Нєт іді нахуй
                   </button>
                 </div>
               </article>

@@ -21,6 +21,7 @@ export const adminApplicationSchema = z.object({
   discordAvatarUrl: z.string().url().nullable(),
   minecraftUsername: z.string(),
   applicationBlocked: z.boolean(),
+  applicationBlockedUntil: z.string().datetime().nullable(),
   status: applicationStatusSchema,
   rejectionReason: z.string().nullable(),
   reviewerName: z.string().nullable(),
@@ -64,12 +65,14 @@ export const adminApplicationBlockSchema = z
   .object({
     publicId: z.string().regex(/^[A-Za-z0-9_-]{16}$/),
     blocked: z.boolean(),
+    durationMinutes: z.literal(60).optional(),
   })
   .strict();
 
 export const adminApplicationBlockResultSchema = z.object({
   publicId: z.string(),
   applicationBlocked: z.boolean(),
+  applicationBlockedUntil: z.string().datetime().nullable(),
 });
 
 export const adminAccountSchema = z.object({

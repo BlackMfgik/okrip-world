@@ -10,6 +10,9 @@ export const users = pgTable("users", {
   applicationBlockedAt: timestamp("application_blocked_at", {
     withTimezone: true,
   }),
+  applicationBlockedUntil: timestamp("application_blocked_until", {
+    withTimezone: true,
+  }),
   applicationBlockedByDiscordId: varchar("application_blocked_by_discord_id"),
   createdAt: createdAt(),
   updatedAt: updatedAt(),

@@ -16,23 +16,26 @@ type TelegramUser = z.infer<typeof telegramUser>;
 function moderatorName(user: TelegramUser) {
   if (user.username) return "@" + user.username;
   return (
-    [user.first_name, user.last_name].filter(Boolean).join(" ") || String(user.id)
+    [user.first_name, user.last_name].filter(Boolean).join(" ") ||
+    String(user.id)
   );
 }
 const webhook = z.object({
   update_id: z.number().int(),
-  message: z.object({
-    message_id: z.number().int().optional(),
-    text: z.string().optional(),
-    from: telegramUser.optional(),
-    chat: z.object({ id: z.number().int().safe() }),
-    reply_to_message: z
-      .object({
-        text: z.string().optional(),
-        from: z.object({ is_bot: z.boolean().optional() }).optional(),
-      })
-      .optional(),
-  }).optional(),
+  message: z
+    .object({
+      message_id: z.number().int().optional(),
+      text: z.string().optional(),
+      from: telegramUser.optional(),
+      chat: z.object({ id: z.number().int().safe() }),
+      reply_to_message: z
+        .object({
+          text: z.string().optional(),
+          from: z.object({ is_bot: z.boolean().optional() }).optional(),
+        })
+        .optional(),
+    })
+    .optional(),
   callback_query: z
     .object({
       id: z.string(),
@@ -64,9 +67,12 @@ export function telegramRoutes(
         throw new AppError(401, "unauthorized", "Unauthorized");
       const update = webhook.parse(req.body);
       const message = update.message;
-      if ((!env.TELEGRAM_ADMIN_CHAT_ID || !env.TELEGRAM_ADMIN_USER_IDS) &&
-          message?.from && !message.from.is_bot &&
-          /^\/(?:start|ids)(?:@\w+)?\s*$/.test(message.text ?? "")) {
+      if (
+        (!env.TELEGRAM_ADMIN_CHAT_ID || !env.TELEGRAM_ADMIN_USER_IDS) &&
+        message?.from &&
+        !message.from.is_bot &&
+        /^\/(?:start|ids)(?:@\w+)?\s*$/.test(message.text ?? "")
+      ) {
         await telegram.call("sendMessage", {
           chat_id: message.chat.id,
           text: `Режим налаштування Okrip World\nTELEGRAM_ADMIN_CHAT_ID=${message.chat.id}\nВаш TELEGRAM_ADMIN_USER_IDS=${message.from.id}\nЦя команда не надає прав модератора.`,
@@ -82,6 +88,21 @@ export function telegramRoutes(
         !message.from.is_bot &&
         message.reply_to_message?.from?.is_bot === true
       ) {
+        const application = await service.prepareRejection(
+          rejectionId,
+          String(message.from.id),
+          String(message.chat.id),
+        );
+        if (application.status !== "pending") {
+          await telegram.call("sendMessage", {
+            chat_id: message.chat.id,
+            text: "Заявку вже було розглянуто: " + application.status,
+            ...(message.message_id
+              ? { reply_parameters: { message_id: message.message_id } }
+              : {}),
+          });
+          return { ok: true };
+        }
         const result = await service.decide(
           rejectionId,
           "reject",

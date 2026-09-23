@@ -17,6 +17,9 @@ import {
   grant,
 } from "../moderation/moderation.repository.js";
 import * as repo from "./application.repository.js";
+
+export const APPLICATION_SUBMISSION_COOLDOWN_MS = 60_000;
+
 export function applicationService(
   db: Database,
   discord: DiscordProvider,
@@ -39,12 +42,20 @@ export function applicationService(
               sql`select set_config('okrip.allow_repeat_applications', 'on', true)`,
             );
           const [lockedUser] = await repo.lockUser(tx, user.id);
-          if (lockedUser?.applicationBlockedAt)
-            throw new AppError(
-              403,
-              "application_blocked",
-              "Адміністратор заборонив вам надсилати заявки.",
-            );
+          if (lockedUser?.applicationBlockedAt) {
+            if (
+              !lockedUser.applicationBlockedUntil ||
+              lockedUser.applicationBlockedUntil.getTime() > Date.now()
+            )
+              throw new AppError(
+                403,
+                "application_blocked",
+                lockedUser.applicationBlockedUntil
+                  ? "Надсилання заявок тимчасово заблоковано на одну годину."
+                  : "Адміністратор заборонив вам надсилати заявки.",
+              );
+            await repo.clearApplicationBlock(tx, user.id);
+          }
           const existingAccess = await repo.accessFor(tx, user.id);
           if (!repeatSubmissionEnabled && existingAccess)
             throw new AppError(
@@ -66,6 +77,17 @@ export function applicationService(
                 409,
                 "application_exists",
                 "У вас уже є активна заявка.",
+              );
+            if (
+              current &&
+              current.application.createdAt.getTime() +
+                APPLICATION_SUBMISSION_COOLDOWN_MS >
+                Date.now()
+            )
+              throw new AppError(
+                429,
+                "application_cooldown",
+                "Наступну заявку можна буде подати після завершення таймера.",
               );
           }
           const existing = await repo.identityFor(tx, user.id);
@@ -157,6 +179,13 @@ export function applicationService(
         repo.accessFor(db, userId),
       ]);
       const command = access ? await repo.lastAdd(db, access.id) : undefined;
+      const nextSubmission =
+        current && !repeatSubmissionEnabled
+          ? new Date(
+              current.application.createdAt.getTime() +
+                APPLICATION_SUBMISSION_COOLDOWN_MS,
+            )
+          : null;
       return currentApplicationSchema.parse({
         application: current
           ? {
@@ -172,6 +201,10 @@ export function applicationService(
             ? command?.status === "completed"
               ? "completed"
               : "waiting"
+            : null,
+        nextSubmissionAt:
+          nextSubmission && nextSubmission.getTime() > Date.now()
+            ? nextSubmission.toISOString()
             : null,
         repeatSubmissionEnabled,
       });

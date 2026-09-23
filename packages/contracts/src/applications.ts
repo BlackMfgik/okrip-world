@@ -21,6 +21,7 @@ export const currentApplicationSchema = z.object({
     .nullable(),
   access: accessStatusSchema.nullable(),
   synchronization: z.enum(["waiting", "completed"]).nullable(),
+  nextSubmissionAt: z.string().datetime().nullable(),
   repeatSubmissionEnabled: z.boolean(),
 });
 export type CurrentApplication = z.infer<typeof currentApplicationSchema>;

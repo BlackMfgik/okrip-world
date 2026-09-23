@@ -60,22 +60,6 @@ export function telegramWorker(
           await repo.finishJob(db, job.id);
           return;
         }
-        if (job.kind === "rejection_prompt") {
-          if (app.status === "rejected")
-            await telegram.call("sendMessage", {
-              chat_id: env.TELEGRAM_ADMIN_CHAT_ID,
-              text: `Заявку №${app.number} відхилено на сайті. Відповідайте на це повідомлення, щоб уточнити причину.\n#reject:${app.publicId}`,
-              ...(app.telegramMessageId
-                ? { reply_parameters: { message_id: app.telegramMessageId } }
-                : {}),
-              reply_markup: {
-                force_reply: true,
-                input_field_placeholder: "Уточніть причину відмови",
-              },
-            });
-          await repo.finishJob(db, job.id);
-          return;
-        }
         const text = [
           "🧾Заявка №" + app.number,
           "🔵Discord: " + user.discordUsername,

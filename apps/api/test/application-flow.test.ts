@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
 import {
   setup,
   login,
@@ -14,7 +15,10 @@ import {
   playerAccess,
   users,
 } from "../src/db/schema.js";
-import { applicationService } from "../src/modules/applications/application.service.js";
+import {
+  APPLICATION_SUBMISSION_COOLDOWN_MS,
+  applicationService,
+} from "../src/modules/applications/application.service.js";
 import { moderationService } from "../src/modules/moderation/moderation.service.js";
 import { minecraftUsernameSchema } from "@okrip/contracts";
 let ctx: Awaited<ReturnType<typeof setup>>;
@@ -219,7 +223,7 @@ it("asks for and saves a Telegram rejection reason", async () => {
     }),
   );
 });
-it("allows two submissions per minute after rejection and keeps the old Telegram notice", async () => {
+it("enforces the visible cooldown after rejection and keeps the old Telegram notice", async () => {
   const { cookie } = await login(ctx);
   const cookies = { okrip_session: cookie };
   const submit = () =>
@@ -234,6 +238,7 @@ it("allows two submissions per minute after rejection and keeps the old Telegram
   const first = await submit();
   expect(first.statusCode).toBe(201);
   expect(first.json().repeatSubmissionEnabled).toBe(false);
+  expect(Date.parse(first.json().nextSubmissionAt)).toBeGreaterThan(Date.now());
 
   await ctx.worker.tick();
   await moderationService(ctx.db, env).decide(
@@ -246,8 +251,23 @@ it("allows two submissions per minute after rejection and keeps the old Telegram
   await ctx.worker.tick();
   ctx.telegram.call.mockClear();
 
-  const resubmitted = await submit();
-  expect(resubmitted.statusCode, resubmitted.body).toBe(201);
+  const blocked = await submit();
+  expect(blocked.statusCode).toBe(429);
+
+  await ctx.db
+    .update(applications)
+    .set({
+      createdAt: new Date(
+        Date.now() - APPLICATION_SUBMISSION_COOLDOWN_MS - 1_000,
+      ),
+    })
+    .where(eq(applications.publicId, first.json().application.publicId));
+  const applicant = (await ctx.db.select().from(users))[0]!;
+  const resubmitted = await applicationService(ctx.db, ctx.discord).submit(
+    applicant,
+    { minecraftUsername: "Player_One" },
+  );
+  expect(resubmitted.application?.status).toBe("pending");
   await ctx.worker.tick();
   expect(ctx.telegram.call).not.toHaveBeenCalledWith(
     "deleteMessage",
@@ -257,8 +277,6 @@ it("allows two submissions per minute after rejection and keeps the old Telegram
     "sendMessage",
     expect.objectContaining({ text: expect.stringContaining("🧾Заявка №2") }),
   );
-  const rateLimited = await submit();
-  expect(rateLimited.statusCode).toBe(429);
   const saved = await ctx.db.select().from(applications);
   expect(saved.map((application) => application.status)).toEqual([
     "rejected",

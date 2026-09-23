@@ -85,6 +85,13 @@
       "when": 1790187400000,
       "tag": "0011_admin_management_and_application_blocks",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790190000000,
+      "tag": "0012_temporary_application_blocks",
+      "breakpoints": true
     }
   ]
 }

@@ -1229,6 +1229,36 @@ body {
   margin-top: 10px;
   line-height: 1.6;
 }
+.application-dialog .application-cooldown {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 6px 18px;
+  border-color: rgba(96, 165, 250, 0.3);
+  background: linear-gradient(
+    135deg,
+    rgba(37, 99, 235, 0.15),
+    rgba(255, 255, 255, 0.025)
+  );
+}
+.application-cooldown > span {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.application-cooldown > strong {
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+.application-dialog .application-cooldown > p {
+  grid-column: 1 / -1;
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
 .application-dialog .verification-form {
   margin: 24px 0;
 }
@@ -1712,6 +1742,8 @@ button,
 }
 .admin-user-controls {
   display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   padding-top: 12px;
   margin-top: 12px;
   border-top: 1px solid var(--border);
@@ -1747,6 +1779,9 @@ button,
 }
 .admin-button-danger {
   background: #b92835;
+}
+.admin-button-hour {
+  background: #8a5a18;
 }
 .admin-button-ghost {
   color: var(--text);

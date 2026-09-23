@@ -150,7 +150,7 @@ it("requires a rejection reason and applies origin protection", async () => {
   expect(response.statusCode).toBe(403);
 });
 
-it("lets a Telegram reply update the reason after a website rejection", async () => {
+it("does not request or accept a Telegram reason after a website rejection", async () => {
   const applicant = await login(ctx);
   const submitted = await ctx.app.inject({
     method: "POST",
@@ -186,7 +186,7 @@ it("lets a Telegram reply update the reason after a website rejection", async ()
 
   await ctx.worker.tick();
   await ctx.worker.tick();
-  expect(ctx.telegram.call).toHaveBeenCalledWith(
+  expect(ctx.telegram.call).not.toHaveBeenCalledWith(
     "sendMessage",
     expect.objectContaining({
       text: expect.stringContaining(`#reject:${publicId}`),
@@ -216,20 +216,12 @@ it("lets a Telegram reply update the reason after a website rejection", async ()
   });
   expect(reply.statusCode, reply.body).toBe(200);
   expect((await ctx.db.select().from(applications))[0]!.rejectionReason).toBe(
-    "Уточнена причина з Telegram",
+    "Причина із сайту",
   );
   expect(ctx.telegram.call).toHaveBeenCalledWith(
     "sendMessage",
     expect.objectContaining({
-      text: "❌ Причину збережено. Заявку відхилено.",
-    }),
-  );
-
-  await ctx.worker.tick();
-  expect(ctx.telegram.call).toHaveBeenCalledWith(
-    "editMessageText",
-    expect.objectContaining({
-      text: expect.stringContaining("📝Причина: Уточнена причина з Telegram"),
+      text: "Заявку вже було розглянуто: rejected",
     }),
   );
 });
@@ -314,7 +306,7 @@ it("lets only protected owners add and remove regular web admins", async () => {
   ).toMatchObject({ isAdmin: false, canManageAdmins: false });
 });
 
-it("blocks and unblocks future applications for a Discord user", async () => {
+it("blocks applications permanently or for one hour", async () => {
   await ctx.close();
   ctx = await setup({ APPLICATION_REPEAT_DEBUG: true });
   const applicant = await login(ctx);
@@ -385,6 +377,41 @@ it("blocks and unblocks future applications for a Discord user", async () => {
   ).resolves.toMatchObject({
     application: { minecraftUsername: "Allowed_Again" },
   });
+
+  const temporary = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/admin/applications/block",
+    cookies: adminCookies,
+    headers: browserHeaders,
+    payload: { publicId, blocked: true, durationMinutes: 60 },
+  });
+  expect(temporary.statusCode, temporary.body).toBe(200);
+  expect(temporary.json().applicationBlocked).toBe(true);
+  expect(Date.parse(temporary.json().applicationBlockedUntil)).toBeGreaterThan(
+    Date.now() + 59 * 60_000,
+  );
+  await expect(
+    applicationService(ctx.db, ctx.discord, true).submit(applicantUser, {
+      minecraftUsername: "Still_Blocked",
+    }),
+  ).rejects.toMatchObject({ code: "application_blocked" });
+
+  await ctx.db
+    .update(users)
+    .set({ applicationBlockedUntil: new Date(Date.now() - 1_000) })
+    .where(eq(users.id, applicantUser.id));
+  await expect(
+    applicationService(ctx.db, ctx.discord, true).submit(applicantUser, {
+      minecraftUsername: "Hour_Expired",
+    }),
+  ).resolves.toMatchObject({
+    application: { minecraftUsername: "Hour_Expired" },
+  });
+  const refreshedUser = (
+    await ctx.db.select().from(users).where(eq(users.id, applicantUser.id))
+  )[0]!;
+  expect(refreshedUser.applicationBlockedAt).toBeNull();
+  expect(refreshedUser.applicationBlockedUntil).toBeNull();
 });
 
 it("adds, lists and removes whitelist players through the plugin command queue", async () => {

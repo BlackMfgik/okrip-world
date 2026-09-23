@@ -10,6 +10,16 @@ import {
 } from "../../db/schema.js";
 export const lockUser = (db: Executor, userId: string) =>
   db.select().from(users).where(eq(users.id, userId)).for("update");
+export const clearApplicationBlock = (db: Executor, userId: string) =>
+  db
+    .update(users)
+    .set({
+      applicationBlockedAt: null,
+      applicationBlockedUntil: null,
+      applicationBlockedByDiscordId: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId));
 export async function accessFor(db: Executor, userId: string) {
   return (
     await db.select().from(playerAccess).where(eq(playerAccess.userId, userId))
@@ -91,18 +101,6 @@ export const enqueueMessage = (
   kind: string,
 ) =>
   db.insert(telegramJobs).values({ applicationId, kind }).onConflictDoNothing();
-export const requeueMessage = (
-  db: Executor,
-  applicationId: string,
-  kind: string,
-) =>
-  db
-    .insert(telegramJobs)
-    .values({ applicationId, kind })
-    .onConflictDoUpdate({
-      target: [telegramJobs.applicationId, telegramJobs.kind],
-      set: { attempts: 0, availableAt: new Date(), completedAt: null },
-    });
 export async function lastAdd(db: Executor, accessId: string) {
   return (
     await db

@@ -38,16 +38,6 @@ export const decide = (
     })
     .where(and(eq(applications.id, id), eq(applications.status, "pending")))
     .returning();
-export const updateRejectionReason = (
-  db: Executor,
-  id: string,
-  rejectionReason: string,
-) =>
-  db
-    .update(applications)
-    .set({ rejectionReason, updatedAt: new Date() })
-    .where(and(eq(applications.id, id), eq(applications.status, "rejected")))
-    .returning();
 export async function grant(db: Executor, userId: string, identityId: string) {
   return (
     await db

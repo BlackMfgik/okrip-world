@@ -44,28 +44,39 @@ export function adminService(
         rejected: 0,
         cancelled: 0,
       };
+      const now = Date.now();
       for (const row of groupedCounts) {
         counts[row.status] = Number(row.count);
         counts.all += Number(row.count);
       }
       return adminApplicationListSchema.parse({
-        applications: rows.map(({ application, identity, user }) => ({
-          publicId: application.publicId,
-          number: application.number,
-          discordUsername: user.discordUsername,
-          discordDisplayName: user.discordGlobalName,
-          discordAvatarUrl: discordAvatarUrl(
-            user.discordId,
-            user.discordAvatar,
-          ),
-          minecraftUsername: identity.username,
-          applicationBlocked: Boolean(user.applicationBlockedAt),
-          status: application.status,
-          rejectionReason: application.rejectionReason,
-          reviewerName: application.reviewedByTelegramName,
-          createdAt: application.createdAt.toISOString(),
-          reviewedAt: application.reviewedAt?.toISOString() ?? null,
-        })),
+        applications: rows.map(({ application, identity, user }) => {
+          const blocked =
+            Boolean(user.applicationBlockedAt) &&
+            (!user.applicationBlockedUntil ||
+              user.applicationBlockedUntil.getTime() > now);
+          return {
+            publicId: application.publicId,
+            number: application.number,
+            discordUsername: user.discordUsername,
+            discordDisplayName: user.discordGlobalName,
+            discordAvatarUrl: discordAvatarUrl(
+              user.discordId,
+              user.discordAvatar,
+            ),
+            minecraftUsername: identity.username,
+            applicationBlocked: blocked,
+            applicationBlockedUntil:
+              blocked && user.applicationBlockedUntil
+                ? user.applicationBlockedUntil.toISOString()
+                : null,
+            status: application.status,
+            rejectionReason: application.rejectionReason,
+            reviewerName: application.reviewedByTelegramName,
+            createdAt: application.createdAt.toISOString(),
+            reviewedAt: application.reviewedAt?.toISOString() ?? null,
+          };
+        }),
         counts,
       });
     },
@@ -169,6 +180,10 @@ export function adminService(
       });
     },
     async setApplicationBlocked(input: AdminApplicationBlock, admin: WebAdmin) {
+      const blockedUntil =
+        input.blocked && input.durationMinutes
+          ? new Date(Date.now() + input.durationMinutes * 60_000)
+          : null;
       await db.transaction(async (tx) => {
         const found = await repo.applicationUserByPublicId(tx, input.publicId);
         if (!found) throw new AppError(404, "not_found", "Заявку не знайдено.");
@@ -177,24 +192,29 @@ export function adminService(
           tx,
           found.user.id,
           input.blocked ? admin.discordId : null,
+          blockedUntil,
         );
         await audit(tx, {
           actorType: "user",
           actorId: admin.id,
           eventType: input.blocked
-            ? "application_user_blocked"
+            ? blockedUntil
+              ? "application_user_temporarily_blocked"
+              : "application_user_blocked"
             : "application_user_unblocked",
           entityType: "user",
           entityId: found.user.id,
           metadata: {
             applicationPublicId: input.publicId,
             actorDiscordId: admin.discordId,
+            blockedUntil: blockedUntil?.toISOString() ?? null,
           },
         });
       });
       return adminApplicationBlockResultSchema.parse({
         publicId: input.publicId,
         applicationBlocked: input.blocked,
+        applicationBlockedUntil: blockedUntil?.toISOString() ?? null,
       });
     },
     async addToWhitelist(input: AdminWhitelistAdd, admin: WebAdmin) {
