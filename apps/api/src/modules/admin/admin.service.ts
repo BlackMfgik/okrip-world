@@ -159,7 +159,7 @@ export function adminService(
         throw new AppError(
           403,
           "protected_admin",
-          "Власника адмін-панелі не можна видалити.",
+          "Головного модератора не можна видалити.",
         );
       await db.transaction(async (tx) => {
         await repo.deleteAdminAccount(tx, input.discordId);

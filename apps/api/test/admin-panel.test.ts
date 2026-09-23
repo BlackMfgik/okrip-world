@@ -65,9 +65,9 @@ it("exposes the admin panel API only to Discord IDs stored as admins", async () 
   const adminLogin = await login(ctx);
   const adminCookies = { okrip_session: adminLogin.cookie };
   expect(
-    (await ctx.app.inject({ url: "/v1/me", cookies: adminCookies })).json().user
-      .isAdmin,
-  ).toBe(true);
+    (await ctx.app.inject({ url: "/v1/me", cookies: adminCookies })).json()
+      .user,
+  ).toMatchObject({ isAdmin: true, canManageAdmins: true });
 
   const list = await ctx.app.inject({
     url: "/v1/admin/applications?status=pending",
@@ -226,7 +226,7 @@ it("does not request or accept a Telegram reason after a website rejection", asy
   );
 });
 
-it("lets only protected owners add and remove regular web admins", async () => {
+it("lets only protected head moderators add and remove regular web admins", async () => {
   ctx.discord.identity.mockResolvedValue({
     id: "554465791358140417",
     username: "OwnerAdmin",
@@ -248,7 +248,7 @@ it("lets only protected owners add and remove regular web admins", async () => {
       .accounts.filter((account: { canManageAdmins: boolean }) =>
         Boolean(account.canManageAdmins),
       ),
-  ).toHaveLength(2);
+  ).toHaveLength(3);
 
   const regularAdminId = "99999999999999999";
   const added = await ctx.app.inject({

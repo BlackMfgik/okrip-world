@@ -46,7 +46,7 @@ export function AdminAccountsPanel() {
           <strong>Адміністратори</strong>
           <span>{accounts.data?.count ?? "—"}</span>
         </div>
-        <p>Додавати й видаляти адмінів можуть лише власники.</p>
+        <p>Додавати й видаляти адмінів можуть головні модератори.</p>
       </header>
 
       <form
@@ -124,8 +124,8 @@ export function AdminAccountsPanel() {
               {account.canManageAdmins ? (
                 <span className="admin-owner-badge">
                   {account.discordId === "554465791358140417"
-                    ? "ахуєвший"
-                    : "Власник"}
+                    ? "Ахуєвший"
+                    : "Головний модер"}
                 </span>
               ) : (
                 <button

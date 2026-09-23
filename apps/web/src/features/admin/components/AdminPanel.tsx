@@ -17,6 +17,7 @@ import { queryKeys } from "@/lib/query-keys";
 import { useCurrentSession } from "@/features/auth/hooks/useCurrentSession";
 import { DiscordAvatar } from "./DiscordAvatar";
 import { AdminAccountsPanel } from "./AdminAccountsPanel";
+import { AdminConfirmDialog } from "./AdminConfirmDialog";
 import { WhitelistPanel } from "./WhitelistPanel";
 
 const filters: Array<{ value: AdminApplicationFilter; label: string }> = [
@@ -34,6 +35,10 @@ const statusLabels = {
   cancelled: "Скасовано",
 } as const;
 
+type BlockConfirmation = AdminApplicationBlock & {
+  minecraftUsername: string;
+};
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("uk-UA", {
     dateStyle: "medium",
@@ -47,6 +52,8 @@ export function AdminPanel() {
   const [filter, setFilter] = useState<AdminApplicationFilter>("pending");
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  const [blockConfirmation, setBlockConfirmation] =
+    useState<BlockConfirmation | null>(null);
   const [section, setSection] = useState<
     "applications" | "whitelist" | "accounts"
   >("applications");
@@ -86,10 +93,12 @@ export function AdminPanel() {
         adminApplicationBlockResultSchema,
         body,
       ),
-    onSuccess: () =>
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      setBlockConfirmation(null);
+      await queryClient.invalidateQueries({
         queryKey: queryKeys.adminApplicationsRoot,
-      }),
+      });
+    },
   });
 
   if (session.isPending)
@@ -365,17 +374,11 @@ export function AdminPanel() {
                     disabled={applicationBlock.isPending}
                     onClick={() => {
                       const blocked = !application.applicationBlocked;
-                      if (
-                        window.confirm(
-                          blocked
-                            ? `Заборонити ${application.minecraftUsername} надсилати заявки?`
-                            : `Дозволити ${application.minecraftUsername} знову надсилати заявки?`,
-                        )
-                      )
-                        applicationBlock.mutate({
-                          publicId: application.publicId,
-                          blocked,
-                        });
+                      setBlockConfirmation({
+                        publicId: application.publicId,
+                        minecraftUsername: application.minecraftUsername,
+                        blocked,
+                      });
                     }}
                     type="button"
                   >
@@ -390,18 +393,12 @@ export function AdminPanel() {
                       application.applicationBlocked
                     }
                     onClick={() => {
-                      if (
-                        window.confirm(
-                          "Заблокувати " +
-                            application.minecraftUsername +
-                            " на одну годину?",
-                        )
-                      )
-                        applicationBlock.mutate({
-                          publicId: application.publicId,
-                          blocked: true,
-                          durationMinutes: 60,
-                        });
+                      setBlockConfirmation({
+                        publicId: application.publicId,
+                        minecraftUsername: application.minecraftUsername,
+                        blocked: true,
+                        durationMinutes: 60,
+                      });
                     }}
                     type="button"
                   >
@@ -412,6 +409,52 @@ export function AdminPanel() {
             ))}
           </div>
         </>
+      )}
+      {blockConfirmation && (
+        <AdminConfirmDialog
+          confirmLabel={
+            blockConfirmation.durationMinutes
+              ? "Нєт іді нахуй"
+              : blockConfirmation.blocked
+                ? "Заблокувати"
+                : "Розблокувати"
+          }
+          description={
+            blockConfirmation.durationMinutes
+              ? blockConfirmation.minecraftUsername +
+                " не зможе надсилати заявки протягом однієї години. Після цього доступ відновиться автоматично."
+              : blockConfirmation.blocked
+                ? blockConfirmation.minecraftUsername +
+                  " не зможе надсилати нові заявки, доки адміністратор не зніме блокування."
+                : blockConfirmation.minecraftUsername +
+                  " знову зможе надсилати заявки на сервер."
+          }
+          onCancel={() => setBlockConfirmation(null)}
+          onConfirm={() =>
+            applicationBlock.mutate({
+              publicId: blockConfirmation.publicId,
+              blocked: blockConfirmation.blocked,
+              ...(blockConfirmation.durationMinutes
+                ? { durationMinutes: blockConfirmation.durationMinutes }
+                : {}),
+            })
+          }
+          pending={applicationBlock.isPending}
+          title={
+            blockConfirmation.durationMinutes
+              ? "Таймаут на одну годину"
+              : blockConfirmation.blocked
+                ? "Заблокувати користувача?"
+                : "Розблокувати користувача?"
+          }
+          tone={
+            blockConfirmation.durationMinutes
+              ? "hour"
+              : blockConfirmation.blocked
+                ? "danger"
+                : "neutral"
+          }
+        />
       )}
     </div>
   );
