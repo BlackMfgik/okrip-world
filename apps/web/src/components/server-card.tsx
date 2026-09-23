@@ -33,6 +33,20 @@ export function UpcomingServerCard({ name }: { name: string }) {
         <IpRow label="IP Адреса" value="Soon…" placeholder />
         <IpRow label="Порт" value="Soon…" placeholder />
       </div>
+      {/* Сервер ще не запущено: кнопки показують, що буде, але неактивні. */}
+      <div className="server-card-footer">
+        <button className="btn btn-map" disabled type="button">
+          Мапа · Soon
+        </button>
+      </div>
+      <div className="server-application">
+        <p className="server-application-hint">
+          Заявки відкриються разом із запуском сервера.
+        </p>
+        <button className="btn btn-primary" disabled type="button">
+          Подати заявку · Soon
+        </button>
+      </div>
     </div>
   );
 }
