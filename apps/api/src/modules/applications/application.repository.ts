@@ -91,6 +91,18 @@ export const enqueueMessage = (
   kind: string,
 ) =>
   db.insert(telegramJobs).values({ applicationId, kind }).onConflictDoNothing();
+export const requeueMessage = (
+  db: Executor,
+  applicationId: string,
+  kind: string,
+) =>
+  db
+    .insert(telegramJobs)
+    .values({ applicationId, kind })
+    .onConflictDoUpdate({
+      target: [telegramJobs.applicationId, telegramJobs.kind],
+      set: { attempts: 0, availableAt: new Date(), completedAt: null },
+    });
 export async function lastAdd(db: Executor, accessId: string) {
   return (
     await db

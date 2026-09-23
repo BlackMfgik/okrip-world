@@ -42,7 +42,12 @@ export function telegramWorker(
   let running = false;
   return {
     async tick() {
-      if (running || !env.TELEGRAM_ADMIN_CHAT_ID || !env.TELEGRAM_ADMIN_USER_IDS) return;
+      if (
+        running ||
+        !env.TELEGRAM_ADMIN_CHAT_ID ||
+        !env.TELEGRAM_ADMIN_USER_IDS
+      )
+        return;
       running = true;
       try {
         const job = await db.transaction((tx) => repo.takeJob(tx));
@@ -52,6 +57,22 @@ export function telegramWorker(
           job.applicationId,
         );
         if (job.kind === "delete") {
+          await repo.finishJob(db, job.id);
+          return;
+        }
+        if (job.kind === "rejection_prompt") {
+          if (app.status === "rejected")
+            await telegram.call("sendMessage", {
+              chat_id: env.TELEGRAM_ADMIN_CHAT_ID,
+              text: `Заявку №${app.number} відхилено на сайті. Відповідайте на це повідомлення, щоб уточнити причину.\n#reject:${app.publicId}`,
+              ...(app.telegramMessageId
+                ? { reply_parameters: { message_id: app.telegramMessageId } }
+                : {}),
+              reply_markup: {
+                force_reply: true,
+                input_field_placeholder: "Уточніть причину відмови",
+              },
+            });
           await repo.finishJob(db, job.id);
           return;
         }

@@ -7,6 +7,7 @@ import {
   lockUser,
   accessFor,
   enqueueMessage,
+  requeueMessage,
 } from "../applications/application.repository.js";
 import * as repo from "./moderation.repository.js";
 
@@ -60,8 +61,32 @@ export function moderationService(
       if (!found) throw new AppError(404, "not_found", "Заявку не знайдено.");
       await lockUser(tx, found.application.userId);
       const fresh = (await repo.findApplication(tx, publicId))!;
-      if (fresh.application.status !== "pending")
+      if (fresh.application.status !== "pending") {
+        if (
+          action === "reject" &&
+          fresh.application.status === "rejected" &&
+          reason
+        ) {
+          await repo.updateRejectionReason(tx, fresh.application.id, reason);
+          await audit(tx, {
+            actorType: reviewer.actorType,
+            actorId: reviewer.actorId,
+            eventType: "application_rejection_reason_updated",
+            entityType: "application",
+            entityId: fresh.application.id,
+            metadata: {
+              source: reviewer.source,
+              reviewerId: reviewer.externalId,
+            },
+          });
+          await requeueMessage(
+            tx,
+            fresh.application.id,
+            "rejection_reason_updated",
+          );
+        }
         return fresh.application.status;
+      }
       const existingAccess = await accessFor(tx, fresh.application.userId);
       if (existingAccess && !env.APPLICATION_REPEAT_DEBUG)
         throw new AppError(
@@ -86,11 +111,7 @@ export function moderationService(
       ) {
         const access =
           existingAccess ??
-          (await repo.grant(
-            tx,
-            fresh.application.userId,
-            fresh.identity.id,
-          ));
+          (await repo.grant(tx, fresh.application.userId, fresh.identity.id));
         await repo.addCommand(
           tx,
           access.id,
@@ -112,6 +133,8 @@ export function moderationService(
         },
       });
       await enqueueMessage(tx, fresh.application.id, "decided");
+      if (status === "rejected" && reviewer.source === "web_admin")
+        await enqueueMessage(tx, fresh.application.id, "rejection_prompt");
       return status;
     });
     if (queued) commandQueued(env.MINECRAFT_SERVER_ID);
@@ -119,11 +142,7 @@ export function moderationService(
   }
 
   return {
-    async prepareRejection(
-      publicId: string,
-      adminId: string,
-      chatId: string,
-    ) {
+    async prepareRejection(publicId: string, adminId: string, chatId: string) {
       assertModerator(adminId, chatId);
       const found = await repo.findApplication(db, publicId);
       if (!found) throw new AppError(404, "not_found", "Заявку не знайдено.");

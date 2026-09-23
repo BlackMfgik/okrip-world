@@ -7,7 +7,7 @@ import {
   playerAccess,
   users,
 } from "../src/db/schema.js";
-import { browserHeaders, login, serverHeaders, setup } from "./helpers.js";
+import { browserHeaders, env, login, serverHeaders, setup } from "./helpers.js";
 import { applicationService } from "../src/modules/applications/application.service.js";
 
 let ctx: Awaited<ReturnType<typeof setup>>;
@@ -148,6 +148,90 @@ it("requires a rejection reason and applies origin protection", async () => {
     },
   });
   expect(response.statusCode).toBe(403);
+});
+
+it("lets a Telegram reply update the reason after a website rejection", async () => {
+  const applicant = await login(ctx);
+  const submitted = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/applications",
+    cookies: { okrip_session: applicant.cookie },
+    headers: browserHeaders,
+    payload: { minecraftUsername: "Reply_Player" },
+  });
+  expect(submitted.statusCode, submitted.body).toBe(201);
+  const publicId = submitted.json().application.publicId as string;
+  await ctx.worker.tick();
+  ctx.telegram.call.mockClear();
+
+  ctx.discord.identity.mockResolvedValue({
+    id: "876509255308541977",
+    username: "WebAdmin",
+    global_name: null,
+    avatar: null,
+  });
+  const admin = await login(ctx);
+  const rejected = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/admin/applications/decision",
+    cookies: { okrip_session: admin.cookie },
+    headers: browserHeaders,
+    payload: {
+      publicId,
+      action: "reject",
+      rejectionReason: "Причина із сайту",
+    },
+  });
+  expect(rejected.statusCode, rejected.body).toBe(200);
+
+  await ctx.worker.tick();
+  await ctx.worker.tick();
+  expect(ctx.telegram.call).toHaveBeenCalledWith(
+    "sendMessage",
+    expect.objectContaining({
+      text: expect.stringContaining(`#reject:${publicId}`),
+      reply_markup: expect.objectContaining({ force_reply: true }),
+    }),
+  );
+
+  const reply = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/integrations/telegram/webhook",
+    headers: {
+      "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET,
+    },
+    payload: {
+      update_id: 10,
+      message: {
+        message_id: 789,
+        text: "Уточнена причина з Telegram",
+        from: { id: 77, is_bot: false, username: "Moderator" },
+        chat: { id: -100 },
+        reply_to_message: {
+          text: `Заявку №1 відхилено на сайті.\n#reject:${publicId}`,
+          from: { is_bot: true },
+        },
+      },
+    },
+  });
+  expect(reply.statusCode, reply.body).toBe(200);
+  expect((await ctx.db.select().from(applications))[0]!.rejectionReason).toBe(
+    "Уточнена причина з Telegram",
+  );
+  expect(ctx.telegram.call).toHaveBeenCalledWith(
+    "sendMessage",
+    expect.objectContaining({
+      text: "❌ Причину збережено. Заявку відхилено.",
+    }),
+  );
+
+  await ctx.worker.tick();
+  expect(ctx.telegram.call).toHaveBeenCalledWith(
+    "editMessageText",
+    expect.objectContaining({
+      text: expect.stringContaining("📝Причина: Уточнена причина з Telegram"),
+    }),
+  );
 });
 
 it("lets only protected owners add and remove regular web admins", async () => {
