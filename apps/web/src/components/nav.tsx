@@ -10,18 +10,20 @@ interface NavProps {
 
 export function Nav({ staticOnline }: NavProps) {
   return (
-    <nav className="nav" aria-label="Основна навігація">
-      <Link href="/" className="nav-logo">
-        OKRIP WORLD
-      </Link>
-      {staticOnline ? (
-        <span className="nav-online">{staticOnline}</span>
-      ) : (
-        <NavOnline />
-      )}
-      <AdminNavLink />
-      <ThemeToggle />
+    <>
+      <nav className="nav" aria-label="Основна навігація">
+        <Link href="/" className="nav-logo">
+          OKRIP WORLD
+        </Link>
+        {staticOnline ? (
+          <span className="nav-online">{staticOnline}</span>
+        ) : (
+          <NavOnline />
+        )}
+        <AdminNavLink />
+        <ThemeToggle />
+      </nav>
       <AccountMenu />
-    </nav>
+    </>
   );
 }

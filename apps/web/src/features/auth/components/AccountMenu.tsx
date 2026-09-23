@@ -38,7 +38,7 @@ export function AccountMenu() {
     <div className="account-menu" ref={root}>
       <button
         aria-expanded={open}
-        aria-haspopup="menu"
+        aria-haspopup="dialog"
         aria-label="Відкрити меню акаунта"
         className="account-menu-trigger"
         onClick={() => {
@@ -61,11 +61,30 @@ export function AccountMenu() {
       </button>
 
       {open && (
-        <div className="account-menu-popover" role="menu">
+        <div
+          aria-label="Особистий кабінет"
+          className="account-menu-popover"
+          role="dialog"
+        >
           <p className="account-menu-eyebrow">Особистий кабінет</p>
-          <div className="account-menu-identity">
-            <strong>{name}</strong>
-            <span>@{user.username}</span>
+          <div className="account-menu-profile">
+            <div className="account-menu-profile-avatar" aria-hidden="true">
+              {user.avatarUrl ? (
+                <Image
+                  alt=""
+                  height={48}
+                  src={user.avatarUrl}
+                  unoptimized
+                  width={48}
+                />
+              ) : (
+                <span>{name.charAt(0).toUpperCase()}</span>
+              )}
+            </div>
+            <div className="account-menu-identity">
+              <strong>{name}</strong>
+              <span>@{user.username}</span>
+            </div>
           </div>
           {error && (
             <p className="account-menu-error" role="alert">
@@ -95,7 +114,6 @@ export function AccountMenu() {
                 setLoggingOut(false);
               }
             }}
-            role="menuitem"
             type="button"
           >
             {loggingOut ? "Виходимо…" : "Вийти з акаунта"}

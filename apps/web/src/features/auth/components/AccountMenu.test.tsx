@@ -46,7 +46,7 @@ test("opens the Discord account menu and logs out", async () => {
   expect(screen.getByText("Особистий кабінет")).toBeTruthy();
   expect(screen.getByText("Discord User")).toBeTruthy();
 
-  fireEvent.click(screen.getByRole("menuitem", { name: "Вийти з акаунта" }));
+  fireEvent.click(screen.getByRole("button", { name: "Вийти з акаунта" }));
   await waitFor(() =>
     expect(request).toHaveBeenCalledWith("/v1/auth/logout", { method: "POST" }),
   );
