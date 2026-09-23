@@ -15,7 +15,7 @@ export function ServerCard({ server }: { server: ServerConfig }) {
         <IpRow label="Порт" value={String(server.port)} />
       </div>
       <div className="server-card-footer">
-        <Link href={server.mapHref} className="btn-map" aria-label={`Мапа сервера ${server.name}`}>
+        <Link href={server.mapHref} className="btn btn-map" aria-label={`Мапа сервера ${server.name}`}>
           Мапа →
         </Link>
       </div>

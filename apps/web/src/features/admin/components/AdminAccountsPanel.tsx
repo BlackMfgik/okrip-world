@@ -9,11 +9,16 @@ import {
 } from "@okrip/contracts";
 import { apiRequest } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
+import { AdminConfirmDialog } from "./AdminConfirmDialog";
 import { DiscordAvatar } from "./DiscordAvatar";
 
 export function AdminAccountsPanel() {
   const queryClient = useQueryClient();
   const [discordId, setDiscordId] = useState("");
+  const [removing, setRemoving] = useState<{
+    discordId: string;
+    name: string;
+  } | null>(null);
   const accounts = useQuery({
     queryKey: queryKeys.adminAccounts,
     queryFn: () => apiRequest("/admin/accounts", adminAccountListSchema),
@@ -131,10 +136,9 @@ export function AdminAccountsPanel() {
                 <button
                   className="admin-remove-player"
                   disabled={removeAdmin.isPending}
-                  onClick={() => {
-                    if (window.confirm(`Видалити адміна ${name}?`))
-                      removeAdmin.mutate({ discordId: account.discordId });
-                  }}
+                  onClick={() =>
+                    setRemoving({ discordId: account.discordId, name })
+                  }
                   type="button"
                 >
                   Видалити
@@ -144,6 +148,25 @@ export function AdminAccountsPanel() {
           );
         })}
       </div>
+      {removing && (
+        <AdminConfirmDialog
+          confirmLabel="Видалити"
+          description={
+            removing.name + " більше не матиме доступу до адмін-панелі."
+          }
+          eyebrow="АДМІНІСТРАТОРИ"
+          onCancel={() => setRemoving(null)}
+          onConfirm={() =>
+            removeAdmin.mutate(
+              { discordId: removing.discordId },
+              { onSettled: () => setRemoving(null) },
+            )
+          }
+          pending={removeAdmin.isPending}
+          title={"Видалити адміна " + removing.name + "?"}
+          tone="danger"
+        />
+      )}
     </section>
   );
 }

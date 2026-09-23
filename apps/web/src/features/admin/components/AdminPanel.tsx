@@ -54,6 +54,10 @@ export function AdminPanel() {
   const [reason, setReason] = useState("");
   const [blockConfirmation, setBlockConfirmation] =
     useState<BlockConfirmation | null>(null);
+  const [approveConfirmation, setApproveConfirmation] = useState<{
+    publicId: string;
+    minecraftUsername: string;
+  } | null>(null);
   const [section, setSection] = useState<
     "applications" | "whitelist" | "accounts"
   >("applications");
@@ -334,17 +338,12 @@ export function AdminPanel() {
                         <button
                           className="admin-button admin-button-success"
                           disabled={decision.isPending}
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                `Схвалити заявку ${application.minecraftUsername}?`,
-                              )
-                            )
-                              decision.mutate({
-                                publicId: application.publicId,
-                                action: "approve",
-                              });
-                          }}
+                          onClick={() =>
+                            setApproveConfirmation({
+                              publicId: application.publicId,
+                              minecraftUsername: application.minecraftUsername,
+                            })
+                          }
                           type="button"
                         >
                           Схвалити
@@ -409,6 +408,26 @@ export function AdminPanel() {
             ))}
           </div>
         </>
+      )}
+      {approveConfirmation && (
+        <AdminConfirmDialog
+          confirmLabel="Схвалити"
+          description={
+            approveConfirmation.minecraftUsername +
+            " отримає доступ до сервера — нік буде додано до вайтліста."
+          }
+          eyebrow="РОЗГЛЯД ЗАЯВКИ"
+          onCancel={() => setApproveConfirmation(null)}
+          onConfirm={() =>
+            decision.mutate(
+              { publicId: approveConfirmation.publicId, action: "approve" },
+              { onSettled: () => setApproveConfirmation(null) },
+            )
+          }
+          pending={decision.isPending}
+          title={"Схвалити заявку " + approveConfirmation.minecraftUsername + "?"}
+          tone="success"
+        />
       )}
       {blockConfirmation && (
         <AdminConfirmDialog

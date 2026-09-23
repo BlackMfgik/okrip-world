@@ -7,7 +7,8 @@ interface AdminConfirmDialogProps {
   title: string;
   description: string;
   confirmLabel: string;
-  tone: "danger" | "hour" | "neutral";
+  eyebrow?: string;
+  tone: "danger" | "hour" | "neutral" | "success";
   pending: boolean;
   onCancel: () => void;
   onConfirm: () => void;
@@ -17,6 +18,7 @@ export function AdminConfirmDialog({
   title,
   description,
   confirmLabel,
+  eyebrow = "КЕРУВАННЯ ДОСТУПОМ",
   tone,
   pending,
   onCancel,
@@ -53,9 +55,9 @@ export function AdminConfirmDialog({
         role="dialog"
       >
         <div className="admin-confirm-icon" aria-hidden="true">
-          !
+          {tone === "success" ? "✓" : "!"}
         </div>
-        <p className="application-eyebrow">КЕРУВАННЯ ДОСТУПОМ</p>
+        <p className="application-eyebrow">{eyebrow}</p>
         <h2 id={titleId}>{title}</h2>
         <p>{description}</p>
         <div className="admin-confirm-actions">

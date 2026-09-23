@@ -10,6 +10,7 @@ import {
 } from "@okrip/contracts";
 import { apiRequest } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
+import { AdminConfirmDialog } from "./AdminConfirmDialog";
 import { DiscordAvatar } from "./DiscordAvatar";
 
 function formatDate(value: string) {
@@ -22,6 +23,10 @@ function formatDate(value: string) {
 export function WhitelistPanel() {
   const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
+  const [removing, setRemoving] = useState<{
+    accessId: string;
+    minecraftUsername: string;
+  } | null>(null);
   const [form, setForm] = useState<AdminWhitelistAdd>({
     minecraftUsername: "",
     discordUsername: "",
@@ -199,14 +204,12 @@ export function WhitelistPanel() {
             <button
               className="admin-remove-player"
               disabled={removePlayer.isPending}
-              onClick={() => {
-                if (
-                  window.confirm(
-                    `Видалити ${player.minecraftUsername} з вайтліста?`,
-                  )
-                )
-                  removePlayer.mutate({ accessId: player.accessId });
-              }}
+              onClick={() =>
+                setRemoving({
+                  accessId: player.accessId,
+                  minecraftUsername: player.minecraftUsername,
+                })
+              }
               type="button"
             >
               Видалити
@@ -214,6 +217,26 @@ export function WhitelistPanel() {
           </article>
         ))}
       </div>
+      {removing && (
+        <AdminConfirmDialog
+          confirmLabel="Видалити"
+          description={
+            removing.minecraftUsername +
+            " втратить доступ до сервера. Повернути гравця можна буде лише вручну."
+          }
+          eyebrow="ВАЙТЛІСТ"
+          onCancel={() => setRemoving(null)}
+          onConfirm={() =>
+            removePlayer.mutate(
+              { accessId: removing.accessId },
+              { onSettled: () => setRemoving(null) },
+            )
+          }
+          pending={removePlayer.isPending}
+          title={"Видалити " + removing.minecraftUsername + " з вайтліста?"}
+          tone="danger"
+        />
+      )}
     </section>
   );
 }
