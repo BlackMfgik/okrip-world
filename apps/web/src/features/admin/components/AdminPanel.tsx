@@ -59,6 +59,8 @@ export function AdminPanel() {
         adminApplicationListSchema,
       ),
     enabled: session.data?.user?.isAdmin === true && section === "applications",
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
   });
 
   const decision = useMutation({
