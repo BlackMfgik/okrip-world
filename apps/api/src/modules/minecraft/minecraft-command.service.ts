@@ -16,8 +16,15 @@ export function minecraftService(
 ) {
   return {
     async whitelistSnapshot() {
+      const players = await repo.activePlayers(db);
       return {
-        usernames: (await repo.activeUsernames(db)).map((row) => row.username),
+        // usernames — для звірки вайтліста (старі версії плагіна читають лише його);
+        // players — деталі для внутрішньоігрового меню /wlmenu.
+        usernames: players.map((row) => row.username),
+        players: players.map((row) => ({
+          ...row,
+          addedAt: row.addedAt.toISOString(),
+        })),
       };
     },
     async lease() {

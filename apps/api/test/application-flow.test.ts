@@ -141,6 +141,15 @@ it("auto-approves a submission, queues whitelist_add, and includes it in snapsho
   });
   expect(snapshot.statusCode, snapshot.body).toBe(200);
   expect(snapshot.json().usernames).toEqual(["Auto_Player"]);
+  expect(snapshot.json().players).toEqual([
+    {
+      username: "Auto_Player",
+      discordId: "111",
+      discordUsername: "DiscordName",
+      discordDisplayName: null,
+      addedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+    },
+  ]);
 
   const leased = await ctx.app.inject({
     method: "POST",

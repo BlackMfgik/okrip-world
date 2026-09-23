@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import { Nav } from "@/components/nav";
-import { BluemapFrame } from "@/components/bluemap-frame";
+import { MapFrame } from "@/components/map-frame";
 import { pageMetadata } from "@/lib/site";
+
+// DYNMAP_ORIGIN читається під час запиту, щоб змінна з Railway діяла без перезбирання.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   ...pageMetadata(
     "Мапа ванільного сервера | Okrip World",
-    "Сторінка мапи ванільного Minecraft-сервера Okrip World. Мапа наразі недоступна.",
+    "Жива мапа ванільного Minecraft-сервера Okrip World: світ, гравці онлайн і мітки.",
     "/map-vanilla",
   ),
-  // No map source is configured yet. Re-enable indexing and add to the
-  // sitemap once this page contains a working map and useful text.
   robots: {
     index: false,
     follow: true,
@@ -24,7 +25,10 @@ export default function MapVanillaPage() {
 
       <main className="body">
         <h1 className="sr-only">Мапа ванільного сервера Okrip World</h1>
-        <BluemapFrame title="BlueMap — ванільний сервер Okrip World" />
+        <MapFrame
+          base={process.env.DYNMAP_ORIGIN ? "/dynmap/" : undefined}
+          title="Dynmap — ванільний сервер Okrip World"
+        />
       </main>
     </div>
   );

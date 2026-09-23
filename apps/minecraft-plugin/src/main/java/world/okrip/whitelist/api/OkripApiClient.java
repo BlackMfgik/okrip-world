@@ -40,12 +40,19 @@ public final class OkripApiClient {
         }
         return new Result(response.statusCode(), json);
     }
-    public List<String> activeWhitelist() throws IOException, InterruptedException {
+    public List<WhitelistEntry> whitelistPlayers() throws IOException, InterruptedException {
+        return WhitelistEntry.parse(snapshot());
+    }
+    private JsonObject snapshot() throws IOException, InterruptedException {
         Result response = post("/v1/minecraft/whitelist/snapshot", new JsonObject());
         if (response.status() != 200 || !response.body().has("usernames"))
             throw new IOException("Whitelist snapshot request failed: " + response.describe());
+        return response.body();
+    }
+    public List<String> activeWhitelist() throws IOException, InterruptedException {
+        JsonObject snapshot = snapshot();
         List<String> usernames = new ArrayList<>();
-        for (JsonElement value : response.body().getAsJsonArray("usernames")) {
+        for (JsonElement value : snapshot.getAsJsonArray("usernames")) {
             String username = value.getAsString();
             if (!username.matches("[A-Za-z0-9_]{3,16}"))
                 throw new IOException("Invalid username in whitelist snapshot");

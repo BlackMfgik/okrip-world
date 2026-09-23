@@ -1,5 +1,5 @@
 name: OkripWhitelist
-version: 1.3.0
+version: 1.4.0
 main: world.okrip.whitelist.OkripWhitelistPlugin
 api-version: '1.21.11'
 description: Durable Okrip World whitelist synchronization
@@ -12,6 +12,11 @@ commands:
     description: Validate the OkripWhitelist configuration and delivery journal
     permission: okrip.admin
     usage: /okripwhitelist validate
+  wlmenu:
+    description: Open the whitelist menu (nickname, Discord, UUID, date added)
+    permission: okrip.admin
+    aliases: [whitelistmenu, okripwl]
+    usage: /wlmenu [nickname, Discord or ID]
 permissions:
   okrip.admin:
     default: op

@@ -45,13 +45,47 @@ Invoke-RestMethod -Method Post -Uri ('https://api.telegram.org/bot' + $env:TELEG
 ## 4. Kinetic Hosting
 
 1. Ціль цієї збірки — Paper/Purpur 1.21.11, Java 21. Для інших версій API спочатку перебудуйте й перевірте сумісність. Folia не підтримується.
-2. Зберіть `apps/minecraft-plugin` через Gradle wrapper; завантажте `build/libs/OkripWhitelist-1.3.0.jar` у /plugins.
+2. Зберіть `apps/minecraft-plugin` через Gradle wrapper; завантажте `build/libs/OkripWhitelist-1.4.0.jar` у /plugins (старий 1.3.0 JAR видаліть). Спочатку задеплойте сервіс api: меню `/wlmenu` потребує оновленого snapshot.
 3. Запустіть один раз, щоб створити plugins/OkripWhitelist/config.yml. При placeholder token плагін відключиться до налаштування.
 4. Укажіть HTTPS public API URL, server-id, той самий MINECRAFT_SERVER_TOKEN і timeout 8 секунд. Переконайтеся, що public domain/proxy API пропускає WebSocket upgrade, і перезапустіть сервер.
 5. У server.properties встановіть white-list=true. Для offline-mode встановіть і налаштуйте AuthMe/аналог; користувачі мають вводити нік із первісним регістром.
 6. Збережіть plugins/OkripWhitelist/delivery-journal.json у backup, не видаляйте його при оновленні JAR. Запускайте один екземпляр плагіна на serverId.
 
 Стандартні profile-бани синхронізуються через подію kick та перевірку списку кожні 10 секунд. Для явного бану зареєстрованого гравця: `/okripban <nickname> <reason>`, permission okrip.admin (op за замовчуванням). Команда ставить подію в чергу; дочекайтеся зміни доступу та виконання ban. Бани сторонніх систем потребують адаптера. Unban не робіть повторним OAuth: окремий адміністративний workflow відкладено.
+
+## 4a. Мапа Dynmap
+
+Сайт показує Dynmap на `/map-vanilla` через проксі `/dynmap/*` (Railway → Kinetic). Напряму вбудувати мапу не можна: сайт працює по HTTPS, а вебсервер Dynmap — по HTTP, браузер блокує такий iframe. Проксі також вмикає `sandbox` для контенту мапи, щоб скрипти з Minecraft-сервера не мали доступу до сесій сайту.
+
+**Kinetic**
+
+1. Встановіть Dynmap (Modrinth/SpigotMC) у /plugins. Перевірте в changelog, що збірка підтримує вашу версію Paper.
+2. У панелі Kinetic відкрийте вкладку мережі (Network) та додайте ще один порт (allocation). Якщо панель не дає цього зробити, попросіть підтримку. Цей порт буде портом вебсервера Dynmap. Якщо для старого BlueMap уже було виділено порт, використайте його.
+3. Запустіть сервер один раз, зупиніть його та відредагуйте `plugins/dynmap/configuration.txt`:
+
+   ```yaml
+   webserver-enabled: true
+   webserver-bindaddress: 0.0.0.0
+   webserver-port: <виділений порт>
+   # Сайт лише показує мапу: вимикаємо чат і логін із вебу
+   allowwebchat: false
+   login-enabled: false
+   # Економія CPU хостингу та трафіку Railway
+   deftemplatesuffix: lowres
+   image-format: jpg-q75
+   tiles-rendered-at-once: 1
+   ```
+
+   У `worlds.txt` за потреби вимкніть незатребувані світи (`enabled: false` для world_nether/world_the_end).
+4. Запустіть сервер. Перевірте мапу напряму: `http://<ip або хост Kinetic>:<порт>/` має відкрити Dynmap.
+5. Запустіть початковий рендер у консолі: `dynmap fullrender world` (краще тоді, коли мало гравців, бо він важкий). Стан рендеру показує `dynmap stats`.
+
+**Railway**
+
+6. У сервісі **web** додайте змінну `DYNMAP_ORIGIN=http://<ip або хост Kinetic>:<порт>` без шляху й без завершального слеша, і перезапустіть сервіс.
+7. Відкрийте `https://<сайт>/dynmap/up/configuration`. Має повернутися JSON. Після цього `/map-vanilla` показує мапу. Якщо Dynmap не відповідає, сторінка покаже «МАПА НАРАЗІ НЕДОСТУПНА».
+
+Трафік: кожен тайл мапи проходить через Railway і тарифікується як вихідний трафік web-сервісу. Тайли кешуються в браузері, а `jpg-q75`/`lowres` зменшують обсяг, але все одно поставте spend limit у Railway.
 
 ## 5. Обов'язковий smoke test перед відкриттям
 

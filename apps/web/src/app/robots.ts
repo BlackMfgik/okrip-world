@@ -6,6 +6,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
+      // Тайли Dynmap: тисячі URL без користі для пошуку, лише витрачають трафік.
+      disallow: "/dynmap/",
     },
     sitemap: new URL("/sitemap.xml", SITE_URL).toString(),
     host: SITE_URL.origin,

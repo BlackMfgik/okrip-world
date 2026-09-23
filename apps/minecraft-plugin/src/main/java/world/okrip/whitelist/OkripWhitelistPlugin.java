@@ -5,6 +5,7 @@ import world.okrip.whitelist.config.PluginConfig;
 import world.okrip.whitelist.api.OkripApiClient;
 import world.okrip.whitelist.commands.*;
 import world.okrip.whitelist.listeners.PlayerBanListener;
+import world.okrip.whitelist.menu.WhitelistMenuController;
 import java.nio.file.Path;
 import java.util.concurrent.*;
 import java.util.Arrays;
@@ -81,6 +82,9 @@ public final class OkripWhitelistPlugin extends JavaPlugin {
                 }
                 return true;
             });
+            WhitelistMenuController menu = new WhitelistMenuController(this, api, OkripWhitelistPlugin::detail);
+            Bukkit.getPluginManager().registerEvents(menu, this);
+            getCommand("wlmenu").setExecutor((sender, command, label, args) -> menu.onCommand(sender, args));
             watcher.start();
             worker.scheduleWithFixedDelay(() -> {
                 try {

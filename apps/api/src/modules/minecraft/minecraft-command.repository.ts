@@ -1,5 +1,5 @@
 import { alias } from "drizzle-orm/pg-core";
-import { and, eq, ne, sql, lte, lt, or, notExists } from "drizzle-orm";
+import { and, desc, eq, ne, sql, lte, lt, or, notExists } from "drizzle-orm";
 import type { Executor } from "../../db/client.js";
 import {
   commands,
@@ -7,6 +7,7 @@ import {
   identities,
   banEvents,
   applications,
+  users,
 } from "../../db/schema.js";
 export const lockQueue = (db: Executor, serverId: string) =>
   db.execute(sql`select pg_advisory_xact_lock(hashtext(${serverId}))`);
@@ -99,12 +100,20 @@ export async function commandAccess(db: Executor, id: string) {
     await db.select().from(playerAccess).where(eq(playerAccess.id, id))
   )[0]!;
 }
-export async function activeUsernames(db: Executor) {
+export async function activePlayers(db: Executor) {
   return db
-    .select({ username: identities.username })
+    .select({
+      username: identities.username,
+      discordId: users.discordId,
+      discordUsername: users.discordUsername,
+      discordDisplayName: users.discordGlobalName,
+      addedAt: playerAccess.createdAt,
+    })
     .from(playerAccess)
     .innerJoin(identities, eq(identities.id, playerAccess.minecraftIdentityId))
-    .where(eq(playerAccess.status, "active"));
+    .innerJoin(users, eq(users.id, playerAccess.userId))
+    .where(eq(playerAccess.status, "active"))
+    .orderBy(desc(playerAccess.createdAt));
 }
 export async function identityByName(db: Executor, username: string) {
   return (
