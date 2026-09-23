@@ -8,6 +8,12 @@ beforeEach(async () => {
 afterEach(async () => ctx.close());
 describe("OAuth and sessions", () => {
   it("consumes browser-bound state once and stores only a hashed session", async () => {
+    ctx.discord.identity.mockResolvedValue({
+      id: "111",
+      username: "DiscordName",
+      global_name: "Display Name",
+      avatar: "a_profileavatar",
+    });
     const { callback, cookie, state, browser } = await login(ctx);
     expect(callback.statusCode).toBe(302);
     expect((await ctx.db.select().from(sessions))[0]!.tokenHash).not.toBe(
@@ -29,8 +35,13 @@ describe("OAuth and sessions", () => {
           url: "/v1/me",
           cookies: { okrip_session: cookie },
         })
-      ).json().user.username,
-    ).toBe("DiscordName");
+      ).json().user,
+    ).toMatchObject({
+      username: "DiscordName",
+      displayName: "Display Name",
+      avatarUrl:
+        "https://cdn.discordapp.com/avatars/111/a_profileavatar.gif?size=64",
+    });
   });
   it("keeps stable Discord ID after rename and rejects a different browser", async () => {
     await login(ctx);

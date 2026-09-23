@@ -4,6 +4,7 @@ export const sessionSchema = z.object({
     .object({
       username: z.string(),
       displayName: z.string().nullable(),
+      avatarUrl: z.string().url().nullable(),
       isAdmin: z.boolean(),
       canManageAdmins: z.boolean(),
     })

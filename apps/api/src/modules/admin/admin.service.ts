@@ -11,6 +11,7 @@ import {
 } from "@okrip/contracts";
 import type { Database } from "../../db/client.js";
 import { AppError } from "../../shared/errors.js";
+import { discordAvatarUrl } from "../../shared/discord-avatar.js";
 import { audit } from "../audit/audit.repository.js";
 import { lockUser } from "../applications/application.repository.js";
 import { addCommand } from "../moderation/moderation.repository.js";
@@ -22,12 +23,6 @@ interface WebAdmin {
   discordId: string;
   discordUsername: string;
   discordGlobalName: string | null;
-}
-
-function discordAvatarUrl(discordId: string, avatar: string | null) {
-  if (!avatar) return null;
-  const extension = avatar.startsWith("a_") ? "gif" : "webp";
-  return `https://cdn.discordapp.com/avatars/${encodeURIComponent(discordId)}/${encodeURIComponent(avatar)}.${extension}?size=64`;
 }
 
 export function adminService(

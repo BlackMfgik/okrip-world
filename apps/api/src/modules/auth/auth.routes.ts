@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { Env } from "../../config/env.js";
 import type { AuthService } from "./auth.service.js";
 import { sessionCookie } from "../../plugins/auth-session.js";
+import { discordAvatarUrl } from "../../shared/discord-avatar.js";
 export function authRoutes(app: FastifyInstance, auth: AuthService, env: Env) {
   const options = {
     httpOnly: true,
@@ -64,6 +65,7 @@ export function authRoutes(app: FastifyInstance, auth: AuthService, env: Env) {
         ? {
             username: user.discordUsername,
             displayName: user.discordGlobalName,
+            avatarUrl: discordAvatarUrl(user.discordId, user.discordAvatar),
             isAdmin: Boolean(admin),
             canManageAdmins: admin?.canManageAdmins ?? false,
           }

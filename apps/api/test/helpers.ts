@@ -2,6 +2,7 @@ import { testDatabase } from "./test-database.js";
 import { vi } from "vitest";
 import { envSchema } from "../src/config/env.js";
 import { buildApp } from "../src/app.js";
+import type { DiscordIdentity } from "../src/modules/auth/discord.service.js";
 export const env = envSchema.parse({
   NODE_ENV: "test",
   DATABASE_URL: "postgres://test",
@@ -26,7 +27,7 @@ export async function setup(overrides: Partial<typeof env> = {}) {
   const db = database.db;
   const activeEnv = { ...env, ...overrides };
   const discord = {
-    identity: vi.fn(async () => ({
+    identity: vi.fn(async (): Promise<DiscordIdentity> => ({
       id: "111",
       username: "DiscordName",
       global_name: null,
