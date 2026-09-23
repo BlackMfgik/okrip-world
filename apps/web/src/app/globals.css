@@ -1094,6 +1094,18 @@ body {
   background: var(--inset-bg-hover);
   border-color: var(--border-strong);
 }
+.ip-row-placeholder {
+  cursor: default;
+}
+.ip-row-placeholder:hover {
+  background: var(--inset-bg);
+  border-color: var(--border);
+}
+.ip-row-placeholder .ip-value {
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-style: italic;
+}
 .ip-info {
   display: flex;
   flex-direction: column;
@@ -1146,14 +1158,10 @@ body {
   width: 100%;
   white-space: normal;
 }
-.server-application-hint,
-.server-account {
+.server-application-hint {
   margin-bottom: 12px;
   color: var(--text-secondary);
   font-size: 0.875rem;
-}
-.server-account {
-  overflow-wrap: anywhere;
 }
 
 /* «Скоро» — картка майбутнього сервера */

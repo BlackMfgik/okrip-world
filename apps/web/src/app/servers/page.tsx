@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Nav } from "@/components/nav";
-import { ServerCard } from "@/components/server-card";
-import { SERVERS } from "@/lib/servers";
+import { ServerCard, UpcomingServerCard } from "@/components/server-card";
+import { SERVERS, UPCOMING_SERVERS } from "@/lib/servers";
 import { pageMetadata } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata(
@@ -24,14 +24,19 @@ export default function ServersPage() {
             <h1 className="page-title">Сервери Minecraft</h1>
             <p className="page-description">
               Приєднуйтеся до української Minecraft-спільноти Okrip World.
-              Оберіть сервер, увійдіть через Discord і подайте заявку на гру.
+              Оберіть сервер і скопіюйте IP-адресу та порт для підключення.
             </p>
           </header>
 
           <div className="servers-grid">
-            {Array.from({ length: 2 }, (_, index) => (
-              <div className="server-card-entry" key={index}>
-                <ServerCard server={SERVERS[0]!} />
+            {SERVERS.map((server) => (
+              <div className="server-card-entry" key={server.id}>
+                <ServerCard server={server} />
+              </div>
+            ))}
+            {UPCOMING_SERVERS.map((server) => (
+              <div className="server-card-entry" key={server.id}>
+                <UpcomingServerCard name={server.name} />
               </div>
             ))}
           </div>

@@ -52,7 +52,6 @@ export function ServerApplicationAction() {
         <div role="alert"><p>{session.error.message}</p><button className="btn" onClick={() => void session.refetch()}>Спробувати ще раз</button></div>
       ) : !session.data?.user ? <DiscordLoginButton /> : (
         <>
-          <p className="server-account">Discord · {session.data.user.displayName ?? session.data.user.username}</p>
           <button className="btn btn-primary" onClick={() => { setOpen(true); void application.refetch(); }} disabled={application.isPending}>
             {application.isPending ? "Перевіряємо заявку…" : application.error ? "Повторити перевірку заявки" : applicationActionLabel(application.data)}
           </button>

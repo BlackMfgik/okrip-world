@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ServerApplicationAction } from "@/features/application/components/ServerApplicationAction";
 import { IpRow } from "@/components/ip-row";
 import type { ServerConfig } from "@/lib/servers";
 
@@ -19,7 +18,21 @@ export function ServerCard({ server }: { server: ServerConfig }) {
           Мапа →
         </Link>
       </div>
-      {server.id === "vanilla" && <ServerApplicationAction />}
+    </div>
+  );
+}
+
+export function UpcomingServerCard({ name }: { name: string }) {
+  return (
+    <div className="server-card server-card-upcoming">
+      <div className="server-card-header">
+        <h2 className="server-name">{name}</h2>
+        <div className="server-soon-label">SOON</div>
+      </div>
+      <div className="server-ip-section">
+        <IpRow label="IP Адреса" value="Soon…" placeholder />
+        <IpRow label="Порт" value="Soon…" placeholder />
+      </div>
     </div>
   );
 }
