@@ -1,17 +1,11 @@
 "use client";
-import { useState } from "react";
-
-import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentSession } from "@/features/auth/hooks/useCurrentSession";
 import { useCurrentApplication } from "../hooks/useCurrentApplication";
 import { ApplicationForm } from "./ApplicationForm";
 import { ApplicationStatus } from "./ApplicationStatus";
 export function ApplicationPanel() {
-  const session = useCurrentSession(),
-    application = useCurrentApplication(!!session.data?.user),
-
-    client = useQueryClient();
-  const [logoutError, setLogoutError] = useState("");
+  const session = useCurrentSession();
+  const application = useCurrentApplication(!!session.data?.user);
 
   if (session.isPending) return <p role="status">Перевіряємо вхід…</p>;
   if (session.error)
@@ -49,28 +43,9 @@ export function ApplicationPanel() {
               (!data.application ||
                 ["rejected", "cancelled"].includes(
                   data.application.status,
-                )))) && (
-              <ApplicationForm />
-            )}
+                )))) && <ApplicationForm />}
         </>
       )}
-      {logoutError && <p role="alert">{logoutError}</p>}
-      <button
-        className="btn application-logout"
-        onClick={async () => {
-          try {
-            const response = await fetch("/v1/auth/logout", { method: "POST" });
-            if (!response.ok) throw new Error();
-            client.clear();
-
-          } catch {
-            setLogoutError("Не вдалося вийти. Спробуйте ще раз.");
-          }
-        }}
-      >
-        Вийти з акаунта
-      </button>
     </>
   );
 }
-
