@@ -62,6 +62,24 @@ public final class OkripApiClient {
         return new RemoveResult(response.body().get("status").getAsString(),
             registered == null || registered.isJsonNull() ? username : registered.getAsString());
     }
+    /** Результат /wlunban: unbanned, not_banned (на сайті бану немає) або not_registered (ніка немає на сайті). */
+    public record UnbanResult(String status, String username, String access) {}
+    public UnbanResult unban(String username, boolean restoreWhitelist, String actor) throws IOException, InterruptedException {
+        JsonObject body = new JsonObject();
+        body.addProperty("username", username);
+        body.addProperty("restoreWhitelist", restoreWhitelist);
+        body.addProperty("actor", actor);
+        Result response = post("/v1/minecraft/unban", body);
+        if (response.status() == 404)
+            throw new IOException("API does not support unban yet; update the API service");
+        if (response.status() != 200 || !response.body().has("status"))
+            throw new IOException("Unban failed: " + response.describe());
+        JsonElement registered = response.body().get("username");
+        JsonElement access = response.body().get("access");
+        return new UnbanResult(response.body().get("status").getAsString(),
+            registered == null || registered.isJsonNull() ? username : registered.getAsString(),
+            access == null || access.isJsonNull() ? null : access.getAsString());
+    }
     public List<String> activeWhitelist() throws IOException, InterruptedException {
         JsonObject snapshot = snapshot();
         List<String> usernames = new ArrayList<>();

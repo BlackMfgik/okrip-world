@@ -217,6 +217,65 @@ it("removes a player from the whitelist via the in-game /wldel command", async (
   });
   expect(await ctx.db.select().from(commands)).toHaveLength(2);
 });
+it("unbans a player via /wlunban, optionally restoring the whitelist", async () => {
+  await ctx.close();
+  ctx = await setup({ APPLICATION_AUTO_APPROVE: true });
+  const { cookie } = await login(ctx);
+  await ctx.app.inject({
+    method: "POST",
+    url: "/v1/applications",
+    cookies: { okrip_session: cookie },
+    headers: browserHeaders,
+    payload: { minecraftUsername: "Auto_Player" },
+  });
+  const post = (url: string, payload: object) =>
+    ctx.app.inject({ method: "POST", url, headers: serverHeaders, payload });
+  const ban = () =>
+    post("/v1/minecraft/events/ban", {
+      eventId: crypto.randomUUID(),
+      username: "Auto_Player",
+      reason: "Гріфінг",
+    });
+  const unban = (restoreWhitelist: boolean, username = "auto_player") =>
+    post("/v1/minecraft/unban", { username, restoreWhitelist, actor: "Admin" });
+  const commandTypes = async () =>
+    (await ctx.db.select().from(commands)).map((command) => command.type);
+  const access = async () => (await ctx.db.select().from(playerAccess))[0]!;
+
+  expect((await ban()).statusCode).toBe(204);
+  expect((await access()).status).toBe("banned");
+  const bannedCommands = await commandTypes();
+
+  const unbanned = await unban(false);
+  expect(unbanned.statusCode, unbanned.body).toBe(200);
+  expect(unbanned.json()).toEqual({
+    status: "unbanned",
+    username: "Auto_Player",
+    access: "revoked",
+  });
+  expect(await access()).toMatchObject({ status: "revoked", banReason: null });
+  expect(await commandTypes()).toEqual(bannedCommands);
+  expect((await unban(true)).json()).toEqual({
+    status: "not_banned",
+    username: "Auto_Player",
+    access: "revoked",
+  });
+
+  expect((await ban()).statusCode).toBe(204);
+  expect((await unban(true)).json()).toEqual({
+    status: "unbanned",
+    username: "Auto_Player",
+    access: "active",
+  });
+  expect((await access()).status).toBe("active");
+  expect((await commandTypes()).at(-1)).toBe("whitelist_add");
+  const snapshot = await post("/v1/minecraft/whitelist/snapshot", {});
+  expect(snapshot.json().usernames).toEqual(["Auto_Player"]);
+
+  expect((await unban(false, "Nobody_Here")).json()).toEqual({
+    status: "not_registered",
+  });
+});
 it("asks for and saves a Telegram rejection reason", async () => {
   const { cookie } = await login(ctx);
   const submitted = await ctx.app.inject({

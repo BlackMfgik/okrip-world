@@ -44,4 +44,13 @@ export const whitelistRemoveEventSchema = z
     actor: z.string().min(1).max(64).optional(),
   })
   .strict();
+export const unbanEventSchema = z
+  .object({
+    username: minecraftUsernameSchema,
+    // true — одразу повернути гравця у вайтліст (як «Додати гравця» в адмінці).
+    restoreWhitelist: z.boolean(),
+    // Нік адміністратора в грі — лише для аудиту.
+    actor: z.string().min(1).max(64).optional(),
+  })
+  .strict();
 export type MinecraftCommand = z.infer<typeof commandSchema>;

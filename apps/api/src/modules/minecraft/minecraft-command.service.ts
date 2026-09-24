@@ -8,6 +8,7 @@ import {
   enqueueMessage,
 } from "../applications/application.repository.js";
 import { addCommand } from "../moderation/moderation.repository.js";
+import { allowAccessRestoration } from "../admin/admin.repository.js";
 import * as repo from "./minecraft-command.repository.js";
 export function minecraftService(
   db: Database,
@@ -135,6 +136,58 @@ export function minecraftService(
         return true;
       });
       if (queued) commandQueued(serverId);
+    },
+    /**
+     * /wlunban у грі. Бан знімається переходом banned → revoked; з restoreWhitelist
+     * доступ одразу стає active і сервер отримує whitelist_add (як «Додати гравця»).
+     * Локальний бан на сервері плагін знімає сам до виклику цього методу.
+     */
+    async unban(event: { username: string; restoreWhitelist: boolean; actor?: string }) {
+      const result = await db.transaction(async (tx) => {
+        const identity = await repo.identityByName(tx, event.username);
+        if (!identity) return { status: "not_registered" as const };
+        await lockUser(tx, identity.userId);
+        const access = await repo.accessByIdentity(tx, identity.id);
+        if (!access || access.status !== "banned")
+          return {
+            status: "not_banned" as const,
+            username: identity.username,
+            access: access?.status ?? null,
+          };
+        await repo.unbanAccess(tx, access.id);
+        if (event.restoreWhitelist) {
+          await allowAccessRestoration(tx);
+          await repo.activateAccess(tx, access.id);
+          await addCommand(
+            tx,
+            access.id,
+            serverId,
+            identity.username,
+            "whitelist_add",
+          );
+        }
+        await audit(tx, {
+          actorType: "minecraft_server",
+          actorId: serverId,
+          eventType: "player_unbanned",
+          entityType: "player_access",
+          entityId: access.id,
+          metadata: {
+            source: "minecraft_command",
+            actor: event.actor ?? null,
+            restoreWhitelist: event.restoreWhitelist,
+            previousReason: access.banReason,
+          },
+        });
+        return {
+          status: "unbanned" as const,
+          username: identity.username,
+          access: event.restoreWhitelist ? ("active" as const) : ("revoked" as const),
+        };
+      });
+      if (result.status === "unbanned" && event.restoreWhitelist)
+        commandQueued(serverId);
+      return result;
     },
     /** /wldel у грі: те саме, що «Видалити» в адмін-панелі сайту. */
     async removeFromWhitelist(event: { username: string; actor?: string }) {

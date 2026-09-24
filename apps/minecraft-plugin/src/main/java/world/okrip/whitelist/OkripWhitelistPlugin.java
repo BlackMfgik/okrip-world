@@ -5,6 +5,7 @@ import world.okrip.whitelist.config.PluginConfig;
 import world.okrip.whitelist.api.OkripApiClient;
 import world.okrip.whitelist.commands.*;
 import world.okrip.whitelist.listeners.PlayerBanListener;
+import world.okrip.whitelist.menu.UnbanController;
 import world.okrip.whitelist.menu.WhitelistMenuController;
 import java.nio.file.Path;
 import java.util.concurrent.*;
@@ -95,6 +96,11 @@ public final class OkripWhitelistPlugin extends JavaPlugin {
                     .filter(name -> name != null && name.toLowerCase(java.util.Locale.ROOT).startsWith(prefix)).sorted().toList();
             };
             getCommand("wldel").setTabCompleter(whitelistNames);
+            UnbanController unban = new UnbanController(this, api, OkripWhitelistPlugin::detail);
+            Bukkit.getPluginManager().registerEvents(unban, this);
+            getCommand("wlunban").setExecutor((sender, command, label, args) -> unban.onCommand(sender, args));
+            getCommand("wlunban").setTabCompleter((sender, command, label, args) -> args.length == 1
+                ? unban.bannedNames(args[0]) : args.length == 2 ? java.util.List.of("wl") : java.util.List.of());
             getCommand("wlban").setTabCompleter(whitelistNames);
             watcher.start();
             worker.scheduleWithFixedDelay(() -> {

@@ -65,6 +65,7 @@ public final class WhitelistMenu implements InventoryHolder {
     }
 
     static String formatDate(WhitelistEntry entry) { return DATE.format(entry.addedAt()); }
+    static String formatDate(java.time.Instant instant) { return DATE.format(instant); }
 
     private void render(int pages) {
         List<WhitelistEntry> current = MenuPages.page(visible, page);
@@ -115,7 +116,7 @@ public final class WhitelistMenu implements InventoryHolder {
         return item;
     }
 
-    private static ItemStack button(Material material, Component name, List<Component> lore) {
+    static ItemStack button(Material material, Component name, List<Component> lore) {
         ItemStack item = new ItemStack(material);
         item.editMeta(meta -> { meta.displayName(name); meta.lore(lore); });
         return item;
@@ -125,7 +126,7 @@ public final class WhitelistMenu implements InventoryHolder {
         return Component.text(value, color).decoration(TextDecoration.ITALIC, false);
     }
 
-    private static Component line(String label, String value) {
+    static Component line(String label, String value) {
         return text(label + ": ", NamedTextColor.GRAY).append(text(value, NamedTextColor.WHITE));
     }
 }

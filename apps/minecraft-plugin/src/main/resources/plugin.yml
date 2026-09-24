@@ -1,5 +1,5 @@
 name: OkripWhitelist
-version: 1.4.0
+version: 1.5.0
 main: world.okrip.whitelist.OkripWhitelistPlugin
 api-version: '1.21.11'
 description: Durable Okrip World whitelist synchronization
@@ -13,6 +13,10 @@ commands:
     description: Remove a nickname from the whitelist and revoke its site access
     permission: okrip.admin
     usage: /wldel <nickname>
+  wlunban:
+    description: Open the ban list menu and unban players (optionally restoring the whitelist)
+    permission: okrip.admin
+    usage: /wlunban [nickname] [wl]
   okripwhitelist:
     description: Validate the OkripWhitelist configuration and delivery journal
     permission: okrip.admin

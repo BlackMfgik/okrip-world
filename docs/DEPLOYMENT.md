@@ -45,13 +45,13 @@ Invoke-RestMethod -Method Post -Uri ('https://api.telegram.org/bot' + $env:TELEG
 ## 4. Kinetic Hosting
 
 1. Ціль цієї збірки — Paper/Purpur 1.21.11, Java 21. Для інших версій API спочатку перебудуйте й перевірте сумісність. Folia не підтримується.
-2. Зберіть `apps/minecraft-plugin` через Gradle wrapper; завантажте `build/libs/OkripWhitelist-1.4.0.jar` у /plugins (старий 1.3.0 JAR видаліть). Спочатку задеплойте сервіс api: меню `/wlmenu` потребує оновленого snapshot.
+2. Зберіть `apps/minecraft-plugin` через Gradle wrapper; завантажте `build/libs/OkripWhitelist-1.5.0.jar` у /plugins (старий JAR видаліть). Спочатку задеплойте сервіс api: `/wlmenu`, `/wldel` і `/wlunban` потребують його нових endpoint.
 3. Запустіть один раз, щоб створити plugins/OkripWhitelist/config.yml. При placeholder token плагін відключиться до налаштування.
 4. Укажіть HTTPS public API URL, server-id, той самий MINECRAFT_SERVER_TOKEN і timeout 8 секунд. Переконайтеся, що public domain/proxy API пропускає WebSocket upgrade, і перезапустіть сервер.
 5. У server.properties встановіть white-list=true. Для offline-mode встановіть і налаштуйте AuthMe/аналог; користувачі мають вводити нік із первісним регістром.
 6. Збережіть plugins/OkripWhitelist/delivery-journal.json у backup, не видаляйте його при оновленні JAR. Запускайте один екземпляр плагіна на serverId.
 
-Стандартні profile-бани синхронізуються через подію kick та перевірку списку кожні 10 секунд. Для явного бану зареєстрованого гравця: `/wlban <nickname> <reason>` (старий аліас `/okripban` теж працює), permission okrip.admin (op за замовчуванням). Команда ставить подію в чергу; дочекайтеся зміни доступу та виконання ban. Бани сторонніх систем потребують адаптера. Щоб прибрати гравця з вайтліста без бану: `/wldel <nickname>`. Це те саме, що «Видалити» в адмін-панелі сайту: доступ скасовується і гравець зникає з whitelist сервера. Гравця, який зараз на сервері, команда не кікає. Unban не робіть повторним OAuth: окремий адміністративний workflow відкладено.
+Стандартні profile-бани синхронізуються через подію kick та перевірку списку кожні 10 секунд. Для явного бану зареєстрованого гравця: `/wlban <nickname> <reason>` (старий аліас `/okripban` теж працює), permission okrip.admin (op за замовчуванням). Команда ставить подію в чергу; дочекайтеся зміни доступу та виконання ban. Бани сторонніх систем потребують адаптера. Щоб прибрати гравця з вайтліста без бану: `/wldel <nickname>`. Це те саме, що «Видалити» в адмін-панелі сайту: доступ скасовується і гравець зникає з whitelist сервера. Гравця, який зараз на сервері, команда не кікає. Розбан: `/wlunban` (меню) або `/wlunban <nickname> [wl]`. Бан знімається на сервері й на сайті (banned → revoked); з `wl` доступ одразу відновлюється (→ active + whitelist_add).
 
 ## 4a. Мапа Dynmap
 

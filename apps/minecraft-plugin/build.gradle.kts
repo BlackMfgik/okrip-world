@@ -1,6 +1,6 @@
 plugins { java }
 group = "world.okrip"
-version = "1.4.0"
+version = "1.5.0"
 repositories { mavenCentral(); maven("https://repo.papermc.io/repository/maven-public/") }
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
@@ -17,4 +17,4 @@ tasks.test {
     doFirst { junitTemp.get().asFile.mkdirs() }
     systemProperty("java.io.tmpdir", junitTemp.get().asFile.absolutePath)
 }
-tasks.jar { archiveFileName.set("OkripWhitelist-1.4.0.jar") }
+tasks.jar { archiveFileName.set("OkripWhitelist-1.5.0.jar") }

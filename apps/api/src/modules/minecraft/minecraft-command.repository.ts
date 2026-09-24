@@ -129,6 +129,17 @@ export const revokeAccess = (db: Executor, accessId: string) =>
     .update(playerAccess)
     .set({ status: "revoked", updatedAt: new Date() })
     .where(eq(playerAccess.id, accessId));
+/** banned → revoked; причину й час бану зберігає аудит. */
+export const unbanAccess = (db: Executor, accessId: string) =>
+  db
+    .update(playerAccess)
+    .set({ status: "revoked", banReason: null, bannedAt: null, updatedAt: new Date() })
+    .where(eq(playerAccess.id, accessId));
+export const activateAccess = (db: Executor, accessId: string) =>
+  db
+    .update(playerAccess)
+    .set({ status: "active", updatedAt: new Date() })
+    .where(eq(playerAccess.id, accessId));
 export async function identityByName(db: Executor, username: string) {
   return (
     await db
