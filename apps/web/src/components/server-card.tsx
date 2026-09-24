@@ -34,9 +34,9 @@ export function UpcomingServerCard({ name }: { name: string }) {
         <IpRow label="IP Адреса" value="Soon…" placeholder />
         <IpRow label="Порт" value="Soon…" placeholder />
       </div>
-      {/* Тимчасово для тестування: мапа і заявки поки ведуть на Vanilla (Dynmap, MINECRAFT_SERVER_ID=vanilla). */}
+      {/* Заявки тимчасово для тестування ведуть на Vanilla (MINECRAFT_SERVER_ID=vanilla). */}
       <div className="server-card-footer">
-        <Link href="/map-vanilla" className="btn btn-map" aria-label={`Мапа сервера ${name}`}>
+        <Link href="/map-modded" className="btn btn-map" aria-label={`Мапа сервера ${name}`}>
           Мапа →
         </Link>
       </div>
