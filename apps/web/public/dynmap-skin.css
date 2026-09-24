@@ -1,0 +1,224 @@
+/*
+ * Скін Dynmap під стиль сайту Okrip World.
+ * Сайт підключає цей файл у сторінку мапи через проксі /dynmap/index.html.
+ * Тему задає клас на <html>: okrip-dark (за замовчуванням) або okrip-light.
+ */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap");
+
+:root {
+  --okrip-glass:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02) 55%),
+    rgba(10, 13, 19, 0.72);
+  --okrip-border: rgba(255, 255, 255, 0.16);
+  --okrip-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --okrip-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+  --okrip-text: #ffffff;
+  --okrip-text-secondary: #a8a8a8;
+  --okrip-hover: rgba(255, 255, 255, 0.1);
+  --okrip-active: rgba(255, 255, 255, 0.16);
+  /* Однакове для обох тем: Dynmap віддає чорні тайли для ненамальованих ділянок. */
+  --okrip-map-bg: #000;
+  --okrip-danger: 239 68 68;
+}
+html.okrip-light {
+  --okrip-glass:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.72) 55%),
+    rgba(246, 248, 251, 0.82);
+  --okrip-border: rgba(255, 255, 255, 0.85);
+  --okrip-highlight: inset 0 1px 0 #ffffff;
+  --okrip-shadow: 0 12px 36px rgba(20, 30, 45, 0.18);
+  --okrip-text: #0a0a0a;
+  --okrip-text-secondary: #4a4a4a;
+  --okrip-hover: rgba(0, 0, 0, 0.05);
+  --okrip-active: rgba(0, 0, 0, 0.08);
+}
+
+html,
+body,
+.dynmap {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+html,
+body,
+#mcmap,
+.dynmap > .map,
+.dynmap .leaflet-container {
+  background: var(--okrip-map-bg) !important;
+}
+
+/* ── Прибрано: компас, годинник і погода, бічна панель, шари, кнопка посилання ── */
+.dynmap .compass,
+.dynmap .largeclock,
+.dynmap .timeofday,
+.dynmap .sidebar,
+.dynmap .hitbar,
+.dynmap .dynmap-link,
+.leaflet-control-layers,
+.leaflet-control-attribution {
+  display: none !important;
+}
+
+/* ── Спільне скло для елементів керування ── */
+.leaflet-control-zoom.leaflet-bar,
+.dynmap .coord-control,
+.okrip-maptypes,
+.alertbox,
+.dynmap .mapMarker .markerName,
+.leaflet-popup-content-wrapper {
+  border: 1px solid var(--okrip-border) !important;
+  background: var(--okrip-glass) !important;
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  box-shadow: var(--okrip-highlight), var(--okrip-shadow) !important;
+  color: var(--okrip-text) !important;
+}
+
+.leaflet-top.leaflet-left {
+  top: 16px;
+  left: 16px;
+}
+.leaflet-top .leaflet-control,
+.leaflet-left .leaflet-control {
+  margin: 0 0 10px;
+}
+
+/* ── Зум: вертикальна pill ── */
+.leaflet-control-zoom.leaflet-bar {
+  overflow: hidden;
+  border-radius: 999px !important;
+}
+.leaflet-control-zoom a,
+.leaflet-control-zoom a:hover {
+  width: 40px !important;
+  height: 40px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--okrip-text) !important;
+  font: 500 20px/40px "Inter", sans-serif !important;
+  transition: background 0.2s;
+}
+.leaflet-control-zoom a:hover {
+  background: var(--okrip-hover) !important;
+}
+.leaflet-control-zoom a + a {
+  border-top: 1px solid var(--okrip-border) !important;
+}
+.leaflet-control-zoom a.leaflet-disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ── Координати під курсором: pill унизу ліворуч ── */
+.dynmap .coord-control {
+  position: fixed !important;
+  left: 16px;
+  bottom: 16px;
+  margin: 0 !important;
+  min-width: 0 !important;
+  padding: 8px 14px !important;
+  border-radius: 999px !important;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.dynmap .coord-control .coord-control-label {
+  display: inline;
+  font-size: 0;
+}
+.dynmap .coord-control .coord-control-label::before {
+  content: "XYZ";
+  margin-right: 8px;
+  color: var(--okrip-text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+.dynmap .coord-control .coord-control-label br,
+.dynmap .coord-control br {
+  display: none;
+}
+.dynmap .coord-control .coord-control-value {
+  font-weight: 600;
+}
+
+/* ── Перемикач типу мапи (додає dynmap-skin.js) ── */
+.okrip-maptypes {
+  position: fixed;
+  z-index: 1000;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+}
+.okrip-maptypes button {
+  min-height: 32px;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--okrip-text-secondary);
+  font: 650 12px "Inter", sans-serif;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.okrip-maptypes button:hover {
+  color: var(--okrip-text);
+}
+.okrip-maptypes button[aria-pressed="true"] {
+  background: var(--okrip-active);
+  color: var(--okrip-text);
+  box-shadow: var(--okrip-highlight);
+}
+.okrip-maptypes button:focus-visible,
+.leaflet-control-zoom a:focus-visible {
+  outline: 2px solid var(--okrip-text);
+  outline-offset: 2px;
+}
+
+/* ── Мітки й підказки ── */
+.dynmap .mapMarker:hover .markerName,
+.dynmap .mapMarker .markerName-show {
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+  font-size: 12px;
+  font-weight: 600;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 16px !important;
+}
+.leaflet-popup-tip {
+  background: rgba(10, 13, 19, 0.72) !important;
+}
+html.okrip-light .leaflet-popup-tip {
+  background: rgba(246, 248, 251, 0.9) !important;
+}
+
+/* ── Повідомлення про помилку оновлення ── */
+.alertbox {
+  top: 16px !important;
+  width: auto !important;
+  max-width: min(420px, calc(100% - 32px));
+  padding: 10px 18px !important;
+  border-color: rgb(var(--okrip-danger) / 0.4) !important;
+  border-radius: 999px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+@media (max-width: 640px) {
+  .okrip-maptypes {
+    top: auto;
+    right: 12px;
+    bottom: 12px;
+  }
+  .dynmap .coord-control {
+    display: none !important;
+  }
+  .leaflet-top.leaflet-left {
+    top: 12px;
+    left: 12px;
+  }
+}

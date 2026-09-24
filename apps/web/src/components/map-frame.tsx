@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useThemeStore } from "@/store/theme-store";
 
 interface MapFrameProps {
   title: string;
@@ -12,6 +13,8 @@ type MapState = "checking" | "loading" | "ready" | "error";
 
 export function MapFrame({ title, base }: MapFrameProps) {
   const [state, setState] = useState<MapState>(base ? "checking" : "error");
+  // Скін мапи (public/dynmap-skin.css) підлаштовується під тему сайту.
+  const theme = useThemeStore((s) => s.theme);
 
   useEffect(() => {
     if (!base) return;
@@ -32,11 +35,19 @@ export function MapFrame({ title, base }: MapFrameProps) {
     };
   }, [base]);
 
+  useEffect(() => {
+    if (state !== "loading") return;
+    // onLoad iframe чекає на всі тайли, що може тривати довго. Мапа з'являється
+    // поступово сама, тож заглушку прибираємо, щойно Dynmap встиг стартувати.
+    const timer = setTimeout(() => setState("ready"), 2500);
+    return () => clearTimeout(timer);
+  }, [state]);
+
   return (
     <div className="maparea">
       {base && state !== "checking" && state !== "error" && (
         <iframe
-          src={base + "index.html"}
+          src={base + "index.html" + (theme === "light" ? "?theme=light" : "")}
           title={title}
           allowFullScreen
           onLoad={() => setState("ready")}
