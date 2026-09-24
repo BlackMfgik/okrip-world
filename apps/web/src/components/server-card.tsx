@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { IpRow } from "@/components/ip-row";
+import { ServerApplicationAction } from "@/features/application/components/ServerApplicationAction";
 import type { ServerConfig } from "@/lib/servers";
 
 export function ServerCard({ server }: { server: ServerConfig }) {
@@ -33,20 +34,13 @@ export function UpcomingServerCard({ name }: { name: string }) {
         <IpRow label="IP Адреса" value="Soon…" placeholder />
         <IpRow label="Порт" value="Soon…" placeholder />
       </div>
-      {/* Сервер ще не запущено: кнопки показують, що буде, але неактивні. */}
+      {/* Тимчасово для тестування: мапа і заявки поки ведуть на Vanilla (Dynmap, MINECRAFT_SERVER_ID=vanilla). */}
       <div className="server-card-footer">
-        <button className="btn btn-map" disabled type="button">
-          Мапа · Soon
-        </button>
+        <Link href="/map-vanilla" className="btn btn-map" aria-label={`Мапа сервера ${name}`}>
+          Мапа →
+        </Link>
       </div>
-      <div className="server-application">
-        <p className="server-application-hint">
-          Заявки відкриються разом із запуском сервера.
-        </p>
-        <button className="btn btn-primary" disabled type="button">
-          Подати заявку · Soon
-        </button>
-      </div>
+      <ServerApplicationAction />
     </div>
   );
 }
