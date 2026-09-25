@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Короб 7.62×54R</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Barlow:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #e4e5dc;
+    --panel: #f1f1ea;
+    --stage: #d7d9cd;
+    --ink: #1f2419;
+    --muted: #5b6250;
+    --line: #c3c6b5;
+    --accent: #7c6446;
+    --accent-ink: #f6f1e7;
+    --olive: #394030;
+    --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+    --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #13150f;
+      --panel: #1b1e16;
+      --stage: #20241a;
+      --ink: #e5e4d7;
+      --muted: #9b9d88;
+      --line: #33382a;
+      --accent: #c19a66;
+      --accent-ink: #1b150d;
+      --olive: #8d9a70;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #13150f;
+    --panel: #1b1e16;
+    --stage: #20241a;
+    --ink: #e5e4d7;
+    --muted: #9b9d88;
+    --line: #33382a;
+    --accent: #c19a66;
+    --accent-ink: #1b150d;
+    --olive: #8d9a70;
+  }
+
+  html, body { height: 100%; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.5 var(--body);
+  }
+  .app {
+    box-sizing: border-box;
+    min-height: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 16px;
+    padding-inline: 16px;
+    padding-block: 16px;
+  }
+  .stage {
+    position: sticky;
+    top: calc(16px + env(safe-area-inset-top, 0px));
+    align-self: start;
+    height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    min-height: 460px;
+    background:
+      radial-gradient(ellipse at 50% 38%, color-mix(in srgb, var(--panel) 70%, transparent), transparent 70%),
+      var(--stage);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .stage canvas { display: block; width: 100%; height: 100%; position: absolute; inset: 0; touch-action: none; }
+  .stage .hint {
+    position: absolute;
+    left: 14px;
+    bottom: 12px;
+    font: 12px/1.3 var(--mono);
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .stage .status {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font: 13px var(--mono);
+    color: var(--muted);
+  }
+  .sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 20px;
+  }
+  .eyebrow {
+    font: 500 12px/1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    margin: 6px 0 0;
+    font: 600 34px/1.05 var(--display);
+    letter-spacing: 0.01em;
+    text-wrap: balance;
+  }
+  .lede { margin: 8px 0 0; color: var(--muted); }
+  .dims {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .dims div { padding: 10px 0; display: flex; flex-direction: column; gap: 2px; }
+  .dims div + div { border-left: 1px solid var(--line); padding-left: 12px; }
+  .dims dt { font: 500 11px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .dims dd { margin: 0; font: 500 22px var(--display); font-variant-numeric: tabular-nums; }
+  .dims dd small { font: 12px var(--mono); color: var(--muted); margin-left: 2px; }
+  .control { display: flex; flex-direction: column; gap: 8px; }
+  .control > span { font: 500 11px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .seg {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .seg button {
+    appearance: none;
+    border: 0;
+    margin: 0;
+    padding: 9px 10px;
+    background: transparent;
+    color: var(--ink);
+    font: 500 14px var(--body);
+    cursor: pointer;
+  }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+  .seg button:hover:not([aria-pressed="true"]) { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .parts { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .parts li { display: grid; grid-template-columns: 14px 1fr; gap: 10px; align-items: baseline; }
+  .swatch { width: 12px; height: 12px; border-radius: 2px; border: 1px solid var(--line); transform: translateY(1px); }
+  .parts b { font-weight: 500; }
+  .parts span.note { display: block; color: var(--muted); font-size: 13px; }
+  .foot { margin-top: auto; font: 12px/1.5 var(--mono); color: var(--muted); }
+  .foot code { color: var(--ink); }
+
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; }
+    .stage { position: relative; top: 0; height: auto; min-height: 0; aspect-ratio: 4 / 5; max-width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .seg button { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="stage" id="stage" aria-label="3D-модель короба">
+    <div class="status" id="status">Генерую текстуру Multicam…</div>
+    <div class="hint">Тягніть — обертати · колесо/щипок — масштаб</div>
+  </section>
+
+  <aside class="sheet">
+    <header>
+      <div class="eyebrow">Кулеметний короб · ПКМ</div>
+      <h1>Короб 7.62×54R у чохлі Multicam</h1>
+      <p class="lede">Пластиковий торець із пружинною кришкою та планкою кріплення, м'який корпус на гвинтах, ручка зі стропи і блискавка по спинці.</p>
+    </header>
+
+    <dl class="dims">
+      <div><dt>Висота</dt><dd>250<small>мм</small></dd></div>
+      <div><dt>Ширина</dt><dd>104<small>мм</small></dd></div>
+      <div><dt>Глибина</dt><dd>151<small>мм</small></dd></div>
+    </dl>
+
+    <div class="control">
+      <span id="pose-label">Положення</span>
+      <div class="seg" role="group" aria-labelledby="pose-label">
+        <button type="button" id="pose-stand" aria-pressed="true">Стоїть</button>
+        <button type="button" id="pose-lie" aria-pressed="false">Лежить</button>
+      </div>
+    </div>
+
+    <div class="control">
+      <span id="lid-label">Кришка <small>(коли стоїть)</small></span>
+      <div class="seg" role="group" aria-labelledby="lid-label">
+        <button type="button" id="lid-closed" aria-pressed="true">Закрита</button>
+        <button type="button" id="lid-open" aria-pressed="false">Відкрита</button>
+      </div>
+    </div>
+
+    <div class="control">
+      <span id="spin-label">Обертання</span>
+      <div class="seg" role="group" aria-labelledby="spin-label">
+        <button type="button" id="spin-on" aria-pressed="true">Авто</button>
+        <button type="button" id="spin-off" aria-pressed="false">Стоп</button>
+        <button type="button" id="view-reset" aria-pressed="false">Скинути</button>
+      </div>
+    </div>
+
+    <ul class="parts">
+      <li><i class="swatch" style="background:#2b3123"></i><div><b>Торець, оливковий пластик</b><span class="note">кришка на двох торсіонних пружинах, маркування «7.62 x 54 мм R»</span></div></li>
+      <li><i class="swatch" style="background:#1d1e1f"></i><div><b>Планка кріплення, чорна сталь</b><span class="note">засувка з зубом, похила напрямна, два L-гаки</span></div></li>
+      <li><i class="swatch" style="background:#8f8a62"></i><div><b>Чохол, кордура Multicam</b><span class="note">12 гвинтів у бортик торця, заокруглена спинка R45</span></div></li>
+      <li><i class="swatch" style="background:#5f4a31"></i><div><b>Окантовка, блискавка, паракорд</b><span class="note">колір coyote, «гараж» для бігунка на нижній стінці</span></div></li>
+    </ul>
+
+    <p class="foot">Файли моделі: <code>models/ammo-box/ammo-box.glb</code> (Blender, Unity, веб) і параметричне джерело <code>model.js</code>.</p>
+  </aside>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+  import * as THREE from 'three';
+  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+  import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+  import { buildAmmoBox } from './model.js';
+
+  const stage = document.getElementById('stage');
+  const status = document.getElementById('status');
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  stage.prepend(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+  const camera = new THREE.PerspectiveCamera(32, 1, 5, 5000);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.minDistance = 250;
+  controls.maxDistance = 1400;
+  controls.autoRotateSpeed = 1.2;
+
+  const sun = new THREE.DirectionalLight(0xfff4e2, 1.6);
+  sun.position.set(260, 520, 380);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -260, right: 260, top: 260, bottom: -260, near: 50, far: 1500 });
+  sun.shadow.bias = -0.0004;
+  scene.add(sun);
+
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.ShadowMaterial({ opacity: 0.22 }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  const holder = new THREE.Group();
+  scene.add(holder);
+
+  function resize() {
+    const { clientWidth: w, clientHeight: h } = stage;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(stage);
+  resize();
+
+  // Даємо сторінці відмалюватись до важкої генерації текстур.
+  await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 30)));
+  const box = buildAmmoBox();
+  holder.add(box.root);
+  status.hidden = true;
+
+  let lidTarget = 0;
+  let lidT = 0;
+
+  function place() {
+    holder.updateMatrixWorld(true);
+    const bb = new THREE.Box3().setFromObject(box.root);
+    holder.position.y -= bb.min.y;
+    holder.position.x -= (bb.min.x + bb.max.x) / 2;
+    holder.position.z -= (bb.min.z + bb.max.z) / 2;
+  }
+
+  function setPose(lying) {
+    holder.position.set(0, 0, 0);
+    box.setLidOpen(0);
+    box.root.rotation.set(lying ? Math.PI / 2 : 0, 0, 0);
+    place();
+    box.setLidOpen(lidT);
+    const bb = new THREE.Box3().setFromObject(box.root);
+    controls.target.set(0, (bb.max.y - bb.min.y) * 0.45, 0);
+  }
+
+  function resetView() {
+    const lying = document.getElementById('pose-lie').getAttribute('aria-pressed') === 'true';
+    camera.position.set(lying ? 330 : 360, lying ? 300 : 230, lying ? 420 : 440);
+    controls.update();
+  }
+
+  setPose(false);
+  resetView();
+
+  function bindSeg(ids, onPick) {
+    const btns = ids.map((id) => document.getElementById(id));
+    btns.forEach((b, i) => b.addEventListener('click', () => {
+      btns.forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+      onPick(i);
+    }));
+  }
+  const lidButtons = ['lid-closed', 'lid-open'].map((id) => document.getElementById(id));
+  bindSeg(['pose-stand', 'pose-lie'], (i) => {
+    // Лежачи на торці кришку не відкрити — вона впирається в поверхню.
+    if (i === 1) {
+      lidTarget = lidT = 0;
+      lidButtons[0].click();
+    }
+    lidButtons.forEach((b) => { b.disabled = i === 1; });
+    setPose(i === 1);
+    resetView();
+  });
+  bindSeg(['lid-closed', 'lid-open'], (i) => { lidTarget = i; });
+  bindSeg(['spin-on', 'spin-off'], (i) => { controls.autoRotate = i === 0; });
+  document.getElementById('view-reset').addEventListener('click', resetView);
+  controls.autoRotate = !reduceMotion;
+  if (reduceMotion) {
+    document.getElementById('spin-on').setAttribute('aria-pressed', 'false');
+    document.getElementById('spin-off').setAttribute('aria-pressed', 'true');
+  }
+  controls.addEventListener('start', () => {
+    controls.autoRotate = false;
+    document.getElementById('spin-on').setAttribute('aria-pressed', 'false');
+    document.getElementById('spin-off').setAttribute('aria-pressed', 'true');
+  });
+
+  const clock = new THREE.Clock();
+  renderer.setAnimationLoop(() => {
+    const dt = Math.min(clock.getDelta(), 0.05);
+    if (lidT !== lidTarget) {
+      lidT = reduceMotion ? lidTarget : THREE.MathUtils.clamp(lidT + Math.sign(lidTarget - lidT) * dt * 1.8, 0, 1);
+      box.setLidOpen(THREE.MathUtils.smoothstep(lidT, 0, 1));
+    }
+    controls.update();
+    renderer.render(scene, camera);
+  });
+
+  window.ammoBox = box;
+  window.ammoView = { camera, controls };
+</script>
+</body>
+</html>
