@@ -55,7 +55,7 @@ Invoke-RestMethod -Method Post -Uri ('https://api.telegram.org/bot' + $env:TELEG
 
 ## 4a. Мапа Dynmap
 
-Сайт показує Dynmap на `/map-modded` (кнопка «Мапа →» на картці Modded; `/map-vanilla` використовує той самий Dynmap) через проксі `/dynmap/*` (Railway → Kinetic). Напряму вбудувати мапу не можна: сайт працює по HTTPS, а вебсервер Dynmap — по HTTP, браузер блокує такий iframe. Проксі також вмикає `sandbox` для контенту мапи, щоб скрипти з Minecraft-сервера не мали доступу до сесій сайту.
+Кожен сервер має свій Dynmap: Modded — `/map-modded` через проксі `/dynmap/*` і змінну `DYNMAP_ORIGIN`; Vanilla — `/map-vanilla` через `/dynmap-vanilla/*` і `DYNMAP_VANILLA_ORIGIN`. Налаштування обох однакові (кроки нижче), різняться лише порт і змінна. Трафік іде через проксі `/dynmap/*` (Railway → Kinetic). Напряму вбудувати мапу не можна: сайт працює по HTTPS, а вебсервер Dynmap — по HTTP, браузер блокує такий iframe. Проксі також вмикає `sandbox` для контенту мапи, щоб скрипти з Minecraft-сервера не мали доступу до сесій сайту.
 
 **Kinetic**
 

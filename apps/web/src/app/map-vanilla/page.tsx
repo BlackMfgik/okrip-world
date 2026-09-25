@@ -3,7 +3,7 @@ import { Nav } from "@/components/nav";
 import { MapFrame } from "@/components/map-frame";
 import { pageMetadata } from "@/lib/site";
 
-// DYNMAP_ORIGIN читається під час запиту, щоб змінна з Railway діяла без перезбирання.
+// DYNMAP_VANILLA_ORIGIN читається під час запиту, щоб змінна з Railway діяла без перезбирання.
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -26,7 +26,7 @@ export default function MapVanillaPage() {
       <main className="body">
         <h1 className="sr-only">Мапа ванільного сервера Okrip World</h1>
         <MapFrame
-          base={process.env.DYNMAP_ORIGIN ? "/dynmap/" : undefined}
+          base={process.env.DYNMAP_VANILLA_ORIGIN ? "/dynmap-vanilla/" : undefined}
           title="Dynmap — ванільний сервер Okrip World"
         />
       </main>
