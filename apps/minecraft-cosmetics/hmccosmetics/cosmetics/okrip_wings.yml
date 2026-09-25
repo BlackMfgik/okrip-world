@@ -1,0 +1,20 @@
+# HMCCosmetics: plugins/HMCCosmetics/cosmetics/okrip_wings.yml
+# Потрібен ресурс-пак з ../resourcepack (namespace okrip). model-id задає компонент item_model (1.21.4+).
+angel_wings:
+  slot: BACKPACK
+  permission: "hmccosmetics.cosmetic.angel_wings"
+  item:
+    material: PAPER
+    model-id: "okrip:angel_wings"
+    name: "<white>Крила ангела"
+    lore:
+      - "<gray>Розкриті білі крила"
+angel_wings_folded:
+  slot: BACKPACK
+  permission: "hmccosmetics.cosmetic.angel_wings_folded"
+  item:
+    material: PAPER
+    model-id: "okrip:angel_wings_folded"
+    name: "<white>Складені крила ангела"
+    lore:
+      - "<gray>Білі крила, складені за спиною"
