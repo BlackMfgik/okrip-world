@@ -1853,8 +1853,38 @@ body {
 }
 .admin-account-row > .admin-owner-badge,
 .admin-account-row > .admin-remove-player,
-.admin-player-row > .admin-remove-player {
+.admin-player-row > .admin-player-actions {
+  display: flex;
+  gap: 8px;
   justify-self: end;
+}
+.admin-rename-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.admin-rename-form input {
+  width: 150px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--field-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+.admin-rename-form input:focus {
+  outline: none;
+  border-color: var(--border-strong);
+  background: var(--field-bg-focus);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+.admin-rename-form .admin-button {
+  min-height: 36px;
+  padding: 6px 12px;
 }
 .admin-player-row {
   display: grid;
@@ -1992,9 +2022,10 @@ body {
   .admin-player-id {
     padding-left: 49px;
   }
-  .admin-player-row > .admin-remove-player {
+  .admin-player-row > .admin-player-actions {
     grid-column: 2;
     grid-row: 1;
+    flex-direction: column;
   }
   .admin-account-row {
     grid-template-columns: minmax(0, 1fr) auto;

@@ -129,6 +129,13 @@ export const adminWhitelistRemoveSchema = z
   .object({ accessId: z.string().uuid() })
   .strict();
 
+export const adminWhitelistRenameSchema = z
+  .object({
+    accessId: z.string().uuid(),
+    minecraftUsername: minecraftUsernameSchema,
+  })
+  .strict();
+
 export const adminWhitelistMutationResultSchema = z.object({
   accessId: z.string().uuid(),
   status: accessStatusSchema,
@@ -145,3 +152,4 @@ export type AdminAccountMutation = z.infer<typeof adminAccountMutationSchema>;
 export type AdminWhitelist = z.infer<typeof adminWhitelistSchema>;
 export type AdminWhitelistAdd = z.infer<typeof adminWhitelistAddSchema>;
 export type AdminWhitelistRemove = z.infer<typeof adminWhitelistRemoveSchema>;
+export type AdminWhitelistRename = z.infer<typeof adminWhitelistRenameSchema>;

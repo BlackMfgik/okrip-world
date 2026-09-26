@@ -208,6 +208,27 @@ export async function setAccessStatus(
   )[0]!;
 }
 
+export async function renameIdentity(
+  db: Executor,
+  identityId: string,
+  username: string,
+) {
+  await db.execute(
+    sql`select set_config('okrip.allow_nickname_change', 'on', true)`,
+  );
+  return (
+    await db
+      .update(identities)
+      .set({
+        username,
+        normalizedUsername: username.toLowerCase(),
+        updatedAt: new Date(),
+      })
+      .where(eq(identities.id, identityId))
+      .returning()
+  )[0]!;
+}
+
 export const allowAccessRestoration = (db: Executor) =>
   db.execute(
     sql`select set_config('okrip.allow_access_restoration', 'on', true)`,

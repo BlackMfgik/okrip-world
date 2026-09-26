@@ -6,6 +6,7 @@ import {
   adminDecisionSchema,
   adminWhitelistAddSchema,
   adminWhitelistRemoveSchema,
+  adminWhitelistRenameSchema,
 } from "@okrip/contracts";
 import {
   requireAdmin,
@@ -75,6 +76,18 @@ export function adminRoutes(
       const admin = await requireAdmin(auth, req);
       const input = adminWhitelistRemoveSchema.parse(req.body);
       return service.removeFromWhitelist(input.accessId, admin);
+    },
+  );
+
+  app.post(
+    "/v1/admin/whitelist/rename",
+    { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } },
+    async (req) => {
+      const admin = await requireAdmin(auth, req);
+      return service.renamePlayer(
+        adminWhitelistRenameSchema.parse(req.body),
+        admin,
+      );
     },
   );
 

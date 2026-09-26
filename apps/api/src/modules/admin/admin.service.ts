@@ -5,6 +5,7 @@ import {
   adminApplicationListSchema,
   adminWhitelistSchema,
   type AdminWhitelistAdd,
+  type AdminWhitelistRename,
   type AdminApplicationFilter,
   type AdminAccountMutation,
   type AdminApplicationBlock,
@@ -300,6 +301,93 @@ export function adminService(
       return {
         accessId: result.id,
         status: result.status,
+        synchronization: "waiting" as const,
+      };
+    },
+    async renamePlayer(input: AdminWhitelistRename, admin: WebAdmin) {
+      let result;
+      try {
+        result = await db.transaction(async (tx) => {
+          const found = await repo.accessById(tx, input.accessId);
+          if (!found)
+            throw new AppError(404, "not_found", "Гравця не знайдено.");
+          await lockUser(tx, found.user.id);
+          const fresh = await repo.accessById(tx, input.accessId);
+          if (!fresh)
+            throw new AppError(404, "not_found", "Гравця не знайдено.");
+          if (fresh.access.status !== "active")
+            throw new AppError(
+              409,
+              "access_not_active",
+              "Гравець уже не має активного доступу.",
+            );
+          const oldUsername = fresh.identity.username;
+          if (oldUsername === input.minecraftUsername)
+            throw new AppError(
+              409,
+              "nickname_unchanged",
+              "Гравець уже має цей нік.",
+            );
+          const taken = await repo.identityByName(tx, input.minecraftUsername);
+          if (taken && taken.id !== fresh.identity.id)
+            throw new AppError(
+              409,
+              "minecraft_identity_exists",
+              "Цей Minecraft-нік уже прив’язаний до іншого Discord.",
+            );
+          await repo.renameIdentity(
+            tx,
+            fresh.identity.id,
+            input.minecraftUsername,
+          );
+          // Зміна лише регістру не потребує оновлення вайтліста на сервері.
+          const nameChanged =
+            oldUsername.toLowerCase() !== input.minecraftUsername.toLowerCase();
+          if (nameChanged) {
+            await addCommand(
+              tx,
+              fresh.access.id,
+              serverId,
+              oldUsername,
+              "whitelist_remove",
+            );
+            await addCommand(
+              tx,
+              fresh.access.id,
+              serverId,
+              input.minecraftUsername,
+              "whitelist_add",
+            );
+          }
+          await audit(tx, {
+            actorType: "user",
+            actorId: admin.id,
+            eventType: "whitelist_player_renamed",
+            entityType: "player_access",
+            entityId: fresh.access.id,
+            metadata: {
+              source: "web_admin",
+              discordId: admin.discordId,
+              oldUsername,
+              newUsername: input.minecraftUsername,
+            },
+          });
+          return { access: fresh.access, nameChanged };
+        });
+      } catch (error) {
+        const cause = error as { code?: string; cause?: { code?: string } };
+        if (cause.code === "23505" || cause.cause?.code === "23505")
+          throw new AppError(
+            409,
+            "minecraft_identity_exists",
+            "Цей Minecraft-нік уже прив’язаний до іншого Discord.",
+          );
+        throw error;
+      }
+      if (result.nameChanged) commandQueued(serverId);
+      return {
+        accessId: result.access.id,
+        status: result.access.status,
         synchronization: "waiting" as const,
       };
     },

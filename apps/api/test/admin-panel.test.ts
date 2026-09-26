@@ -604,3 +604,65 @@ it("lets a player re-apply after access was revoked and restores the same access
     (await ctx.db.select().from(commands)).map((command) => command.type),
   ).toEqual(["whitelist_add", "whitelist_remove", "whitelist_add"]);
 });
+
+it("lets an admin rename a whitelisted player and re-syncs the server whitelist", async () => {
+  const applicant = await login(ctx);
+  const submitted = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/applications",
+    cookies: { okrip_session: applicant.cookie },
+    headers: browserHeaders,
+    payload: { minecraftUsername: "Old_Name" },
+  });
+  expect(submitted.statusCode, submitted.body).toBe(201);
+
+  ctx.discord.identity.mockResolvedValue({
+    id: "876509255308541977",
+    username: "WebAdmin",
+    global_name: null,
+    avatar: null,
+  });
+  const admin = await login(ctx);
+  const adminCookies = { okrip_session: admin.cookie };
+  await ctx.app.inject({
+    method: "POST",
+    url: "/v1/admin/applications/decision",
+    cookies: adminCookies,
+    headers: browserHeaders,
+    payload: { publicId: submitted.json().application.publicId, action: "approve" },
+  });
+  const [access] = await ctx.db.select().from(playerAccess);
+  const rename = (minecraftUsername: string) =>
+    ctx.app.inject({
+      method: "POST",
+      url: "/v1/admin/whitelist/rename",
+      cookies: adminCookies,
+      headers: browserHeaders,
+      payload: { accessId: access!.id, minecraftUsername },
+    });
+
+  expect((await rename("Old_Name")).statusCode).toBe(409);
+  expect((await rename("bad name")).statusCode).toBe(400);
+
+  const renamed = await rename("New_Name");
+  expect(renamed.statusCode, renamed.body).toBe(200);
+  const whitelist = await ctx.app.inject({
+    url: "/v1/admin/whitelist",
+    cookies: adminCookies,
+  });
+  expect(whitelist.json().players[0].minecraftUsername).toBe("New_Name");
+  expect(
+    (await ctx.db.select().from(commands)).map((command) => [
+      command.type,
+      (command.payload as { username: string }).username,
+    ]),
+  ).toEqual([
+    ["whitelist_add", "Old_Name"],
+    ["whitelist_remove", "Old_Name"],
+    ["whitelist_add", "New_Name"],
+  ]);
+
+  // Лише зміна регістру не шле команд на сервер.
+  expect((await rename("new_name")).statusCode).toBe(200);
+  expect(await ctx.db.select().from(commands)).toHaveLength(3);
+});

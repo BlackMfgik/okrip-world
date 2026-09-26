@@ -7,6 +7,7 @@ import {
   adminWhitelistSchema,
   type AdminWhitelistAdd,
   type AdminWhitelistRemove,
+  type AdminWhitelistRename,
 } from "@okrip/contracts";
 import { apiRequest } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
@@ -27,6 +28,7 @@ export function WhitelistPanel() {
     accessId: string;
     minecraftUsername: string;
   } | null>(null);
+  const [renaming, setRenaming] = useState<AdminWhitelistRename | null>(null);
   const [form, setForm] = useState<AdminWhitelistAdd>({
     minecraftUsername: "",
     discordUsername: "",
@@ -61,7 +63,20 @@ export function WhitelistPanel() {
       ),
     onSuccess: refresh,
   });
-  const mutationError = addPlayer.error ?? removePlayer.error;
+  const renamePlayer = useMutation({
+    mutationFn: (body: AdminWhitelistRename) =>
+      apiRequest(
+        "/admin/whitelist/rename",
+        adminWhitelistMutationResultSchema,
+        body,
+      ),
+    onSuccess: async () => {
+      setRenaming(null);
+      await refresh();
+    },
+  });
+  const mutationError =
+    addPlayer.error ?? removePlayer.error ?? renamePlayer.error;
 
   return (
     <section className="admin-whitelist-section">
@@ -183,10 +198,56 @@ export function WhitelistPanel() {
                 name={player.minecraftUsername}
                 url={player.discordAvatarUrl}
               />
-              <div>
-                <strong>{player.minecraftUsername}</strong>
-                <small>Додано {formatDate(player.addedAt)}</small>
-              </div>
+              {renaming?.accessId === player.accessId ? (
+                <form
+                  className="admin-rename-form"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    renamePlayer.mutate(renaming);
+                  }}
+                >
+                  <input
+                    aria-label={"Новий нік для " + player.minecraftUsername}
+                    autoComplete="off"
+                    autoFocus
+                    disabled={renamePlayer.isPending}
+                    maxLength={16}
+                    minLength={3}
+                    onChange={(event) =>
+                      setRenaming({
+                        accessId: player.accessId,
+                        minecraftUsername: event.target.value,
+                      })
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") setRenaming(null);
+                    }}
+                    pattern="[A-Za-z0-9_]{3,16}"
+                    required
+                    value={renaming.minecraftUsername}
+                  />
+                  <button
+                    className="admin-button admin-button-success"
+                    disabled={renamePlayer.isPending}
+                    type="submit"
+                  >
+                    {renamePlayer.isPending ? "…" : "Зберегти"}
+                  </button>
+                  <button
+                    className="admin-button admin-button-ghost"
+                    disabled={renamePlayer.isPending}
+                    onClick={() => setRenaming(null)}
+                    type="button"
+                  >
+                    Скасувати
+                  </button>
+                </form>
+              ) : (
+                <div>
+                  <strong>{player.minecraftUsername}</strong>
+                  <small>Додано {formatDate(player.addedAt)}</small>
+                </div>
+              )}
             </div>
             <div className="admin-player-discord">
               <span>Discord</span>
@@ -201,19 +262,35 @@ export function WhitelistPanel() {
               <span>Discord ID</span>
               <code>{player.discordId}</code>
             </div>
-            <button
-              className="admin-remove-player"
-              disabled={removePlayer.isPending}
-              onClick={() =>
-                setRemoving({
-                  accessId: player.accessId,
-                  minecraftUsername: player.minecraftUsername,
-                })
-              }
-              type="button"
-            >
-              Видалити
-            </button>
+            <div className="admin-player-actions">
+              <button
+                className="admin-button admin-button-neutral"
+                disabled={renamePlayer.isPending}
+                onClick={() => {
+                  renamePlayer.reset();
+                  setRenaming({
+                    accessId: player.accessId,
+                    minecraftUsername: player.minecraftUsername,
+                  });
+                }}
+                type="button"
+              >
+                Змінити нік
+              </button>
+              <button
+                className="admin-remove-player"
+                disabled={removePlayer.isPending}
+                onClick={() =>
+                  setRemoving({
+                    accessId: player.accessId,
+                    minecraftUsername: player.minecraftUsername,
+                  })
+                }
+                type="button"
+              >
+                Видалити
+              </button>
+            </div>
           </article>
         ))}
       </div>

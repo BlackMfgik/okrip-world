@@ -113,6 +113,13 @@
       "when": 1790193000000,
       "tag": "0015_reapply_after_revocation",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790194000000,
+      "tag": "0016_admin_nickname_change",
+      "breakpoints": true
     }
   ]
 }
