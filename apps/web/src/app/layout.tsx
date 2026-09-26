@@ -4,6 +4,7 @@ import { Toast } from "@/components/toast";
 import {
   SITE_DESCRIPTION,
   SITE_NAME,
+  SITE_OG_IMAGE,
   SITE_SOCIALS,
   SITE_URL,
 } from "@/lib/site";
@@ -49,11 +50,13 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: "Okrip World — Українська Minecraft-спільнота",
     description: SITE_DESCRIPTION,
+    images: [SITE_OG_IMAGE],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Okrip World — Українська Minecraft-спільнота",
     description: SITE_DESCRIPTION,
+    images: [SITE_OG_IMAGE],
   },
 };
 

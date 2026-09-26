@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   ...pageMetadata(
-    "Мапа сервера Modded | Okrip World",
-    "Жива мапа сервера Modded спільноти Okrip World.",
+    "Мапа сервера SMP | Okrip World",
+    "Жива мапа сервера SMP спільноти Okrip World.",
     "/map-modded",
   ),
   robots: {
@@ -24,10 +24,10 @@ export default function MapModdedPage() {
       <Nav />
 
       <main className="body">
-        <h1 className="sr-only">Мапа сервера Modded Okrip World</h1>
+        <h1 className="sr-only">Мапа сервера SMP Okrip World</h1>
         <MapFrame
           base={process.env.DYNMAP_ORIGIN ? "/dynmap/" : undefined}
-          title="Dynmap — сервер Modded Okrip World"
+          title="Dynmap — сервер SMP Okrip World"
         />
       </main>
     </div>
