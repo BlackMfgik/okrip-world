@@ -23,6 +23,11 @@ export const envSchema = z
     DISCORD_REDIRECT_URI: z.string().url(),
     DISCORD_BOT_TOKEN: z.string().min(1),
     DISCORD_GUILD_ID: z.string().regex(/^\d+$/),
+    // Public Key застосунку (Developer Portal → General Information). Порожньо — кнопки ролей вимкнені.
+    DISCORD_PUBLIC_KEY: z
+      .string()
+      .regex(/^([0-9a-fA-F]{64})?$/)
+      .default(""),
     TELEGRAM_BOT_TOKEN: z.string().min(1),
     TELEGRAM_WEBHOOK_SECRET: secret.regex(/^[A-Za-z0-9_-]+$/),
     TELEGRAM_ADMIN_CHAT_ID: z.string().regex(/^$|^-?\d+$/).default(""),

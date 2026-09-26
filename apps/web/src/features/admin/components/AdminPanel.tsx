@@ -19,6 +19,7 @@ import { DiscordAvatar } from "./DiscordAvatar";
 import { AdminAccountsPanel } from "./AdminAccountsPanel";
 import { AdminConfirmDialog } from "./AdminConfirmDialog";
 import { WhitelistPanel } from "./WhitelistPanel";
+import { DiscordRoleMessagePanel } from "./DiscordRoleMessagePanel";
 
 const filters: Array<{ value: AdminApplicationFilter; label: string }> = [
   { value: "all", label: "Усі" },
@@ -59,7 +60,7 @@ export function AdminPanel() {
     minecraftUsername: string;
   } | null>(null);
   const [section, setSection] = useState<
-    "applications" | "whitelist" | "accounts"
+    "applications" | "whitelist" | "accounts" | "discord"
   >("applications");
 
   const applications = useQuery({
@@ -157,6 +158,15 @@ export function AdminPanel() {
               Адміни
             </button>
           )}
+          {session.data.user.canManageAdmins && (
+            <button
+              className={section === "discord" ? "is-active" : undefined}
+              onClick={() => setSection("discord")}
+              type="button"
+            >
+              Discord
+            </button>
+          )}
         </nav>
         <div className="admin-identity">
           <span>Адміністратор</span>
@@ -170,6 +180,8 @@ export function AdminPanel() {
         <WhitelistPanel />
       ) : section === "accounts" && session.data.user.canManageAdmins ? (
         <AdminAccountsPanel />
+      ) : section === "discord" && session.data.user.canManageAdmins ? (
+        <DiscordRoleMessagePanel />
       ) : (
         <>
           <nav className="admin-filters" aria-label="Фільтр заявок">

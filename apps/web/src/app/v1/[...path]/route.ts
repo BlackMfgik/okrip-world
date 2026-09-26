@@ -19,6 +19,7 @@ const allowed = new Set([
   "admin/whitelist/add",
   "admin/whitelist/remove",
   "admin/whitelist/rename",
+  "admin/discord/role-message",
 ]);
 async function proxy(
   request: NextRequest,

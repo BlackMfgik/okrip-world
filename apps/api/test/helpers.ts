@@ -36,13 +36,27 @@ export async function setup(overrides: Partial<typeof env> = {}) {
     membership: vi.fn(async () => {}),
   };
   const telegram = { call: vi.fn(async () => ({ message_id: 123 })) };
-  const { app, worker } = await buildApp(activeEnv, db, { discord, telegram });
+  const discordBot = {
+    guildRoles: vi.fn(async () => [
+      { id: "456", name: "@everyone", permissions: "0", managed: false },
+      { id: "20000000000000001", name: "Гравець", permissions: "0", managed: false },
+      { id: "20000000000000002", name: "Модератор", permissions: "8", managed: false },
+    ]),
+    postMessage: vi.fn(async () => ({ status: 200, id: "30000000000000001" })),
+    setMemberRole: vi.fn(async () => 204),
+  };
+  const { app, worker } = await buildApp(activeEnv, db, {
+    discord,
+    telegram,
+    discordBot,
+  });
   return {
     db,
     app,
     worker,
     discord,
     telegram,
+    discordBot,
     close: async () => {
       await app.close();
       await database.close();

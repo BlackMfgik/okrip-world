@@ -1858,6 +1858,62 @@ body {
   gap: 8px;
   justify-self: end;
 }
+.admin-discord-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--inset-bg);
+}
+.admin-discord-form label > span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.admin-discord-form input,
+.admin-discord-form textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--field-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+.admin-discord-form input:focus,
+.admin-discord-form textarea:focus {
+  outline: none;
+  border-color: var(--border-strong);
+  background: var(--field-bg-focus);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+.admin-discord-form-wide {
+  grid-column: 1 / -1;
+}
+.admin-discord-form .admin-button {
+  align-self: end;
+  min-height: 44px;
+}
+.admin-discord-hint {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+@media (max-width: 640px) {
+  .admin-discord-form {
+    grid-template-columns: 1fr;
+  }
+}
 .admin-rename-form {
   display: flex;
   flex: 1;

@@ -29,10 +29,20 @@ import { minecraftRoutes } from "./modules/minecraft/minecraft.routes.js";
 import { MinecraftCommandSignals } from "./modules/minecraft/minecraft-command.signal.js";
 import { adminService } from "./modules/admin/admin.service.js";
 import { adminRoutes } from "./modules/admin/admin.routes.js";
+import {
+  discordBot,
+  type DiscordBot,
+} from "./modules/discord/discord-bot.service.js";
+import { discordRolesService } from "./modules/discord/discord-roles.service.js";
+import { discordRoutes } from "./modules/discord/discord.routes.js";
 export async function buildApp(
   env: Env,
   db: Database,
-  providers: { discord?: DiscordProvider; telegram?: TelegramProvider } = {},
+  providers: {
+    discord?: DiscordProvider;
+    telegram?: TelegramProvider;
+    discordBot?: DiscordBot;
+  } = {},
 ) {
   const app = Fastify({
     bodyLimit: 16384,
@@ -67,7 +77,9 @@ export async function buildApp(
         req.routeOptions.url === "/v1/auth/logout" ||
         req.routeOptions.url === "/v1/admin/applications/decision" ||
         req.routeOptions.url === "/v1/admin/whitelist/add" ||
-        req.routeOptions.url === "/v1/admin/whitelist/remove") &&
+        req.routeOptions.url === "/v1/admin/whitelist/remove" ||
+        req.routeOptions.url === "/v1/admin/whitelist/rename" ||
+        req.routeOptions.url === "/v1/admin/discord/role-message") &&
       req.headers.origin !== env.WEB_ORIGIN
     )
       throw new AppError(403, "invalid_origin", "Запит заблоковано.");
@@ -128,6 +140,11 @@ export async function buildApp(
     adminService(db, moderation, env.MINECRAFT_SERVER_ID, (serverId) =>
       commandSignals.notify(serverId),
     ),
+  );
+  discordRoutes(
+    app,
+    auth,
+    discordRolesService(db, env, providers.discordBot ?? discordBot(env)),
   );
   minecraftRoutes(
     app,
