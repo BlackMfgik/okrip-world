@@ -47,15 +47,12 @@ export const metadata: Metadata = {
     type: "website",
     locale: "uk_UA",
     url: "/",
-    siteName: SITE_NAME,
     title: "Okrip World — Українська Minecraft-спільнота",
-    description: SITE_DESCRIPTION,
     images: [SITE_OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: "Okrip World — Українська Minecraft-спільнота",
-    description: SITE_DESCRIPTION,
     images: [SITE_OG_IMAGE],
   },
 };

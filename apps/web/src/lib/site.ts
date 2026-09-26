@@ -33,16 +33,13 @@ export function pageMetadata(
     openGraph: {
       type: "website",
       locale: "uk_UA",
-      siteName: SITE_NAME,
       url: path,
       title,
-      description,
       images: [SITE_OG_IMAGE],
     },
     twitter: {
       card: "summary_large_image",
       title,
-      description,
       images: [SITE_OG_IMAGE],
     },
   };
