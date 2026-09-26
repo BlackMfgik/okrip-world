@@ -15,6 +15,7 @@ import {
   addCommand,
   decide,
   grant,
+  reactivate,
 } from "../moderation/moderation.repository.js";
 import * as repo from "./application.repository.js";
 
@@ -57,7 +58,9 @@ export function applicationService(
             await repo.clearApplicationBlock(tx, user.id);
           }
           const existingAccess = await repo.accessFor(tx, user.id);
-          if (!repeatSubmissionEnabled && existingAccess)
+          // Після відкликання доступу гравець може подати заявку повторно.
+          const revoked = existingAccess?.status === "revoked";
+          if (!repeatSubmissionEnabled && existingAccess && !revoked)
             throw new AppError(
               409,
               "access_exists",
@@ -71,7 +74,7 @@ export function applicationService(
             const current = await repo.latest(tx, user.id);
             if (
               current?.application.status === "pending" ||
-              current?.application.status === "approved"
+              (current?.application.status === "approved" && !revoked)
             )
               throw new AppError(
                 409,
@@ -140,8 +143,11 @@ export function applicationService(
               throw new Error(
                 "Automatic approval lost its pending application",
               );
-            const access =
-              existingAccess ?? (await grant(tx, user.id, identity.id));
+            const access = !existingAccess
+              ? await grant(tx, user.id, identity.id)
+              : revoked
+                ? await reactivate(tx, existingAccess.id)
+                : existingAccess;
             await addCommand(
               tx,
               access.id,

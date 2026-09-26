@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { Executor } from "../../db/client.js";
 import {
   applications,
@@ -43,6 +43,19 @@ export async function grant(db: Executor, userId: string, identityId: string) {
     await db
       .insert(playerAccess)
       .values({ userId, minecraftIdentityId: identityId, status: "active" })
+      .returning()
+  )[0]!;
+}
+/** revoked → active після схваленої повторної заявки; тригер guard_access вимагає явного дозволу. */
+export async function reactivate(db: Executor, accessId: string) {
+  await db.execute(
+    sql`select set_config('okrip.allow_access_restoration', 'on', true)`,
+  );
+  return (
+    await db
+      .update(playerAccess)
+      .set({ status: "active", updatedAt: new Date() })
+      .where(eq(playerAccess.id, accessId))
       .returning()
   )[0]!;
 }

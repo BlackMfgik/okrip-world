@@ -4,6 +4,7 @@ import { useCurrentApplication } from "../hooks/useCurrentApplication";
 import { ApplicationForm } from "./ApplicationForm";
 import { ApplicationCooldown } from "./ApplicationCooldown";
 import { ApplicationStatus } from "./ApplicationStatus";
+import { effectiveAccess } from "../effective-access";
 export function ApplicationPanel() {
   const session = useCurrentSession();
   const application = useCurrentApplication(!!session.data?.user);
@@ -18,6 +19,7 @@ export function ApplicationPanel() {
     );
   if (!session.data?.user) return null;
   const data = application.data;
+  const access = effectiveAccess(data);
   return (
     <>
       <p>
@@ -44,7 +46,8 @@ export function ApplicationPanel() {
           )}
           {!data.nextSubmissionAt &&
             (data.repeatSubmissionEnabled ||
-              (!data.access &&
+              access === "revoked" ||
+              (!access &&
                 (!data.application ||
                   ["rejected", "cancelled"].includes(
                     data.application.status,

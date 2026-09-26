@@ -4,13 +4,15 @@ import { useCurrentSession } from "@/features/auth/hooks/useCurrentSession";
 import { DiscordLoginButton } from "@/features/auth/components/DiscordLoginButton";
 import { useCurrentApplication } from "../hooks/useCurrentApplication";
 import { ApplicationPanel } from "./ApplicationPanel";
+import { effectiveAccess } from "../effective-access";
 
 function applicationActionLabel(
   data: ReturnType<typeof useCurrentApplication>["data"],
 ) {
-  if (data?.access === "banned") return "🚫 Доступ заблоковано";
-  if (data?.access === "revoked") return "⚠️ Доступ відкликано";
-  if (data?.access === "active") return "✅ Заявку схвалено";
+  const access = effectiveAccess(data);
+  if (access === "banned") return "🚫 Доступ заблоковано";
+  if (access === "revoked") return "⚠️ Доступ відкликано";
+  if (access === "active") return "✅ Заявку схвалено";
   if (data?.application?.status === "pending")
     return "⏳ Заявка на розгляді";
   if (data?.application?.status === "rejected")

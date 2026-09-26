@@ -63,7 +63,8 @@ export function moderationService(
       if (fresh.application.status !== "pending")
         return fresh.application.status;
       const existingAccess = await accessFor(tx, fresh.application.userId);
-      if (existingAccess && !env.APPLICATION_REPEAT_DEBUG)
+      const revoked = existingAccess?.status === "revoked";
+      if (existingAccess && !revoked && !env.APPLICATION_REPEAT_DEBUG)
         throw new AppError(
           409,
           "access_exists",
@@ -82,11 +83,13 @@ export function moderationService(
         return (await repo.findApplication(tx, publicId))!.application.status;
       if (
         status === "approved" &&
-        (!existingAccess || env.APPLICATION_REPEAT_DEBUG)
+        (!existingAccess || revoked || env.APPLICATION_REPEAT_DEBUG)
       ) {
-        const access =
-          existingAccess ??
-          (await repo.grant(tx, fresh.application.userId, fresh.identity.id));
+        const access = !existingAccess
+          ? await repo.grant(tx, fresh.application.userId, fresh.identity.id)
+          : revoked
+            ? await repo.reactivate(tx, existingAccess.id)
+            : existingAccess;
         await repo.addCommand(
           tx,
           access.id,

@@ -532,3 +532,75 @@ it("adds, lists and removes whitelist players through the plugin command queue",
   expect(restored.json().status).toBe("active");
   expect(await ctx.db.select().from(commands)).toHaveLength(3);
 });
+
+it("lets a player re-apply after access was revoked and restores the same access on approval", async () => {
+  const applicant = await login(ctx);
+  const applicantCookies = { okrip_session: applicant.cookie };
+  const submit = () =>
+    ctx.app.inject({
+      method: "POST",
+      url: "/v1/applications",
+      cookies: applicantCookies,
+      headers: browserHeaders,
+      payload: { minecraftUsername: "Returning_Player" },
+    });
+  const first = await submit();
+  expect(first.statusCode, first.body).toBe(201);
+
+  ctx.discord.identity.mockResolvedValue({
+    id: "876509255308541977",
+    username: "WebAdmin",
+    global_name: null,
+    avatar: null,
+  });
+  const admin = await login(ctx);
+  const adminCookies = { okrip_session: admin.cookie };
+  const decide = (publicId: string) =>
+    ctx.app.inject({
+      method: "POST",
+      url: "/v1/admin/applications/decision",
+      cookies: adminCookies,
+      headers: browserHeaders,
+      payload: { publicId, action: "approve" },
+    });
+  expect((await decide(first.json().application.publicId)).statusCode).toBe(200);
+  const [access] = await ctx.db.select().from(playerAccess);
+  const removed = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/admin/whitelist/remove",
+    cookies: adminCookies,
+    headers: browserHeaders,
+    payload: { accessId: access!.id },
+  });
+  expect(removed.statusCode, removed.body).toBe(200);
+
+  // Минає таймер між заявками.
+  await ctx.db
+    .update(applications)
+    .set({ createdAt: new Date(Date.now() - 120_000) });
+  const revoked = await ctx.app.inject({
+    url: "/v1/applications/current",
+    cookies: applicantCookies,
+  });
+  expect(revoked.json()).toMatchObject({
+    access: "revoked",
+    application: { status: "approved" },
+    nextSubmissionAt: null,
+  });
+
+  const second = await submit();
+  expect(second.statusCode, second.body).toBe(201);
+  expect(second.json()).toMatchObject({
+    access: "revoked",
+    application: { status: "pending", minecraftUsername: "Returning_Player" },
+  });
+
+  const approved = await decide(second.json().application.publicId);
+  expect(approved.statusCode, approved.body).toBe(200);
+  const accesses = await ctx.db.select().from(playerAccess);
+  expect(accesses).toHaveLength(1);
+  expect(accesses[0]).toMatchObject({ id: access!.id, status: "active" });
+  expect(
+    (await ctx.db.select().from(commands)).map((command) => command.type),
+  ).toEqual(["whitelist_add", "whitelist_remove", "whitelist_add"]);
+});

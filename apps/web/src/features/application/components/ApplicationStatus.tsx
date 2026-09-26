@@ -1,16 +1,18 @@
 import type { CurrentApplication } from "@okrip/contracts";
+import { effectiveAccess } from "../effective-access";
 export function ApplicationStatus({ data }: { data: CurrentApplication }) {
+  const access = effectiveAccess(data);
   let title = "Заявки ще немає",
     description: string | null =
       "Вкажіть свій Minecraft нік, щоб приєднатися.";
-  if (data.access === "banned") {
+  if (access === "banned") {
     title = "Доступ заблокований";
     description =
       "Для перегляду рішення зверніться до адміністрації в Discord.";
-  } else if (data.access === "revoked") {
+  } else if (access === "revoked") {
     title = "Доступ відкликано";
-    description = "Зверніться до адміністрації для відновлення доступу.";
-  } else if (data.access === "active") {
+    description = "Ви можете подати заявку повторно.";
+  } else if (access === "active") {
     title =
       data.synchronization === "completed"
         ? "Доступ відкрито"
