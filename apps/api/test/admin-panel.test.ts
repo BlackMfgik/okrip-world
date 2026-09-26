@@ -241,14 +241,14 @@ it("lets only protected head moderators add and remove regular web admins", asyn
     cookies: ownerCookies,
   });
   expect(initial.statusCode, initial.body).toBe(200);
-  expect(initial.json().count).toBe(3);
+  expect(initial.json().count).toBe(4);
   expect(
     initial
       .json()
       .accounts.filter((account: { canManageAdmins: boolean }) =>
         Boolean(account.canManageAdmins),
       ),
-  ).toHaveLength(3);
+  ).toHaveLength(4);
 
   const regularAdminId = "99999999999999999";
   const added = await ctx.app.inject({
@@ -259,7 +259,7 @@ it("lets only protected head moderators add and remove regular web admins", asyn
     payload: { discordId: regularAdminId },
   });
   expect(added.statusCode, added.body).toBe(200);
-  expect(await ctx.db.select().from(adminAccounts)).toHaveLength(4);
+  expect(await ctx.db.select().from(adminAccounts)).toHaveLength(5);
 
   ctx.discord.identity.mockResolvedValue({
     id: regularAdminId,

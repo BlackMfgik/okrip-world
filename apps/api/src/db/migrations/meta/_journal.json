@@ -99,6 +99,13 @@
       "when": 1790191000000,
       "tag": "0013_promote_head_moderator",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790192000000,
+      "tag": "0014_add_owner",
+      "breakpoints": true
     }
   ]
 }
