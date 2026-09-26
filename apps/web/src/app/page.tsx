@@ -5,13 +5,12 @@ import { Nav } from "@/components/nav";
 import { Mascot } from "@/components/mascot";
 import { SocialLinks } from "@/components/social-links";
 import { HomeStatOnline } from "@/components/home-stat-online";
-import { pageMetadata } from "@/lib/site";
+import { pageMetadata, SITE_DESCRIPTION } from "@/lib/site";
 import { SERVERS } from "@/lib/servers";
 
 export const metadata: Metadata = pageMetadata(
   "Okrip World — Українська Minecraft-спільнота",
-  // Без опису: Next.js копіює його в og:description, а прев'ю в Discord має бути лише з заголовком і картинкою.
-  undefined,
+  SITE_DESCRIPTION,
   "/",
 );
 

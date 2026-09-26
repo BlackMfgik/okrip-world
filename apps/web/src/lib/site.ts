@@ -23,7 +23,7 @@ export const SITE_SOCIALS = [
 
 export function pageMetadata(
   title: string,
-  description: string | undefined,
+  description: string,
   path: string,
 ): Metadata {
   return {
