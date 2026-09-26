@@ -16,7 +16,6 @@ export const metadata: Metadata = {
     default: "Okrip World — Українська Minecraft-спільнота",
     template: "%s | Okrip World",
   },
-  description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   keywords: [
     "Okrip World",
