@@ -1860,13 +1860,15 @@ body {
 }
 .admin-rename-form {
   display: flex;
-  flex-wrap: wrap;
+  flex: 1;
   align-items: center;
   gap: 6px;
   min-width: 0;
 }
 .admin-rename-form input {
-  width: 150px;
+  flex: 1 1 110px;
+  width: 0;
+  min-width: 90px;
   min-height: 36px;
   padding: 6px 12px;
   border: 1px solid var(--border);
@@ -1883,6 +1885,7 @@ body {
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
 .admin-rename-form .admin-button {
+  flex: none;
   min-height: 36px;
   padding: 6px 12px;
 }
