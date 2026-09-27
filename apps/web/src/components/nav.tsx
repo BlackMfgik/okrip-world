@@ -22,8 +22,10 @@ export function Nav({ staticOnline }: NavProps) {
         )}
         <AdminNavLink />
         <ThemeToggle />
+        {/* На телефонах аватарка всередині меню; на ширших екранах — окремо в правому куті. */}
+        <AccountMenu placement="nav" />
       </nav>
-      <AccountMenu />
+      <AccountMenu placement="corner" />
     </>
   );
 }

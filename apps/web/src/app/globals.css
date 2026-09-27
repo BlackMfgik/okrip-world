@@ -715,6 +715,9 @@ body {
 }
 
 /* ── Account menu ── */
+.account-menu-nav {
+  display: none;
+}
 .account-menu {
   position: fixed;
   /* вертикально по центру навігації: 16px + (56px − 48px) / 2 */
@@ -2154,25 +2157,38 @@ body {
     gap: 8px;
     padding: 8px 16px;
   }
-  /* Залогінений: nav ліворуч, щоб не наїжджати на кнопку акаунта */
-  .nav:has(+ .account-menu) {
-    left: max(8px, env(safe-area-inset-left));
-    transform: none;
-    max-width: calc(100% - 68px);
-  }
   .nav-online {
     display: none;
   }
-  .account-menu {
-    top: 14px;
-    right: max(8px, env(safe-area-inset-right));
+  /* Телефон: аватарка всередині меню по центру, окрема кнопка в куті прихована. */
+  .account-menu-corner {
+    display: none;
   }
-  .account-menu-trigger {
-    width: 44px;
-    height: 44px;
+  .account-menu-nav {
+    display: block;
+    position: relative;
+    top: auto;
+    right: auto;
+  }
+  .account-menu-nav .account-menu-trigger {
+    width: 36px;
+    height: 36px;
+  }
+  .account-menu-nav .account-menu-trigger:hover,
+  .account-menu-nav .account-menu-trigger[aria-expanded="true"] {
+    transform: none;
   }
   .account-menu-popover {
     width: min(300px, calc(100vw - 16px));
+  }
+  /* «Пігулка» меню має backdrop-filter, тож fixed тут не працює — прив'язуємо до правого краю меню. */
+  .account-menu-nav .account-menu-popover {
+    top: calc(100% + 18px);
+    right: -16px;
+    /* Вкладений backdrop-filter не розмиває сторінку під «пігулкою», тож фон суцільний. */
+    background:
+      linear-gradient(rgb(255 255 255 / 0.05), transparent),
+      var(--bg);
   }
   .body {
     padding-top: 72px;

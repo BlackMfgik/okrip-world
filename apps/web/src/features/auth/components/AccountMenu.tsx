@@ -6,7 +6,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentSession } from "@/features/auth/hooks/useCurrentSession";
 import { queryKeys } from "@/lib/query-keys";
 
-export function AccountMenu() {
+export function AccountMenu({
+  placement = "corner",
+}: {
+  placement?: "corner" | "nav";
+}) {
   const session = useCurrentSession();
   const queryClient = useQueryClient();
   const root = useRef<HTMLDivElement>(null);
@@ -35,7 +39,7 @@ export function AccountMenu() {
   const name = user.displayName ?? user.username;
 
   return (
-    <div className="account-menu" ref={root}>
+    <div className={"account-menu account-menu-" + placement} ref={root}>
       <button
         aria-expanded={open}
         aria-haspopup="dialog"
