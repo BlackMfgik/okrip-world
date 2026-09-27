@@ -28,7 +28,10 @@ const interactionSchema = z.object({
 });
 
 function reply(content: string) {
-  return { type: 4, data: { content, flags: EPHEMERAL } };
+  return {
+    type: 4,
+    data: { content, flags: EPHEMERAL, allowed_mentions: { parse: [] } },
+  };
 }
 
 export function discordRolesService(db: Database, env: Env, bot: DiscordBot) {
@@ -141,7 +144,7 @@ export function discordRolesService(db: Database, env: Env, bot: DiscordBot) {
         interaction.guild_id !== env.DISCORD_GUILD_ID ||
         !interaction.member
       )
-        return reply("Ця кнопка більше не працює.");
+        return reply("⚠️ Ця кнопка більше не працює.");
       // Повторне натискання знімає роль.
       const has = interaction.member.roles.includes(roleId);
       const status = await bot.setMemberRole(
@@ -149,12 +152,19 @@ export function discordRolesService(db: Database, env: Env, bot: DiscordBot) {
         roleId,
         !has,
       );
-      if (status === 204) return reply(has ? "Роль знято." : "Роль видано! ✅");
+      // Згадка ролі у прихованій відповіді показує її назву й нікого не пінгує.
+      const role = `<@&${roleId}>`;
+      if (status === 204)
+        return reply(
+          has
+            ? `❌ Роль ${role} знято.\nЩоб повернути її, натисни кнопку ще раз.`
+            : `✅ Ти отримав роль ${role}!\nЩоб зняти її, натисни кнопку ще раз.`,
+        );
       if (status === 403)
         return reply(
-          "Бот не може змінити цю роль. Попросіть адміністрацію підняти роль бота вище.",
+          `⚠️ Бот не може ${has ? "зняти" : "видати"} роль ${role}: його роль стоїть нижче. Напиши адміністрації.`,
         );
-      return reply("Не вдалося змінити роль. Спробуйте пізніше.");
+      return reply("⚠️ Не вдалося змінити роль. Спробуй ще раз за хвилину.");
     },
   };
 }

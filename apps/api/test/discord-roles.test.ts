@@ -57,16 +57,26 @@ it("answers Discord PING and rejects unsigned or forged interactions", async () 
 it("toggles the role on button click", async () => {
   ctx = await setup({ DISCORD_PUBLIC_KEY: publicKeyHex });
   const given = await ctx.app.inject(signed(click([])));
-  expect(given.json()).toMatchObject({ type: 4, data: { content: "Роль видано! ✅", flags: 64 } });
+  expect(given.json()).toMatchObject({
+    type: 4,
+    data: {
+      content:
+        "✅ Ти отримав роль <@&20000000000000001>!\nЩоб зняти її, натисни кнопку ще раз.",
+      flags: 64,
+      allowed_mentions: { parse: [] },
+    },
+  });
   expect(ctx.discordBot.setMemberRole).toHaveBeenLastCalledWith("111", "20000000000000001", true);
 
   const removed = await ctx.app.inject(signed(click(["20000000000000001"])));
-  expect(removed.json().data.content).toBe("Роль знято.");
+  expect(removed.json().data.content).toBe(
+    "❌ Роль <@&20000000000000001> знято.\nЩоб повернути її, натисни кнопку ще раз.",
+  );
   expect(ctx.discordBot.setMemberRole).toHaveBeenLastCalledWith("111", "20000000000000001", false);
 
   ctx.discordBot.setMemberRole.mockResolvedValueOnce(403);
   const denied = await ctx.app.inject(signed(click([])));
-  expect(denied.json().data.content).toContain("Бот не може змінити цю роль");
+  expect(denied.json().data.content).toContain("Бот не може видати роль");
 });
 
 it("lets only the super admin post a role message, refusing privileged roles", async () => {
