@@ -35,16 +35,28 @@ export function adminService(
 ) {
   return {
     async list(filter: AdminApplicationFilter) {
-      const [rows, groupedCounts] = await Promise.all([
+      const [allRows, groupedCounts, blockedCount] = await Promise.all([
         repo.listApplications(db, filter),
         repo.applicationCounts(db),
+        repo.blockedUserCount(db),
       ]);
+      // У «Заблокованих» — по одному рядку на гравця: його остання заявка.
+      const seenUsers = new Set<string>();
+      const rows =
+        filter === "blocked"
+          ? allRows.filter(({ user }) => {
+              if (seenUsers.has(user.id)) return false;
+              seenUsers.add(user.id);
+              return true;
+            })
+          : allRows;
       const counts = {
         all: 0,
         pending: 0,
         approved: 0,
         rejected: 0,
         cancelled: 0,
+        blocked: Number(blockedCount),
       };
       const now = Date.now();
       for (const row of groupedCounts) {

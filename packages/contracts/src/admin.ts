@@ -11,6 +11,7 @@ export const adminApplicationFilterSchema = z.enum([
   "approved",
   "rejected",
   "cancelled",
+  "blocked",
 ]);
 
 export const adminApplicationSchema = z.object({
@@ -37,6 +38,7 @@ export const adminApplicationListSchema = z.object({
     approved: z.number().int().nonnegative(),
     rejected: z.number().int().nonnegative(),
     cancelled: z.number().int().nonnegative(),
+    blocked: z.number().int().nonnegative(),
   }),
 });
 

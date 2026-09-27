@@ -1,4 +1,4 @@
-import { asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNotNull, isNull, or, sql } from "drizzle-orm";
 import type { Executor } from "../../db/client.js";
 import {
   applications,
@@ -22,9 +22,29 @@ export function listApplications(db: Executor, filter: AdminApplicationFilter) {
     .orderBy(desc(applications.createdAt))
     .limit(200);
 
-  return filter === "all"
-    ? query
-    : query.where(eq(applications.status, filter));
+  if (filter === "all") return query;
+  if (filter === "blocked") return query.where(activeApplicationBlock());
+  return query.where(eq(applications.status, filter));
+}
+
+/** Заборона подавати заявки діє: безстрокова або ще не минула. */
+function activeApplicationBlock() {
+  return and(
+    isNotNull(users.applicationBlockedAt),
+    or(
+      isNull(users.applicationBlockedUntil),
+      gt(users.applicationBlockedUntil, new Date()),
+    ),
+  );
+}
+
+export async function blockedUserCount(db: Executor) {
+  return (
+    await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(users)
+      .where(activeApplicationBlock())
+  )[0]!.count;
 }
 
 export function applicationCounts(db: Executor) {

@@ -22,11 +22,11 @@ import { WhitelistPanel } from "./WhitelistPanel";
 import { DiscordRoleMessagePanel } from "./DiscordRoleMessagePanel";
 
 const filters: Array<{ value: AdminApplicationFilter; label: string }> = [
-  { value: "all", label: "Усі" },
   { value: "pending", label: "Очікують" },
   { value: "approved", label: "Схвалені" },
   { value: "rejected", label: "Відхилені" },
   { value: "cancelled", label: "Скасовані" },
+  { value: "blocked", label: "Заблоковані" },
 ];
 
 const statusLabels = {

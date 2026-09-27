@@ -381,6 +381,18 @@ it("blocks applications permanently or for one hour", async () => {
       })
     ).json().applications[0].applicationBlocked,
   ).toBe(true);
+  const blockedList = (
+    await ctx.app.inject({
+      url: "/v1/admin/applications?status=blocked",
+      cookies: adminCookies,
+    })
+  ).json();
+  expect(blockedList.counts.blocked).toBe(1);
+  expect(blockedList.applications).toHaveLength(1);
+  expect(blockedList.applications[0]).toMatchObject({
+    minecraftUsername: "Blocked_Player",
+    applicationBlocked: true,
+  });
 
   const unblocked = await ctx.app.inject({
     method: "POST",
@@ -391,6 +403,14 @@ it("blocks applications permanently or for one hour", async () => {
   });
   expect(unblocked.statusCode, unblocked.body).toBe(200);
   expect(unblocked.json().applicationBlocked).toBe(false);
+  expect(
+    (
+      await ctx.app.inject({
+        url: "/v1/admin/applications?status=blocked",
+        cookies: adminCookies,
+      })
+    ).json(),
+  ).toMatchObject({ applications: [], counts: { blocked: 0 } });
 
   const applicantUser = (
     await ctx.db.select().from(users).where(eq(users.discordId, "111"))
