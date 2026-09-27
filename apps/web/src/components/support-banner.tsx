@@ -1,8 +1,23 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { SITE_SUPPORT_URL } from "@/lib/site";
 
-/** Блок донату на сервер. Не показується, поки не задано посилання на банку. */
+const DISMISSED_KEY = "okrip-support-banner-dismissed";
+
+/** Закріплений унизу блок донату. Закритий стан пам'ятає браузер відвідувача. */
 export function SupportBanner() {
-  if (!SITE_SUPPORT_URL) return null;
+  // До гідратації не показуємо, щоб банер не блимав у тих, хто його закрив.
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    try {
+      setVisible(localStorage.getItem(DISMISSED_KEY) !== "1");
+    } catch {
+      setVisible(true);
+    }
+  }, []);
+
+  if (!SITE_SUPPORT_URL || !visible) return null;
   return (
     <aside className="support-banner" aria-labelledby="support-banner-title">
       <div className="support-banner-icon" aria-hidden="true">
@@ -20,6 +35,19 @@ export function SupportBanner() {
       >
         На банку →
       </a>
+      <button
+        aria-label="Закрити"
+        className="support-banner-close"
+        onClick={() => {
+          setVisible(false);
+          try {
+            localStorage.setItem(DISMISSED_KEY, "1");
+          } catch {}
+        }}
+        type="button"
+      >
+        ×
+      </button>
     </aside>
   );
 }

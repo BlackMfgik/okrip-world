@@ -994,7 +994,7 @@ body {
   min-height: calc(100vh - 88px);
   max-width: 960px;
   margin: 0 auto;
-  padding: 48px 24px;
+  padding: 48px 24px 110px;
 }
 .page-header {
   position: relative;
@@ -1181,13 +1181,16 @@ body {
 }
 
 .support-banner {
-  position: relative;
-  z-index: 2;
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  z-index: 50;
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 20px;
-  padding: 12px 16px;
+  width: min(720px, calc(100% - 32px));
+  padding: 10px 12px 10px 16px;
+  transform: translateX(-50%);
   border: 1px solid rgb(var(--warning-rgb) / 0.35);
   border-radius: var(--radius);
   background: var(--glass-surface);
@@ -1212,6 +1215,24 @@ body {
   font-size: 0.78rem;
   line-height: 1.4;
 }
+.support-banner-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.support-banner-close:hover {
+  background: var(--inset-bg);
+  color: var(--text);
+}
 .support-banner-button {
   flex: none;
   min-height: 0;
@@ -1220,12 +1241,13 @@ body {
 }
 @media (max-width: 640px) {
   .support-banner {
-    flex-wrap: wrap;
-    padding: 12px 14px;
+    bottom: 12px;
+    padding: 8px 8px 8px 12px;
   }
-  .support-banner-button {
-    width: 100%;
+  .support-banner-text p {
+    display: none;
   }
+
 }
 
 /* «Скоро» — картка майбутнього сервера */
@@ -2173,7 +2195,7 @@ body {
 
 @media (max-width: 640px) {
   .servers-wrap {
-    padding: 32px 16px;
+    padding: 32px 16px 96px;
   }
   .page-header {
     margin-bottom: 32px;
