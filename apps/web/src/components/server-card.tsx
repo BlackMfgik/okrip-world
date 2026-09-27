@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { IpRow } from "@/components/ip-row";
-import { ServerApplicationAction } from "@/features/application/components/ServerApplicationAction";
 import type { ServerConfig } from "@/lib/servers";
 
 export function ServerCard({ server }: { server: ServerConfig }) {
@@ -34,13 +33,18 @@ export function UpcomingServerCard({ name }: { name: string }) {
         <IpRow label="IP Адреса" value="Soon…" placeholder />
         <IpRow label="Порт" value="Soon…" placeholder />
       </div>
-      {/* Заявки тимчасово для тестування ведуть на Vanilla (MINECRAFT_SERVER_ID=vanilla). */}
+      {/* Поки сервер не запущено, мапа й подача заявки вимкнені. Щоб увімкнути, поверніть
+          <Link href="/map-modded"> і <ServerApplicationAction /> (заявки ведуть на MINECRAFT_SERVER_ID). */}
       <div className="server-card-footer">
-        <Link href="/map-modded" className="btn btn-map" aria-label={`Мапа сервера ${name}`}>
-          Мапа →
-        </Link>
+        <button className="btn btn-map" disabled type="button">
+          Мапа — скоро
+        </button>
       </div>
-      <ServerApplicationAction />
+      <div className="server-application">
+        <button className="btn btn-primary" disabled type="button">
+          Заявки — скоро
+        </button>
+      </div>
     </div>
   );
 }

@@ -375,6 +375,14 @@ body {
   border-color: var(--border-strong);
   transform: translateY(-1px);
 }
+/* Неактивні кнопки: сірі, без підсвітки й наведення. */
+.btn:disabled {
+  border-color: var(--border);
+  background: var(--inset-bg);
+  color: var(--text-muted);
+  box-shadow: none;
+  opacity: 1;
+}
 .btn:disabled,
 .admin-button:disabled,
 .admin-remove-player:disabled,
