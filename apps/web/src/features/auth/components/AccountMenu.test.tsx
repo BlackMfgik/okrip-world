@@ -20,6 +20,7 @@ vi.mock("@/features/auth/hooks/useCurrentSession", () => ({
         avatarUrl: "https://cdn.discordapp.com/avatars/111/avatar.webp?size=64",
         isAdmin: false,
         canManageAdmins: false,
+        isSuperAdmin: false,
       },
     },
   }),

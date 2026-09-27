@@ -7,6 +7,7 @@ export const sessionSchema = z.object({
       avatarUrl: z.string().url().nullable(),
       isAdmin: z.boolean(),
       canManageAdmins: z.boolean(),
+      isSuperAdmin: z.boolean(),
     })
     .nullable(),
 });

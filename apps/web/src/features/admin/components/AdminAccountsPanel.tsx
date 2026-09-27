@@ -11,8 +11,12 @@ import { apiRequest } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
 import { AdminConfirmDialog } from "./AdminConfirmDialog";
 import { DiscordAvatar } from "./DiscordAvatar";
+import { useCurrentSession } from "@/features/auth/hooks/useCurrentSession";
+
+const SUPER_ADMIN_DISCORD_ID = "554465791358140417";
 
 export function AdminAccountsPanel() {
+  const isSuperAdmin = useCurrentSession().data?.user?.isSuperAdmin === true;
   const queryClient = useQueryClient();
   const [discordId, setDiscordId] = useState("");
   const [removing, setRemoving] = useState<{
@@ -126,26 +130,30 @@ export function AdminAccountsPanel() {
                 </div>
               </div>
               <code>{account.discordId}</code>
-              {account.canManageAdmins ? (
-                <span className="admin-owner-badge">
-                  {account.discordId === "302714744626741248"
-                    ? "Власник"
-                    : account.discordId === "554465791358140417"
-                      ? "Ахуєвший"
-                      : "Головний модер"}
-                </span>
-              ) : (
-                <button
-                  className="admin-remove-player"
-                  disabled={removeAdmin.isPending}
-                  onClick={() =>
-                    setRemoving({ discordId: account.discordId, name })
-                  }
-                  type="button"
-                >
-                  Видалити
-                </button>
-              )}
+              <div className="admin-account-actions">
+                {account.canManageAdmins && (
+                  <span className="admin-owner-badge">
+                    {account.discordId === "302714744626741248"
+                      ? "Власник"
+                      : account.discordId === SUPER_ADMIN_DISCORD_ID
+                        ? "Ахуєвший"
+                        : "Головний модер"}
+                  </span>
+                )}
+                {account.discordId !== SUPER_ADMIN_DISCORD_ID &&
+                  (!account.canManageAdmins || isSuperAdmin) && (
+                    <button
+                      className="admin-remove-player"
+                      disabled={removeAdmin.isPending}
+                      onClick={() =>
+                        setRemoving({ discordId: account.discordId, name })
+                      }
+                      type="button"
+                    >
+                      Видалити
+                    </button>
+                  )}
+              </div>
             </article>
           );
         })}

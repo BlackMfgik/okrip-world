@@ -1914,6 +1914,12 @@ body {
     grid-template-columns: 1fr;
   }
 }
+.admin-account-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
 .admin-rename-form {
   display: flex;
   flex: 1;

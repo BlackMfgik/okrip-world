@@ -69,7 +69,7 @@ it("toggles the role on button click", async () => {
   expect(denied.json().data.content).toContain("Бот не може змінити цю роль");
 });
 
-it("lets only admin managers post a role message, refusing privileged roles", async () => {
+it("lets only the super admin post a role message, refusing privileged roles", async () => {
   ctx = await setup();
   const payload = {
     channelId: "10000000000000001",
@@ -89,7 +89,23 @@ it("lets only admin managers post a role message, refusing privileged roles", as
 
   ctx.discord.identity.mockResolvedValue({
     id: "876509255308541977",
-    username: "WebAdmin",
+    username: "HeadModerator",
+    global_name: null,
+    avatar: null,
+  });
+  const headModerator = await login(ctx);
+  const notSuperAdmin = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/admin/discord/role-message",
+    cookies: { okrip_session: headModerator.cookie },
+    headers: browserHeaders,
+    payload,
+  });
+  expect(notSuperAdmin.statusCode).toBe(403);
+
+  ctx.discord.identity.mockResolvedValue({
+    id: "554465791358140417",
+    username: "SuperAdmin",
     global_name: null,
     avatar: null,
   });

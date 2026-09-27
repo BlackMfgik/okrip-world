@@ -158,7 +158,7 @@ export function AdminPanel() {
               Адміни
             </button>
           )}
-          {session.data.user.canManageAdmins && (
+          {session.data.user.isSuperAdmin && (
             <button
               className={section === "discord" ? "is-active" : undefined}
               onClick={() => setSection("discord")}
@@ -180,7 +180,7 @@ export function AdminPanel() {
         <WhitelistPanel />
       ) : section === "accounts" && session.data.user.canManageAdmins ? (
         <AdminAccountsPanel />
-      ) : section === "discord" && session.data.user.canManageAdmins ? (
+      ) : section === "discord" && session.data.user.isSuperAdmin ? (
         <DiscordRoleMessagePanel />
       ) : (
         <>

@@ -283,14 +283,39 @@ it("lets only protected head moderators add and remove regular web admins", asyn
   });
   expect(forbiddenAdd.statusCode).toBe(403);
 
+  ctx.discord.identity.mockResolvedValue({
+    id: "876509255308541977",
+    username: "HeadModerator",
+    global_name: null,
+    avatar: null,
+  });
+  const headModerator = await login(ctx);
   const protectedRemoval = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/admin/accounts/remove",
+    cookies: { okrip_session: headModerator.cookie },
+    headers: browserHeaders,
+    payload: { discordId: "303118455635312641" },
+  });
+  expect(protectedRemoval.statusCode).toBe(403);
+
+  const selfRemoval = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/admin/accounts/remove",
+    cookies: ownerCookies,
+    headers: browserHeaders,
+    payload: { discordId: "554465791358140417" },
+  });
+  expect(selfRemoval.statusCode).toBe(403);
+
+  const headModeratorRemoval = await ctx.app.inject({
     method: "POST",
     url: "/v1/admin/accounts/remove",
     cookies: ownerCookies,
     headers: browserHeaders,
     payload: { discordId: "303118455635312641" },
   });
-  expect(protectedRemoval.statusCode).toBe(403);
+  expect(headModeratorRemoval.statusCode, headModeratorRemoval.body).toBe(200);
 
   const removed = await ctx.app.inject({
     method: "POST",

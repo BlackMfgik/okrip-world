@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { adminDiscordRoleMessageSchema } from "@okrip/contracts";
 import { AppError } from "../../shared/errors.js";
-import { requireAdminManager } from "../../plugins/auth-session.js";
+import { requireSuperAdmin } from "../../plugins/auth-session.js";
 import type { AuthService } from "../auth/auth.service.js";
 import type { discordRolesService } from "./discord-roles.service.js";
 
@@ -18,7 +18,7 @@ export function discordRoutes(
     async (req) =>
       service.postRoleMessage(
         adminDiscordRoleMessageSchema.parse(req.body),
-        await requireAdminManager(auth, req),
+        await requireSuperAdmin(auth, req),
       ),
   );
 

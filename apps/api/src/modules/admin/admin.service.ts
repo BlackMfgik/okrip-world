@@ -13,6 +13,7 @@ import {
 import type { Database } from "../../db/client.js";
 import { AppError } from "../../shared/errors.js";
 import { discordAvatarUrl } from "../../shared/discord-avatar.js";
+import { isSuperAdmin } from "../../shared/super-admin.js";
 import { audit } from "../audit/audit.repository.js";
 import { lockUser } from "../applications/application.repository.js";
 import { addCommand } from "../moderation/moderation.repository.js";
@@ -156,7 +157,10 @@ export function adminService(
       const target = await repo.adminAccountByDiscordId(db, input.discordId);
       if (!target)
         throw new AppError(404, "not_found", "Адміністратора не знайдено.");
-      if (target.canManageAdmins)
+      if (target.discordId === admin.discordId)
+        throw new AppError(403, "protected_admin", "Не можна видалити себе.");
+      // Головних модерів може видалити лише супер-адмін.
+      if (target.canManageAdmins && !isSuperAdmin(admin.discordId))
         throw new AppError(
           403,
           "protected_admin",

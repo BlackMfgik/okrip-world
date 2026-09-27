@@ -1,6 +1,7 @@
 import type { FastifyRequest } from "fastify";
 import type { AuthService } from "../modules/auth/auth.service.js";
 import { AppError } from "../shared/errors.js";
+import { isSuperAdmin } from "../shared/super-admin.js";
 export const sessionCookie = "okrip_session";
 export async function requireUser(auth: AuthService, request: FastifyRequest) {
   const user = await auth.current(request.cookies[sessionCookie]);
@@ -22,6 +23,16 @@ export async function requireAdminManager(
   const user = await requireUser(auth, request);
   const access = await auth.adminAccess(user.discordId);
   if (!access?.canManageAdmins)
+    throw new AppError(403, "forbidden", "Недостатньо прав.");
+  return user;
+}
+
+export async function requireSuperAdmin(
+  auth: AuthService,
+  request: FastifyRequest,
+) {
+  const user = await requireUser(auth, request);
+  if (!isSuperAdmin(user.discordId) || !(await auth.isAdmin(user.discordId)))
     throw new AppError(403, "forbidden", "Недостатньо прав.");
   return user;
 }
