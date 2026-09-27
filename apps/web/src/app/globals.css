@@ -1215,7 +1215,7 @@ body {
   font-size: 0.78rem;
   line-height: 1.4;
 }
-/* Закриття: банер з'їжджає вниз, потім виїжджає півколо. Відкриття — навпаки.
+/* Закриття: банер з'їжджає вниз, потім зліва виїжджає язичок. Відкриття — навпаки.
    Черговість задає transition-delay: те, що з'являється, чекає, поки інше сховається. */
 .support-banner.is-collapsed {
   transform: translate(-50%, calc(100% + 32px));
@@ -1228,17 +1228,17 @@ body {
 }
 .support-tab {
   position: fixed;
-  bottom: 0;
-  left: 24px;
+  bottom: 120px;
+  left: 0;
   z-index: 50;
   display: grid;
-  place-items: start center;
-  width: 64px;
-  height: 32px;
-  padding-top: 7px;
+  place-items: center;
+  width: 36px;
+  height: 76px;
+  padding: 0 2px 0 0;
   border: 1px solid rgb(var(--warning-rgb) / 0.35);
-  border-bottom: 0;
-  border-radius: 64px 64px 0 0;
+  border-left: 0;
+  border-radius: 0 38px 38px 0;
   background: var(--glass-surface);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -1246,20 +1246,20 @@ body {
   font-size: 1rem;
   line-height: 1;
   cursor: pointer;
-  transform: translateY(0);
+  transform: translateX(0);
 }
 .support-tab:hover,
 .support-tab:focus-visible {
-  height: 38px;
+  width: 44px;
   outline: none;
 }
 .support-tab.is-open {
-  transform: translateY(110%);
+  transform: translateX(-110%);
 }
 .support-tab.is-animated {
   transition:
     transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    height 0.15s ease;
+    width 0.15s ease;
 }
 .support-tab.is-animated.is-collapsed {
   transition-delay: 0.35s, 0s;

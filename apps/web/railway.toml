@@ -1,6 +1,16 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "apps/web/Dockerfile"
+# Перезбирати лише коли змінився код сайту, спільні контракти або залежності.
+watchPatterns = [
+  "apps/web/**",
+  "packages/**",
+  "package.json",
+  "pnpm-lock.yaml",
+  "pnpm-workspace.yaml",
+  "tsconfig.base.json",
+  "turbo.json",
+]
 [deploy]
 healthcheckPath = "/health"
 healthcheckTimeout = 60

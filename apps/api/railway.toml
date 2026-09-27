@@ -1,6 +1,16 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "apps/api/Dockerfile"
+# Перезбирати лише коли змінився код API, спільні контракти або залежності.
+watchPatterns = [
+  "apps/api/**",
+  "packages/**",
+  "package.json",
+  "pnpm-lock.yaml",
+  "pnpm-workspace.yaml",
+  "tsconfig.base.json",
+  "turbo.json",
+]
 [deploy]
 preDeployCommand = "pnpm --filter @okrip/api db:migrate"
 healthcheckPath = "/ready"
