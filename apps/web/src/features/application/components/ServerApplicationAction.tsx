@@ -46,9 +46,20 @@ export function ServerApplicationAction() {
   return (
     <div className="server-application">
       {!hasApplication && (
-        <p className="server-application-hint">
-          Вхід на сервер — після схвалення заявки.
-        </p>
+        <>
+          <p className="server-application-hint">
+            Вхід на сервер — після схвалення заявки.
+          </p>
+          <details className="server-application-why">
+            <summary>Навіщо заявка й вхід через Discord?</summary>
+            <p>
+              На сервері немає приватів, тому ми пускаємо лише перевірених
+              гравців. Ви входите через Discord і вказуєте свій нік, адміністрація
+              схвалює заявку, і нік потрапляє у вайтліст. Так ми захищаємо ваші
+              будівлі від грифу.
+            </p>
+          </details>
+        </>
       )}
       {session.isPending ? <p role="status">Перевіряємо вхід…</p> : session.error ? (
         <div role="alert"><p>{session.error.message}</p><button className="btn" onClick={() => void session.refetch()}>Спробувати ще раз</button></div>

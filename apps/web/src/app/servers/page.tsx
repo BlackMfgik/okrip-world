@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Nav } from "@/components/nav";
 import { ServerCard, UpcomingServerCard } from "@/components/server-card";
 import { SERVERS, UPCOMING_SERVERS } from "@/lib/servers";
+import { SupportBanner } from "@/components/support-banner";
 import { pageMetadata } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata(
@@ -40,6 +41,8 @@ export default function ServersPage() {
               </div>
             ))}
           </div>
+
+          <SupportBanner />
         </div>
       </main>
     </>

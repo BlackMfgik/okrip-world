@@ -14,6 +14,9 @@ export const SITE_OG_IMAGE = {
 export const SITE_DESCRIPTION =
   "Українська Minecraft-спільнота Okrip World: ванільний сервер, актуальна IP-адреса та спілкування в Discord і Telegram.";
 
+/** Посилання на банку Monobank для блоку «Підтримай сервер». Порожньо — блок прихований. */
+export const SITE_SUPPORT_URL = "";
+
 export const SITE_SOCIALS = [
   "https://t.me/okripworld",
   "https://www.youtube.com/@OKRIPp",
