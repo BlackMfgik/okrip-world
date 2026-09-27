@@ -1233,24 +1233,25 @@ body {
   z-index: 50;
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 76px;
-  padding: 0 2px 0 0;
+  width: 38px;
+  height: 46px;
+  padding: 0 4px 0 0;
   border: 1px solid rgb(var(--warning-rgb) / 0.35);
   border-left: 0;
-  border-radius: 0 38px 38px 0;
+  /* Форма «D»: рівний лівий край, короткий прямий відрізок і повне півколо справа. */
+  border-radius: 0 23px 23px 0;
   background: var(--glass-surface);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   box-shadow: var(--glass-highlight);
-  font-size: 1rem;
+  font-size: 0.85rem;
   line-height: 1;
   cursor: pointer;
   transform: translateX(0);
 }
 .support-tab:hover,
 .support-tab:focus-visible {
-  width: 44px;
+  width: 42px;
   outline: none;
 }
 .support-tab.is-open {
