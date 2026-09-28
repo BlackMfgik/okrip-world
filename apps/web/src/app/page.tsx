@@ -58,6 +58,9 @@ export default function HomePage() {
             </div>
           </div>
           <SocialLinks />
+          <a className="made-by" href="https://aokigahara.dev">
+            made by Aokigahara
+          </a>
         </div>
       </main>
 

@@ -982,6 +982,20 @@ body {
   width: 18px;
   height: 18px;
 }
+.made-by {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.45);
+  transition: color 0.25s;
+}
+.made-by:hover {
+  color: #ffffff;
+}
 
 /* Home: текст і головна кнопка завжди як у темній темі — фото темне в обох темах */
 .home-wrap .home-eyebrow,
