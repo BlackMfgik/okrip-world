@@ -7,11 +7,17 @@ interface MapFrameProps {
   title: string;
   /** Базовий шлях проксі мапи із завершальним слешем, напр. "/dynmap/". */
   base?: string;
+  /** Текст заглушки, коли мапи немає; типово — «МАПА НАРАЗІ НЕДОСТУПНА». */
+  unavailableText?: string;
 }
 
 type MapState = "checking" | "loading" | "ready" | "error";
 
-export function MapFrame({ title, base }: MapFrameProps) {
+export function MapFrame({
+  title,
+  base,
+  unavailableText = "МАПА НАРАЗІ НЕДОСТУПНА",
+}: MapFrameProps) {
   const [state, setState] = useState<MapState>(base ? "checking" : "error");
   // Скін мапи (public/dynmap-skin.css) підлаштовується під тему сайту.
   const theme = useThemeStore((s) => s.theme);
@@ -63,7 +69,7 @@ export function MapFrame({ title, base }: MapFrameProps) {
       </div>
 
       <div className={`map-error${state === "error" ? " visible" : ""}`}>
-        МАПА НАРАЗІ НЕДОСТУПНА
+        {unavailableText}
       </div>
     </div>
   );

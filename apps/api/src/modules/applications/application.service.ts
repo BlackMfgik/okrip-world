@@ -143,11 +143,15 @@ export function applicationService(
               throw new Error(
                 "Automatic approval lost its pending application",
               );
-            const access = !existingAccess
+            const identityAccess = await repo.accessForIdentity(
+              tx,
+              identity.id,
+            );
+            const access = !identityAccess
               ? await grant(tx, user.id, identity.id)
-              : revoked
-                ? await reactivate(tx, existingAccess.id)
-                : existingAccess;
+              : identityAccess.status === "revoked"
+                ? await reactivate(tx, identityAccess.id)
+                : identityAccess;
             await addCommand(
               tx,
               access.id,

@@ -175,7 +175,7 @@ export async function banAccess(
         bannedAt: new Date(),
       })
       .onConflictDoUpdate({
-        target: playerAccess.userId,
+        target: playerAccess.minecraftIdentityId,
         set: {
           status: "banned",
           banReason: reason,

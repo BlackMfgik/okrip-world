@@ -37,7 +37,10 @@ export default function ServersPage() {
             ))}
             {UPCOMING_SERVERS.map((server) => (
               <div className="server-card-entry" key={server.id}>
-                <UpcomingServerCard name={server.name} />
+                <UpcomingServerCard
+                  name={server.name}
+                  mapHref={server.mapHref}
+                />
               </div>
             ))}
           </div>

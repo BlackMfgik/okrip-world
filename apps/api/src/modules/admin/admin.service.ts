@@ -20,6 +20,8 @@ import { addCommand } from "../moderation/moderation.repository.js";
 import type { moderationService } from "../moderation/moderation.service.js";
 import * as repo from "./admin.repository.js";
 
+const ADMIN_MINECRAFT_ACCOUNT_LIMIT = 2;
+
 interface WebAdmin {
   id: string;
   discordId: string;
@@ -244,37 +246,46 @@ export function adminService(
             (await repo.createUser(tx, input.discordId, discordUsername));
           await lockUser(tx, user.id);
 
-          const [ownedIdentity, namedIdentity] = await Promise.all([
-            repo.identityByUserId(tx, user.id),
+          const [ownedIdentities, namedIdentity, accesses] = await Promise.all([
+            repo.identitiesByUserId(tx, user.id),
             repo.identityByName(tx, input.minecraftUsername),
+            repo.accessesByUserId(tx, user.id),
           ]);
-          if (
-            ownedIdentity &&
-            ownedIdentity.normalizedUsername !==
-              input.minecraftUsername.toLowerCase()
-          )
-            throw new AppError(
-              409,
-              "discord_identity_exists",
-              "Цей Discord уже прив’язаний до іншого Minecraft-ніка.",
-            );
           if (namedIdentity && namedIdentity.userId !== user.id)
             throw new AppError(
               409,
               "minecraft_identity_exists",
               "Цей Minecraft-нік уже прив’язаний до іншого Discord.",
             );
-          const identity =
-            ownedIdentity ??
-            namedIdentity ??
-            (await repo.createIdentity(tx, user.id, input.minecraftUsername));
-          const existingAccess = await repo.accessByUserId(tx, user.id);
-          if (existingAccess?.status === "banned")
+          if (!namedIdentity) {
+            // Другий Minecraft-акаунт дозволено лише адмінам сайту; той самий ліміт тримає тригер guard_identity_limit.
+            const isAdmin = Boolean(
+              await repo.adminAccountByDiscordId(tx, input.discordId),
+            );
+            if (
+              ownedIdentities.length >=
+              (isAdmin ? ADMIN_MINECRAFT_ACCOUNT_LIMIT : 1)
+            )
+              throw new AppError(
+                409,
+                "discord_identity_exists",
+                isAdmin
+                  ? "Адміністратор уже має два Minecraft-акаунти."
+                  : "Цей Discord уже прив’язаний до іншого Minecraft-ніка.",
+              );
+          }
+          if (accesses.some((access) => access.status === "banned"))
             throw new AppError(
               409,
               "access_banned",
               "Гравець заблокований. Спочатку потрібне окреме рішення щодо бану.",
             );
+          const identity =
+            namedIdentity ??
+            (await repo.createIdentity(tx, user.id, input.minecraftUsername));
+          const existingAccess = accesses.find(
+            (access) => access.minecraftIdentityId === identity.id,
+          );
           if (existingAccess?.status === "active")
             throw new AppError(
               409,

@@ -711,3 +711,92 @@ it("lets an admin rename a whitelisted player and re-syncs the server whitelist"
   expect((await rename("new_name")).statusCode).toBe(200);
   expect(await ctx.db.select().from(commands)).toHaveLength(3);
 });
+
+it("lets a web admin hold two Minecraft accounts while players stay limited to one", async () => {
+  ctx.discord.identity.mockResolvedValue({
+    id: "554465791358140417",
+    username: "WebAdmin",
+    global_name: null,
+    avatar: null,
+  });
+  const { cookie } = await login(ctx);
+  const cookies = { okrip_session: cookie };
+  const add = (minecraftUsername: string, discordId: string) =>
+    ctx.app.inject({
+      method: "POST",
+      url: "/v1/admin/whitelist/add",
+      cookies,
+      headers: browserHeaders,
+      payload: { minecraftUsername, discordUsername: "someone", discordId },
+    });
+
+  const main = await add("Admin_Main", "554465791358140417");
+  expect(main.statusCode, main.body).toBe(200);
+  const second = await add("Admin_Second", "554465791358140417");
+  expect(second.statusCode, second.body).toBe(200);
+  expect(second.json().accessId).not.toBe(main.json().accessId);
+
+  const third = await add("Admin_Third", "554465791358140417");
+  expect(third.statusCode, third.body).toBe(409);
+  expect(third.json().code).toBe("discord_identity_exists");
+
+  expect((await add("Player_Main", "123456789012345678")).statusCode).toBe(200);
+  const playerSecond = await add("Player_Second", "123456789012345678");
+  expect(playerSecond.statusCode, playerSecond.body).toBe(409);
+  expect(playerSecond.json().code).toBe("discord_identity_exists");
+
+  const listed = await ctx.app.inject({ url: "/v1/admin/whitelist", cookies });
+  expect(
+    listed
+      .json()
+      .players.map(
+        (player: { minecraftUsername: string }) => player.minecraftUsername,
+      )
+      .sort(),
+  ).toEqual(["Admin_Main", "Admin_Second", "Player_Main"]);
+
+  // Акаунти незалежні: видалення другого не зачіпає основний.
+  const removed = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/admin/whitelist/remove",
+    cookies,
+    headers: browserHeaders,
+    payload: { accessId: second.json().accessId },
+  });
+  expect(removed.statusCode, removed.body).toBe(200);
+  expect(
+    Object.fromEntries(
+      (await ctx.db.select().from(playerAccess)).map((access) => [
+        access.id,
+        access.status,
+      ]),
+    ),
+  ).toMatchObject({
+    [main.json().accessId]: "active",
+    [second.json().accessId]: "revoked",
+  });
+
+  // Бан з гри стосується лише того ніка, який забанили.
+  const banned = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/minecraft/events/ban",
+    headers: serverHeaders,
+    payload: {
+      eventId: crypto.randomUUID(),
+      username: "Admin_Second",
+      reason: "Test",
+    },
+  });
+  expect(banned.statusCode, banned.body).toBe(204);
+  expect(
+    Object.fromEntries(
+      (await ctx.db.select().from(playerAccess)).map((access) => [
+        access.id,
+        access.status,
+      ]),
+    ),
+  ).toMatchObject({
+    [main.json().accessId]: "active",
+    [second.json().accessId]: "banned",
+  });
+});

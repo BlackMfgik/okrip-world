@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { Executor } from "../../db/client.js";
 import {
   users,
@@ -20,14 +20,34 @@ export const clearApplicationBlock = (db: Executor, userId: string) =>
       updatedAt: new Date(),
     })
     .where(eq(users.id, userId));
+/** В адміна може бути два акаунти: першим іде чинний (не відкликаний) доступ, далі — найстаріший. */
 export async function accessFor(db: Executor, userId: string) {
   return (
-    await db.select().from(playerAccess).where(eq(playerAccess.userId, userId))
+    await db
+      .select()
+      .from(playerAccess)
+      .where(eq(playerAccess.userId, userId))
+      .orderBy(sql`${playerAccess.status} = 'revoked'`, playerAccess.createdAt)
+      .limit(1)
   )[0];
 }
+export async function accessForIdentity(db: Executor, identityId: string) {
+  return (
+    await db
+      .select()
+      .from(playerAccess)
+      .where(eq(playerAccess.minecraftIdentityId, identityId))
+  )[0];
+}
+/** Основний (перший) Minecraft-акаунт користувача. */
 export async function identityFor(db: Executor, userId: string) {
   return (
-    await db.select().from(identities).where(eq(identities.userId, userId))
+    await db
+      .select()
+      .from(identities)
+      .where(eq(identities.userId, userId))
+      .orderBy(identities.createdAt)
+      .limit(1)
   )[0];
 }
 export async function latest(db: Executor, userId: string) {

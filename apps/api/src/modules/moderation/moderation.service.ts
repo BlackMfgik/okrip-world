@@ -6,6 +6,7 @@ import { audit } from "../audit/audit.repository.js";
 import {
   lockUser,
   accessFor,
+  accessForIdentity,
   enqueueMessage,
 } from "../applications/application.repository.js";
 import * as repo from "./moderation.repository.js";
@@ -85,11 +86,13 @@ export function moderationService(
         status === "approved" &&
         (!existingAccess || revoked || env.APPLICATION_REPEAT_DEBUG)
       ) {
-        const access = !existingAccess
+        // Доступ прив'язаний до ніка із заявки: в адміна з двома акаунтами їх два.
+        const identityAccess = await accessForIdentity(tx, fresh.identity.id);
+        const access = !identityAccess
           ? await repo.grant(tx, fresh.application.userId, fresh.identity.id)
-          : revoked
-            ? await repo.reactivate(tx, existingAccess.id)
-            : existingAccess;
+          : identityAccess.status === "revoked"
+            ? await repo.reactivate(tx, identityAccess.id)
+            : identityAccess;
         await repo.addCommand(
           tx,
           access.id,

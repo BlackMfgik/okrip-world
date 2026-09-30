@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Nav } from "@/components/nav";
 import { MapFrame } from "@/components/map-frame";
+import { isAdminSession } from "@/lib/admin-session";
+import { createDynmapToken } from "@/lib/dynmap-token";
 import { pageMetadata } from "@/lib/site";
 
-// DYNMAP_ORIGIN читається під час запиту, щоб змінна з Railway діяла без перезбирання.
+// DYNMAP_ORIGIN і сесія адміна читаються під час запиту, щоб змінна з Railway діяла без перезбирання.
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -18,7 +20,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function MapModdedPage() {
+export default async function MapModdedPage() {
+  // Поки сервер SMP не запущено, мапу бачать лише адміни сайту: сторінка перевіряє
+  // сесію і видає токен, без якого проксі /dynmap/ нічого не віддає.
+  const isAdmin = await isAdminSession();
+  const token =
+    isAdmin && process.env.DYNMAP_ORIGIN ? createDynmapToken() : null;
+
   return (
     <div style={{ height: "100vh" }}>
       <Nav />
@@ -26,8 +34,11 @@ export default function MapModdedPage() {
       <main className="body">
         <h1 className="sr-only">Мапа сервера SMP Okrip World</h1>
         <MapFrame
-          base={process.env.DYNMAP_ORIGIN ? "/dynmap/" : undefined}
+          base={token ? `/dynmap/${token}/` : undefined}
           title="Dynmap — сервер SMP Okrip World"
+          unavailableText={
+            isAdmin ? undefined : "МАПА SMP ПОКИ ДОСТУПНА ЛИШЕ АДМІНІСТРАЦІЇ"
+          }
         />
       </main>
     </div>

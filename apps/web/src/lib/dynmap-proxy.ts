@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyDynmapToken } from "@/lib/dynmap-token";
 
 // Проксі до вбудованого вебсервера Dynmap на Minecraft-сервері (Kinetic).
 // Сайт працює по HTTPS, Dynmap — по HTTP на окремому порту, тому iframe напряму
@@ -47,8 +48,14 @@ function cacheControl(path: string) {
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 
+interface DynmapProxyOptions {
+  /** Мапа лише для адмінів: перший сегмент шляху — токен із createDynmapToken. */
+  adminOnly?: boolean;
+}
+
 async function proxy(
   originEnv: string,
+  options: DynmapProxyOptions,
   request: NextRequest,
   { params }: RouteContext,
 ) {
@@ -56,7 +63,15 @@ async function proxy(
   if (!origin)
     return new NextResponse("Мапу ще не налаштовано.", { status: 503 });
 
-  const { path: segments } = await params;
+  let { path: segments } = await params;
+  if (options.adminOnly) {
+    if (segments.length < 2 || !verifyDynmapToken(segments[0]!))
+      return new NextResponse("Not found", {
+        status: 404,
+        headers: { "Cache-Control": "no-store" },
+      });
+    segments = segments.slice(1);
+  }
   if (
     segments.some(
       (segment) =>
@@ -107,7 +122,15 @@ async function proxy(
       const value = upstream.headers.get(name);
       if (value) response.headers.set(name, value);
     }
-    response.headers.set("Cache-Control", cacheControl(path));
+    // Закриту мапу не можна класти у спільні кеші (CDN), лише в кеш браузера адміна.
+    response.headers.set(
+      "Cache-Control",
+      options.adminOnly
+        ? cacheControl(path).replace("public", "private")
+        : cacheControl(path),
+    );
+    // Токен закритої мапи лежить у шляху — не віддаємо його зовнішнім сайтам у Referer.
+    response.headers.set("Referrer-Policy", "no-referrer");
     // Контент із Minecraft-сервера не повинен виконуватися з origin сайту
     // (інакше скрипт мапи мав би доступ до сесії адміна). sandbox дає документу
     // opaque origin навіть при прямому відкритті, а CORS * дозволяє такому
@@ -142,8 +165,11 @@ function preflight() {
 }
 
 /** Обробники маршруту /<шлях>/[...path] для Dynmap, адреса якого лежить у змінній originEnv. */
-export function dynmapProxy(originEnv: string) {
+export function dynmapProxy(
+  originEnv: string,
+  options: DynmapProxyOptions = {},
+) {
   const handler = (request: NextRequest, context: RouteContext) =>
-    proxy(originEnv, request, context);
+    proxy(originEnv, options, request, context);
   return { GET: handler, HEAD: handler, OPTIONS: preflight };
 }

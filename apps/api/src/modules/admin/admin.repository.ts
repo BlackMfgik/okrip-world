@@ -148,10 +148,8 @@ export async function createUser(
   )[0]!;
 }
 
-export async function identityByUserId(db: Executor, userId: string) {
-  return (
-    await db.select().from(identities).where(eq(identities.userId, userId))
-  )[0];
+export function identitiesByUserId(db: Executor, userId: string) {
+  return db.select().from(identities).where(eq(identities.userId, userId));
 }
 
 export async function identityByName(db: Executor, username: string) {
@@ -180,10 +178,8 @@ export async function createIdentity(
   )[0]!;
 }
 
-export async function accessByUserId(db: Executor, userId: string) {
-  return (
-    await db.select().from(playerAccess).where(eq(playerAccess.userId, userId))
-  )[0];
+export function accessesByUserId(db: Executor, userId: string) {
+  return db.select().from(playerAccess).where(eq(playerAccess.userId, userId));
 }
 
 export async function accessById(db: Executor, accessId: string) {

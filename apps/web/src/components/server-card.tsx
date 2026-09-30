@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { IpRow } from "@/components/ip-row";
+import { AdminMapLink } from "@/features/admin/components/AdminMapLink";
 import type { ServerConfig } from "@/lib/servers";
 
 export function ServerCard({ server }: { server: ServerConfig }) {
@@ -22,7 +23,10 @@ export function ServerCard({ server }: { server: ServerConfig }) {
   );
 }
 
-export function UpcomingServerCard({ name }: { name: string }) {
+export function UpcomingServerCard({
+  name,
+  mapHref,
+}: Pick<ServerConfig, "name" | "mapHref">) {
   return (
     <div className="server-card server-card-upcoming">
       <div className="server-card-header">
@@ -33,12 +37,11 @@ export function UpcomingServerCard({ name }: { name: string }) {
         <IpRow label="IP Адреса" value="Soon…" placeholder />
         <IpRow label="Порт" value="Soon…" placeholder />
       </div>
-      {/* Поки сервер не запущено, мапа й подача заявки вимкнені. Щоб увімкнути, поверніть
-          <Link href="/map-modded"> і <ServerApplicationAction /> (заявки ведуть на MINECRAFT_SERVER_ID). */}
+      {/* Поки сервер не запущено, подача заявки вимкнена, а мапу бачать лише адміни. Щоб увімкнути,
+          поверніть <Link href={mapHref}> і <ServerApplicationAction /> (заявки ведуть на MINECRAFT_SERVER_ID)
+          та приберіть adminOnly у app/dynmap/[...path]/route.ts. */}
       <div className="server-card-footer">
-        <button className="btn btn-map" disabled type="button">
-          Мапа — скоро
-        </button>
+        <AdminMapLink href={mapHref} name={name} />
       </div>
       <div className="server-application">
         <button className="btn btn-primary" disabled type="button">
