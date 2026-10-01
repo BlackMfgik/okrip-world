@@ -1040,6 +1040,11 @@ body {
   color: var(--text-secondary);
   animation: fade-up 0.7s ease 0.1s both;
 }
+.page-description a {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .servers-grid {
   position: relative;
   z-index: 2;
@@ -2281,6 +2286,91 @@ body {
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+ * About (SEO-сторінка «Український Minecraft-сервер»)
+ * ══════════════════════════════════════════════════════════════════════ */
+.about-content {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 20px;
+  max-width: 760px;
+  margin: 0 auto;
+  animation: fade-up 0.7s ease 0.2s both;
+}
+.about-section {
+  padding: 28px 30px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  background: var(--glass-surface);
+  box-shadow: var(--glass-highlight), var(--shadow-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  line-height: 1.65;
+}
+.about-section h2 {
+  margin-bottom: 12px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.about-section p,
+.about-section li {
+  color: var(--text-secondary);
+}
+.about-section p + p,
+.about-section p + ul,
+.about-section ol + p {
+  margin-top: 12px;
+}
+.about-section ul,
+.about-section ol {
+  display: grid;
+  gap: 6px;
+  padding-left: 1.3em;
+}
+.about-section ul {
+  list-style: disc;
+}
+.about-section ol {
+  list-style: decimal;
+}
+.about-section a:not(.btn) {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.about-section code {
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: var(--inset-bg);
+  color: var(--text);
+  word-break: break-all;
+}
+.about-faq {
+  display: grid;
+  gap: 10px;
+}
+.about-faq details {
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--inset-bg);
+}
+.about-faq summary {
+  color: var(--text);
+  font-weight: 650;
+  cursor: pointer;
+}
+.about-faq details p {
+  margin-top: 10px;
+}
+.home-wrap .btn:not(.btn-primary) {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
 @media (max-width: 640px) {
   .servers-wrap {
     padding: 32px 16px 96px;
@@ -2291,6 +2381,9 @@ body {
   .servers-grid {
     grid-template-columns: 1fr;
     gap: 18px;
+  }
+  .about-section {
+    padding: 22px 18px;
   }
   .login-error-toast {
     right: 16px;
@@ -2373,6 +2466,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .page-title,
   .page-description,
+  .about-content,
   .server-card-entry,
   .login-error-toast,
   .login-error-toast.is-exiting,

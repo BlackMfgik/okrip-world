@@ -3,6 +3,7 @@ import { Providers } from "@/components/providers";
 import { Toast } from "@/components/toast";
 import {
   SITE_DESCRIPTION,
+  SITE_KEYWORDS,
   SITE_NAME,
   SITE_OG_IMAGE,
   SITE_SOCIALS,
@@ -13,19 +14,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: SITE_URL,
   title: {
-    default: "Okrip World — Українська Minecraft-спільнота",
+    default: "Okrip World — український Minecraft-сервер і спільнота",
     template: "%s | Okrip World",
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
-  keywords: [
-    "Okrip World",
-    "Okrip",
-    "український Minecraft сервер",
-    "Minecraft сервер Україна",
-    "ванільний Minecraft сервер",
-    "Minecraft Java сервер",
-  ],
+  keywords: SITE_KEYWORDS,
   authors: [{ name: SITE_NAME }],
   creator: SITE_NAME,
   publisher: SITE_NAME,
@@ -47,12 +41,15 @@ export const metadata: Metadata = {
     type: "website",
     locale: "uk_UA",
     url: "/",
-    title: "Okrip World — Українська Minecraft-спільнота",
+    title: "Okrip World — український Minecraft-сервер і спільнота",
+    siteName: SITE_NAME,
+    description: SITE_DESCRIPTION,
     images: [SITE_OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Okrip World — Українська Minecraft-спільнота",
+    title: "Okrip World — український Minecraft-сервер і спільнота",
+    description: SITE_DESCRIPTION,
     images: [SITE_OG_IMAGE],
   },
 };
@@ -69,6 +66,7 @@ const jsonLd = {
       "@type": "Organization",
       "@id": `${SITE_URL}#organization`,
       name: SITE_NAME,
+      alternateName: ["Okrip", "OkripWorld", "Окріп Ворлд"],
       url: SITE_URL.toString(),
       logo: new URL("/content/OiOi.svg", SITE_URL).toString(),
       description: SITE_DESCRIPTION,
@@ -78,6 +76,7 @@ const jsonLd = {
       "@type": "WebSite",
       "@id": `${SITE_URL}#website`,
       name: SITE_NAME,
+      alternateName: "Okrip World — український Minecraft-сервер",
       url: SITE_URL.toString(),
       inLanguage: "uk-UA",
       publisher: { "@id": `${SITE_URL}#organization` },

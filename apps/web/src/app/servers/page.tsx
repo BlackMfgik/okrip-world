@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Nav } from "@/components/nav";
 import { ServerCard, UpcomingServerCard } from "@/components/server-card";
 import { SERVERS, UPCOMING_SERVERS } from "@/lib/servers";
 import { SupportBanner } from "@/components/support-banner";
-import { pageMetadata } from "@/lib/site";
+import { ABOUT_PATH, pageMetadata } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata(
-  "Сервери Minecraft: IP-адреса та порт | Okrip World",
-  "Підключайтеся до ванільного Minecraft-сервера Okrip World. Тут є IP-адреса й порт для входу та посилання на сторінку мапи світу.",
+  "IP українського Minecraft-сервера Okrip World — сервери та порт",
+  "IP-адреса й порт українського ванільного Minecraft-сервера Okrip World (Java 1.21), заявка у вайтліст через Discord і жива мапа світу.",
   "/servers",
 );
 
@@ -25,7 +26,8 @@ export default function ServersPage() {
             <h1 className="page-title">Сервери Minecraft</h1>
             <p className="page-description">
               Приєднуйтеся до української Minecraft-спільноти Okrip World.
-              Оберіть сервер і скопіюйте IP-адресу та порт для підключення.
+              Оберіть сервер і скопіюйте IP-адресу та порт для підключення.{" "}
+              <Link href={ABOUT_PATH}>Більше про сервер</Link>.
             </p>
           </header>
 

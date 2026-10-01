@@ -5,11 +5,11 @@ import { Nav } from "@/components/nav";
 import { Mascot } from "@/components/mascot";
 import { SocialLinks } from "@/components/social-links";
 import { HomeStatOnline } from "@/components/home-stat-online";
-import { pageMetadata, SITE_DESCRIPTION } from "@/lib/site";
+import { ABOUT_PATH, pageMetadata, SITE_DESCRIPTION } from "@/lib/site";
 import { SERVERS } from "@/lib/servers";
 
 export const metadata: Metadata = pageMetadata(
-  "Okrip World — Українська Minecraft-спільнота",
+  "Okrip World — український Minecraft-сервер і спільнота",
   SITE_DESCRIPTION,
   "/",
 );
@@ -37,10 +37,11 @@ export default function HomePage() {
             Ванільний сервер — один дім.
           </p>
           <div className="home-actions">
-
-
             <Link href="/servers" className="btn btn-primary">
               Обрати сервер →
+            </Link>
+            <Link href={ABOUT_PATH} className="btn">
+              Про сервер
             </Link>
           </div>
           <div className="home-stats">
