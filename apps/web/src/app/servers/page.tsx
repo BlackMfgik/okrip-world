@@ -4,6 +4,7 @@ import { Nav } from "@/components/nav";
 import { ServerCard, UpcomingServerCard } from "@/components/server-card";
 import { SERVERS, UPCOMING_SERVERS } from "@/lib/servers";
 import { SupportBanner } from "@/components/support-banner";
+import { AdminOnly } from "@/features/admin/components/AdminOnly";
 import { ABOUT_PATH, pageMetadata } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata(
@@ -37,14 +38,17 @@ export default function ServersPage() {
                 <ServerCard server={server} />
               </div>
             ))}
-            {UPCOMING_SERVERS.map((server) => (
-              <div className="server-card-entry" key={server.id}>
-                <UpcomingServerCard
-                  name={server.name}
-                  mapHref={server.mapHref}
-                />
-              </div>
-            ))}
+            {/* Сервери, що готуються, бачить лише адміністрація. */}
+            <AdminOnly>
+              {UPCOMING_SERVERS.map((server) => (
+                <div className="server-card-entry" key={server.id}>
+                  <UpcomingServerCard
+                    name={server.name}
+                    mapHref={server.mapHref}
+                  />
+                </div>
+              ))}
+            </AdminOnly>
           </div>
 
           <SupportBanner />

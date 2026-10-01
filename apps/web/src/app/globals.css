@@ -1053,6 +1053,11 @@ body {
   align-items: start;
   gap: 24px;
 }
+/* Одна картка (гостям не видно серверів, що готуються) — по центру, тієї ж ширини. */
+.servers-grid:has(> .server-card-entry:only-child) {
+  grid-template-columns: minmax(0, 444px);
+  justify-content: center;
+}
 .server-card-entry {
   min-width: 0;
   visibility: hidden;
