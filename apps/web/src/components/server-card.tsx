@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { IpRow } from "@/components/ip-row";
 import { AdminMapLink } from "@/features/admin/components/AdminMapLink";
-import { ServerApplicationAction } from "@/features/application/components/ServerApplicationAction";
 import type { ServerConfig } from "@/lib/servers";
 
 export function ServerCard({ server }: { server: ServerConfig }) {
@@ -38,12 +37,17 @@ export function UpcomingServerCard({
         <IpRow label="IP Адреса" value="Soon…" placeholder />
         <IpRow label="Порт" value="Soon…" placeholder />
       </div>
-      {/* Заявки відкриті (ведуть на MINECRAFT_SERVER_ID), а мапу поки бачать лише адміни. Щоб відкрити
-          мапу всім, поверніть <Link href={mapHref}> і приберіть adminOnly у app/dynmap/[...path]/route.ts. */}
+      {/* Поки сервер не запущено, подача заявки вимкнена, а мапу бачать лише адміни. Щоб увімкнути,
+          поверніть <Link href={mapHref}> і <ServerApplicationAction /> (заявки ведуть на MINECRAFT_SERVER_ID)
+          та приберіть adminOnly у app/dynmap/[...path]/route.ts. */}
       <div className="server-card-footer">
         <AdminMapLink href={mapHref} name={name} />
       </div>
-      <ServerApplicationAction />
+      <div className="server-application">
+        <button className="btn btn-primary" disabled type="button">
+          Заявки — скоро
+        </button>
+      </div>
     </div>
   );
 }
