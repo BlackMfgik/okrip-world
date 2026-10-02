@@ -5,10 +5,7 @@ import {
   currentApplicationSchema,
 } from "@okrip/contracts";
 import type { Database } from "../../db/client.js";
-import {
-  DISCORD_MEMBERSHIP_CHECK_ENABLED,
-  type DiscordProvider,
-} from "../auth/discord.service.js";
+import type { DiscordProvider } from "../auth/discord.service.js";
 import { AppError } from "../../shared/errors.js";
 import { audit } from "../audit/audit.repository.js";
 import {
@@ -27,12 +24,13 @@ export function applicationService(
   repeatSubmissionEnabled = false,
   autoApproveEnabled = false,
   minecraftServerId = "",
+  membershipCheckEnabled = false,
   commandQueued: (serverId: string) => void = () => undefined,
 ) {
   return {
     async submit(user: { id: string; discordId: string }, input: unknown) {
       const { minecraftUsername } = submitApplicationSchema.parse(input);
-      if (DISCORD_MEMBERSHIP_CHECK_ENABLED) {
+      if (membershipCheckEnabled) {
         await discord.membership(user.discordId);
       }
       let queued = false;

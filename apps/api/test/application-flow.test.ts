@@ -21,6 +21,7 @@ import {
 } from "../src/modules/applications/application.service.js";
 import { moderationService } from "../src/modules/moderation/moderation.service.js";
 import { minecraftUsernameSchema } from "@okrip/contracts";
+import { AppError } from "../src/shared/errors.js";
 let ctx: Awaited<ReturnType<typeof setup>>;
 beforeEach(async () => {
   ctx = await setup();
@@ -37,7 +38,8 @@ it("submits, durably sends Telegram, approves exactly once, leases and completes
     payload: { minecraftUsername: "Player_One" },
   });
   expect(submitted.statusCode, submitted.body).toBe(201);
-  expect(ctx.discord.membership).not.toHaveBeenCalled();
+  // Один раз при вході (login) і один раз при подачі заявки.
+  expect(ctx.discord.membership).toHaveBeenCalledTimes(2);
   const publicId = submitted.json().application.publicId;
   expect((await ctx.db.select().from(identities))[0]!.normalizedUsername).toBe(
     "player_one",
@@ -511,3 +513,19 @@ it.each(["ab", "has space", "somebody;op", "abcdefghijklmnopq", "Імя"])(
     expect(minecraftUsernameSchema.safeParse(name).success).toBe(false);
   },
 );
+it("rejects an application from someone who left the Discord guild", async () => {
+  const { cookie } = await login(ctx);
+  ctx.discord.membership.mockRejectedValueOnce(
+    new AppError(403, "guild_required", "Спочатку приєднайтеся до Discord-сервера Okrip World."),
+  );
+  const submitted = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/applications",
+    cookies: { okrip_session: cookie },
+    headers: browserHeaders,
+    payload: { minecraftUsername: "Player_One" },
+  });
+  expect(submitted.statusCode).toBe(403);
+  expect(submitted.json().code).toBe("guild_required");
+  expect(await ctx.db.select().from(identities)).toHaveLength(0);
+});

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { setup, login, env, browserHeaders } from "./helpers.js";
 import { users, sessions } from "../src/db/schema.js";
+import { AppError } from "../src/shared/errors.js";
 let ctx: Awaited<ReturnType<typeof setup>>;
 beforeEach(async () => {
   ctx = await setup();
@@ -28,7 +29,7 @@ describe("OAuth and sessions", () => {
     });
     expect(replay.headers.location).toContain("error=login_failed");
     expect(ctx.discord.identity).toHaveBeenCalledTimes(1);
-    expect(ctx.discord.membership).not.toHaveBeenCalled();
+    expect(ctx.discord.membership).toHaveBeenCalledExactlyOnceWith("111");
     expect(
       (
         await ctx.app.inject({
@@ -87,5 +88,26 @@ describe("OAuth and sessions", () => {
       (await ctx.app.inject({ url: "/v1/me", cookies })).json().user,
     ).toBeNull();
     expect(env.SESSION_SECRET).toHaveLength(32);
+  });
+  it("rejects login outside the Discord guild with a specific error", async () => {
+    ctx.discord.membership.mockRejectedValueOnce(
+      new AppError(403, "guild_required", "Спочатку приєднайтеся до Discord-сервера Okrip World."),
+    );
+    const start = await ctx.app.inject({ url: "/v1/auth/discord/start" });
+    const state = new URL(start.headers.location!).searchParams.get("state");
+    const browser = start.cookies.find((c) => c.name === "okrip_oauth")!.value;
+    const callback = await ctx.app.inject({
+      url: "/v1/auth/discord/callback?code=valid&state=" + state,
+      cookies: { okrip_oauth: browser },
+    });
+    expect(callback.headers.location).toContain("error=guild_required");
+    expect(await ctx.db.select().from(sessions)).toHaveLength(0);
+  });
+  it("skips the guild check when DISCORD_MEMBERSHIP_CHECK=false", async () => {
+    await ctx.close();
+    ctx = await setup({ DISCORD_MEMBERSHIP_CHECK: false });
+    const { callback } = await login(ctx);
+    expect(callback.headers.location).toContain("/application");
+    expect(ctx.discord.membership).not.toHaveBeenCalled();
   });
 });

@@ -42,6 +42,11 @@ export const envSchema = z
       .union([z.boolean(), z.enum(["true", "false"])])
       .default("false")
       .transform((value) => value === true || value === "true"),
+    // Вхід і подача заявки лише для учасників Discord-сервера DISCORD_GUILD_ID.
+    DISCORD_MEMBERSHIP_CHECK: z
+      .union([z.boolean(), z.enum(["true", "false"])])
+      .default("true")
+      .transform((value) => value === true || value === "true"),
     APPLICATION_AUTO_APPROVE: z
       .union([z.boolean(), z.enum(["true", "false"])])
       .default("false")

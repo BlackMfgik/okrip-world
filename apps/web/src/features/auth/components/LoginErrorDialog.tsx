@@ -1,8 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SITE_DISCORD_URL } from "@/lib/site";
 
-export function LoginErrorDialog() {
+const MESSAGES: Record<string, { title: string; description: string }> = {
+  guild_required: {
+    title: "Ви не на Discord-сервері",
+    description: "Спочатку приєднайтеся до Discord-сервера Okrip World, а потім увійдіть ще раз.",
+  },
+  guild_screening: {
+    title: "Завершіть перевірку в Discord",
+    description: "Прийміть правила Discord-сервера Okrip World, а потім увійдіть ще раз.",
+  },
+};
+const DEFAULT_MESSAGE = {
+  title: "Не вдалося завершити вхід",
+  description: "Спробуйте увійти через Discord ще раз.",
+};
+
+export function LoginErrorDialog({ reason }: { reason?: string }) {
+  const message = (reason && MESSAGES[reason]) || DEFAULT_MESSAGE;
   const [visible, setVisible] = useState(true);
   const [exiting, setExiting] = useState(false);
 
@@ -37,8 +54,13 @@ export function LoginErrorDialog() {
       </div>
       <div>
         <p className="application-eyebrow">DISCORD · ВХІД</p>
-        <h2>Не вдалося завершити вхід</h2>
-        <p className="login-toast-description">Спробуйте увійти через Discord ще раз.</p>
+        <h2>{message.title}</h2>
+        <p className="login-toast-description">{message.description}</p>
+        {message !== DEFAULT_MESSAGE && (
+          <a className="login-toast-link" href={SITE_DISCORD_URL} rel="noopener noreferrer" target="_blank">
+            Відкрити Discord →
+          </a>
+        )}
       </div>
       <div className="login-toast-progress" aria-hidden="true" />
     </aside>

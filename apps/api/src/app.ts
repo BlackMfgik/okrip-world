@@ -130,6 +130,7 @@ export async function buildApp(
       env.APPLICATION_REPEAT_DEBUG,
       env.APPLICATION_AUTO_APPROVE,
       env.MINECRAFT_SERVER_ID,
+      env.DISCORD_MEMBERSHIP_CHECK,
       (serverId) => commandSignals.notify(serverId),
     ),
   );

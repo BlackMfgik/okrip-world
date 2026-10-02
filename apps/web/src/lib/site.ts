@@ -68,11 +68,13 @@ export const SITE_KEYWORDS = [
 /** Посилання на банку Monobank для блоку «Підтримай сервер». Порожньо — блок прихований. */
 export const SITE_SUPPORT_URL = "https://send.monobank.ua/jar/AXR21BaES1";
 
+export const SITE_DISCORD_URL = "https://discord.gg/UbPaPdfA26";
+
 export const SITE_SOCIALS = [
   "https://t.me/okripworld",
   "https://www.youtube.com/@OKRIPp",
   "https://instagram.com/okrip_p",
-  "https://discord.gg/UbPaPdfA26",
+  SITE_DISCORD_URL,
 ] as const;
 
 export function pageMetadata(

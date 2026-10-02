@@ -5,6 +5,10 @@ import type { Env } from "../../config/env.js";
 import type { AuthService } from "./auth.service.js";
 import { sessionCookie } from "../../plugins/auth-session.js";
 import { discordAvatarUrl } from "../../shared/discord-avatar.js";
+import { AppError } from "../../shared/errors.js";
+
+// Помилки входу, які сайт пояснює окремо; решта — загальне login_failed.
+const LOGIN_ERRORS = new Set(["guild_required", "guild_screening"]);
 export function authRoutes(app: FastifyInstance, auth: AuthService, env: Env) {
   const options = {
     httpOnly: true,
@@ -51,9 +55,13 @@ export function authRoutes(app: FastifyInstance, auth: AuthService, env: Env) {
           maxAge: 7 * 86400,
         });
         return reply.redirect(env.APP_BASE_URL + "/application");
-      } catch {
+      } catch (error) {
+        const code =
+          error instanceof AppError && LOGIN_ERRORS.has(error.code)
+            ? error.code
+            : "login_failed";
         return reply.redirect(
-          env.APP_BASE_URL + "/auth/callback?error=login_failed",
+          env.APP_BASE_URL + "/auth/callback?error=" + code,
         );
       }
     },

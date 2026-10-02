@@ -20,3 +20,13 @@ test("error is non-blocking and slides out before it disappears", () => {
   act(() => vi.advanceTimersByTime(1));
   expect(screen.queryByRole("alert")).toBeNull();
 });
+test("explains a missing Discord guild membership with a link", () => {
+  render(<LoginErrorDialog reason="guild_required" />);
+  expect(screen.getByText("Ви не на Discord-сервері")).toBeTruthy();
+  expect(screen.getByRole("link").getAttribute("href")).toContain("discord.gg");
+});
+test("falls back to the generic message for unknown reasons", () => {
+  render(<LoginErrorDialog reason="login_failed" />);
+  expect(screen.getByText("Не вдалося завершити вхід")).toBeTruthy();
+  expect(screen.queryByRole("link")).toBeNull();
+});

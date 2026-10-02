@@ -16,7 +16,7 @@ export const SERVERS: ServerConfig[] = [
   },
 ];
 
-/** Сервери, які ще готуються: картку «Soon» на сторінці серверів і мапу бачать лише адміни; в онлайн і лічильник не входять. */
+/** Сервери, які ще готуються: картка «Soon» з подачею заявки видна всім, мапа — лише адмінам; в онлайн і лічильник не входять. */
 export const UPCOMING_SERVERS: Array<
   Pick<ServerConfig, "id" | "name" | "mapHref">
 > = [{ id: "modded", name: "SMP", mapHref: "/map-modded" }];
