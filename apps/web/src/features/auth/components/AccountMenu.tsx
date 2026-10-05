@@ -5,6 +5,22 @@ import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentSession } from "@/features/auth/hooks/useCurrentSession";
 import { queryKeys } from "@/lib/query-keys";
+import { DiscordLoginButton } from "./DiscordLoginButton";
+
+/** Силует замість аватарки, поки гість не увійшов. */
+function AvatarPlaceholder() {
+  return (
+    <svg aria-hidden="true" fill="none" height="20" viewBox="0 0 24 24" width="20">
+      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M4 20c0-3.6 3.6-6 8-6s8 2.4 8 6"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  );
+}
 
 export function AccountMenu({
   placement = "corner",
@@ -35,7 +51,45 @@ export function AccountMenu({
   }, [open]);
 
   const user = session.data?.user;
-  if (!user) return null;
+
+  if (!user)
+    return (
+      <div className={"account-menu account-menu-" + placement} ref={root}>
+        <button
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          aria-label="Увійти в акаунт"
+          className="account-menu-trigger account-menu-trigger-guest"
+          onClick={() => setOpen((value) => !value)}
+          type="button"
+        >
+          <AvatarPlaceholder />
+        </button>
+
+        {open && (
+          <div
+            aria-label="Вхід в акаунт"
+            className="account-menu-popover"
+            role="dialog"
+          >
+            <p className="account-menu-eyebrow">Особистий кабінет</p>
+            <div className="account-menu-profile">
+              <div className="account-menu-profile-avatar" aria-hidden="true">
+                <AvatarPlaceholder />
+              </div>
+              <div className="account-menu-identity">
+                <strong>Ви не увійшли</strong>
+                <span>Увійдіть, щоб подати заявку</span>
+              </div>
+            </div>
+            <div className="account-menu-login">
+              <DiscordLoginButton />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+
   const name = user.displayName ?? user.username;
 
   return (

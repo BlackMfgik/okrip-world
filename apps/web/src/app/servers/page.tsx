@@ -25,11 +25,14 @@ export default function ServersPage() {
 
           <header className="page-header">
             <h1 className="page-title">Сервери Minecraft</h1>
-            <p className="page-description">
-              Приєднуйтеся до української Minecraft-спільноти Okrip World.
-              Оберіть сервер і скопіюйте IP-адресу та порт для підключення.{" "}
-              <Link href={ABOUT_PATH}>Більше про сервер</Link>.
-            </p>
+            {/* Опис під заголовком бачить лише адміністрація. */}
+            <AdminOnly>
+              <p className="page-description">
+                Приєднуйтеся до української Minecraft-спільноти Okrip World.
+                Оберіть сервер і скопіюйте IP-адресу та порт для підключення.{" "}
+                <Link href={ABOUT_PATH}>Більше про сервер</Link>.
+              </p>
+            </AdminOnly>
           </header>
 
           <div className="servers-grid">
