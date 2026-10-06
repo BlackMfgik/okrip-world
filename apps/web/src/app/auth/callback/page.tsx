@@ -1,4 +1,4 @@
-import ServersPage from "@/app/servers/page";
+import { ServersPage } from "@/features/servers/components/ServersPage";
 import { LoginErrorDialog } from "@/features/auth/components/LoginErrorDialog";
 
 export const metadata = {
@@ -15,7 +15,9 @@ export default async function AuthCallbackPage({
   return (
     <>
       <ServersPage />
-      <LoginErrorDialog reason={typeof error === "string" ? error : undefined} />
+      <LoginErrorDialog
+        reason={typeof error === "string" ? error : undefined}
+      />
     </>
   );
 }

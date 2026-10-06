@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import type { AuthService } from "../auth/auth.service.js";
+import type { AuthService } from "../auth/index.js";
 import type { applicationService } from "./application.service.js";
 import { requireUser } from "../../plugins/auth-session.js";
 import { submitApplicationSchema } from "@okrip/contracts";

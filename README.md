@@ -12,3 +12,5 @@ and approved players are automatically whitelisted on the game server.
 - Java plugin with retry-based command delivery, so approved players are never lost between services
 - Live Dynmap world maps through a server-side proxy
 - CI: typecheck, lint, Vitest tests on real PostgreSQL, build
+
+See [architecture and module boundaries](docs/ARCHITECTURE.md) for code ownership, transaction rules, and frontend organization.

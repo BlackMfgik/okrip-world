@@ -32,12 +32,17 @@ export const consumeState = (
       ),
     )
     .returning();
-export async function upsertUser(db: Executor, profile: DiscordIdentity) {
+export async function upsertUser(
+  db: Executor,
+  profile: DiscordIdentity,
+  joinedAt?: Date | null,
+) {
   const values = {
     discordId: profile.id,
     discordUsername: profile.username,
     discordGlobalName: profile.global_name,
     discordAvatar: profile.avatar,
+    ...(joinedAt ? { discordGuildJoinedAt: joinedAt } : {}),
   };
   return (
     await db
@@ -50,6 +55,16 @@ export async function upsertUser(db: Executor, profile: DiscordIdentity) {
       .returning()
   )[0]!;
 }
+export const saveDiscordMembership = (
+  db: Executor,
+  userId: string,
+  joinedAt: Date,
+) =>
+  db
+    .update(users)
+    .set({ discordGuildJoinedAt: joinedAt })
+    .where(eq(users.id, userId));
+
 export const saveSession = (db: Executor, userId: string, tokenHash: string) =>
   db.insert(sessions).values({
     userId,

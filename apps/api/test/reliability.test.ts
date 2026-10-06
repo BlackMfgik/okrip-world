@@ -13,9 +13,9 @@ import {
 import {
   APPLICATION_SUBMISSION_COOLDOWN_MS,
   applicationService,
-} from "../src/modules/applications/application.service.js";
-import { moderationService } from "../src/modules/moderation/moderation.service.js";
-import { minecraftService } from "../src/modules/minecraft/minecraft-command.service.js";
+} from "../src/modules/applications/index.js";
+import { moderationService } from "../src/modules/moderation/index.js";
+import { minecraftService } from "../src/modules/minecraft/index.js";
 let ctx: Awaited<ReturnType<typeof setup>>;
 beforeEach(async () => {
   ctx = await setup();

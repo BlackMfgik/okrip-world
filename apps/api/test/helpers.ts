@@ -2,7 +2,10 @@ import { testDatabase } from "./test-database.js";
 import { vi } from "vitest";
 import { envSchema } from "../src/config/env.js";
 import { buildApp } from "../src/app.js";
-import type { DiscordIdentity } from "../src/modules/auth/discord.service.js";
+import type {
+  DiscordIdentity,
+  DiscordMembership,
+} from "../src/modules/auth/index.js";
 export const env = envSchema.parse({
   NODE_ENV: "test",
   DATABASE_URL: "postgres://test",
@@ -33,14 +36,26 @@ export async function setup(overrides: Partial<typeof env> = {}) {
       global_name: null,
       avatar: null,
     })),
-    membership: vi.fn(async () => {}),
+    membership: vi.fn(async (): Promise<DiscordMembership> => ({
+      joinedAt: new Date("2026-09-01T10:20:30.000Z"),
+    })),
   };
   const telegram = { call: vi.fn(async () => ({ message_id: 123 })) };
   const discordBot = {
     guildRoles: vi.fn(async () => [
       { id: "456", name: "@everyone", permissions: "0", managed: false },
-      { id: "20000000000000001", name: "Гравець", permissions: "0", managed: false },
-      { id: "20000000000000002", name: "Модератор", permissions: "8", managed: false },
+      {
+        id: "20000000000000001",
+        name: "Гравець",
+        permissions: "0",
+        managed: false,
+      },
+      {
+        id: "20000000000000002",
+        name: "Модератор",
+        permissions: "8",
+        managed: false,
+      },
     ]),
     postMessage: vi.fn(async () => ({ status: 200, id: "30000000000000001" })),
     setMemberRole: vi.fn(async () => 204),

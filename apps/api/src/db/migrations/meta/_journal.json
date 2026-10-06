@@ -127,6 +127,13 @@
       "when": 1790195000000,
       "tag": "0017_admin_second_account",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791244800000,
+      "tag": "0018_discord_membership_dates",
+      "breakpoints": true
     }
   ]
 }

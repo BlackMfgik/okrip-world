@@ -8,7 +8,7 @@ import {
   users,
 } from "../src/db/schema.js";
 import { browserHeaders, env, login, serverHeaders, setup } from "./helpers.js";
-import { applicationService } from "../src/modules/applications/application.service.js";
+import { applicationService } from "../src/modules/applications/index.js";
 
 let ctx: Awaited<ReturnType<typeof setup>>;
 
@@ -608,7 +608,9 @@ it("lets a player re-apply after access was revoked and restores the same access
       headers: browserHeaders,
       payload: { publicId, action: "approve" },
     });
-  expect((await decide(first.json().application.publicId)).statusCode).toBe(200);
+  expect((await decide(first.json().application.publicId)).statusCode).toBe(
+    200,
+  );
   const [access] = await ctx.db.select().from(playerAccess);
   const removed = await ctx.app.inject({
     method: "POST",
@@ -674,7 +676,10 @@ it("lets an admin rename a whitelisted player and re-syncs the server whitelist"
     url: "/v1/admin/applications/decision",
     cookies: adminCookies,
     headers: browserHeaders,
-    payload: { publicId: submitted.json().application.publicId, action: "approve" },
+    payload: {
+      publicId: submitted.json().application.publicId,
+      action: "approve",
+    },
   });
   const [access] = await ctx.db.select().from(playerAccess);
   const rename = (minecraftUsername: string) =>

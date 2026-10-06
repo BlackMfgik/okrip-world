@@ -7,7 +7,7 @@ import {
 import type { Database } from "../../db/client.js";
 import type { Env } from "../../config/env.js";
 import { AppError } from "../../shared/errors.js";
-import { audit } from "../audit/audit.repository.js";
+import { audit } from "../audit/index.js";
 import type { DiscordBot } from "./discord-bot.service.js";
 
 const ROLE_BUTTON_PREFIX = "role:";

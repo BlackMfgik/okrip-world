@@ -1,6 +1,6 @@
 "use client";
 
-import { useTotalOnline } from "@/hooks/use-total-online";
+import { useTotalOnline } from "@/features/servers/hooks/use-total-online";
 
 export function HomeStatOnline() {
   const { data } = useTotalOnline();

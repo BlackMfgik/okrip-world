@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Nav } from "@/components/nav";
-import { ServerCard, UpcomingServerCard } from "@/components/server-card";
-import { SERVERS, UPCOMING_SERVERS } from "@/lib/servers";
-import { SupportBanner } from "@/components/support-banner";
-import { AdminOnly } from "@/features/admin/components/AdminOnly";
-import { ABOUT_PATH, pageMetadata } from "@/lib/site";
+import { pageMetadata } from "@/lib/site";
+import { ServersPage } from "@/features/servers/components/ServersPage";
 
 export const metadata: Metadata = pageMetadata(
   "IP українського Minecraft-сервера Okrip World — сервери та порт",
@@ -13,53 +8,4 @@ export const metadata: Metadata = pageMetadata(
   "/servers",
 );
 
-export default function ServersPage() {
-  return (
-    <>
-      <Nav />
-
-      <main className="body">
-        <div className="servers-wrap">
-          <div className="servers-night-bg" />
-          <div className="servers-day-bg" />
-
-          <header className="page-header">
-            <h1 className="page-title">Сервери Minecraft</h1>
-            {/* Опис під заголовком бачить лише адміністрація. */}
-            <AdminOnly>
-              <p className="page-description">
-                Приєднуйтеся до української Minecraft-спільноти Okrip World.
-                Оберіть сервер і скопіюйте IP-адресу та порт для підключення.{" "}
-                <Link href={ABOUT_PATH}>Більше про сервер</Link>.
-              </p>
-            </AdminOnly>
-          </header>
-
-          <div className="servers-grid">
-            {SERVERS.map((server) => (
-              <div className="server-card-entry" key={server.id}>
-                <ServerCard server={server} />
-              </div>
-            ))}
-            {/* Сервери, що готуються, бачить лише адміністрація. */}
-            <AdminOnly>
-              {UPCOMING_SERVERS.map((server) => (
-                <div className="server-card-entry" key={server.id}>
-                  <UpcomingServerCard
-                    name={server.name}
-                    mapHref={server.mapHref}
-                  />
-                </div>
-              ))}
-            </AdminOnly>
-          </div>
-
-          <SupportBanner />
-        </div>
-      </main>
-    </>
-  );
-}
-
-
-
+export default ServersPage;

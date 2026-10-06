@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { SERVERS } from "@/lib/servers";
+import { SERVERS } from "@/features/servers/config";
 
 interface McStatusResponse {
   online: boolean;

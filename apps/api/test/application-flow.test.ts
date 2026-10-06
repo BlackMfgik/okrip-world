@@ -18,8 +18,8 @@ import {
 import {
   APPLICATION_SUBMISSION_COOLDOWN_MS,
   applicationService,
-} from "../src/modules/applications/application.service.js";
-import { moderationService } from "../src/modules/moderation/moderation.service.js";
+} from "../src/modules/applications/index.js";
+import { moderationService } from "../src/modules/moderation/index.js";
 import { minecraftUsernameSchema } from "@okrip/contracts";
 import { AppError } from "../src/shared/errors.js";
 let ctx: Awaited<ReturnType<typeof setup>>;
@@ -196,7 +196,10 @@ it("removes a player from the whitelist via the in-game /wldel command", async (
   // Регістр ніка не важливий, у відповіді — нік як зареєстровано.
   const removed = await remove("auto_player");
   expect(removed.statusCode, removed.body).toBe(200);
-  expect(removed.json()).toEqual({ status: "removed", username: "Auto_Player" });
+  expect(removed.json()).toEqual({
+    status: "removed",
+    username: "Auto_Player",
+  });
   expect((await ctx.db.select().from(playerAccess))[0]!.status).toBe("revoked");
   expect(
     (await ctx.db.select().from(commands)).map((command) => command.type),
@@ -516,7 +519,11 @@ it.each(["ab", "has space", "somebody;op", "abcdefghijklmnopq", "Імя"])(
 it("rejects an application from someone who left the Discord guild", async () => {
   const { cookie } = await login(ctx);
   ctx.discord.membership.mockRejectedValueOnce(
-    new AppError(403, "guild_required", "Спочатку приєднайтеся до Discord-сервера Okrip World."),
+    new AppError(
+      403,
+      "guild_required",
+      "Спочатку приєднайтеся до Discord-сервера Okrip World.",
+    ),
   );
   const submitted = await ctx.app.inject({
     method: "POST",

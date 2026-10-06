@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Nav } from "@/components/nav";
-import { MapFrame } from "@/components/map-frame";
+import { MapFrame } from "@/features/maps/components/map-frame";
 import { isAdminSession } from "@/lib/admin-session";
-import { createDynmapToken } from "@/lib/dynmap-token";
+import { createDynmapToken } from "@/features/maps/server/dynmap-token";
 import { pageMetadata } from "@/lib/site";
 
 // DYNMAP_ORIGIN і сесія адміна читаються під час запиту, щоб змінна з Railway діяла без перезбирання.

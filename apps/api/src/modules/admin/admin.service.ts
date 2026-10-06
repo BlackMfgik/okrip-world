@@ -1,41 +1,38 @@
 import {
-  adminAccountListSchema,
-  adminAccountMutationResultSchema,
   adminApplicationBlockResultSchema,
   adminApplicationListSchema,
-  adminWhitelistSchema,
-  type AdminWhitelistAdd,
-  type AdminWhitelistRename,
   type AdminApplicationFilter,
-  type AdminAccountMutation,
   type AdminApplicationBlock,
 } from "@okrip/contracts";
+import {
+  discordMembershipEnricher,
+  type DiscordProvider,
+} from "../auth/index.js";
+import { discordAccountCreatedAt } from "../../shared/discord-account.js";
+import { lockUser } from "../player-access/index.js";
+import type { moderationService } from "../moderation/index.js";
+import { adminAccountsService } from "./admin-accounts.service.js";
+import { adminWhitelistService } from "./admin-whitelist.service.js";
 import type { Database } from "../../db/client.js";
 import { AppError } from "../../shared/errors.js";
+import { audit } from "../audit/index.js";
 import { discordAvatarUrl } from "../../shared/discord-avatar.js";
-import { isSuperAdmin } from "../../shared/super-admin.js";
-import { audit } from "../audit/audit.repository.js";
-import { lockUser } from "../applications/application.repository.js";
-import { addCommand } from "../moderation/moderation.repository.js";
-import type { moderationService } from "../moderation/moderation.service.js";
+import type { WebAdmin } from "./admin.types.js";
 import * as repo from "./admin.repository.js";
-
-const ADMIN_MINECRAFT_ACCOUNT_LIMIT = 2;
-
-interface WebAdmin {
-  id: string;
-  discordId: string;
-  discordUsername: string;
-  discordGlobalName: string | null;
-}
 
 export function adminService(
   db: Database,
   moderation: ReturnType<typeof moderationService>,
   serverId: string,
   commandQueued: (serverId: string) => void = () => undefined,
+  discord?: DiscordProvider,
 ) {
+  const enrichMembership = discord
+    ? discordMembershipEnricher(db, discord)
+    : undefined;
   return {
+    ...adminAccountsService(db),
+    ...adminWhitelistService(db, serverId, commandQueued),
     async list(filter: AdminApplicationFilter) {
       const [allRows, groupedCounts, blockedCount] = await Promise.all([
         repo.listApplications(db, filter),
@@ -52,6 +49,9 @@ export function adminService(
               return true;
             })
           : allRows;
+      const joinedDates = await enrichMembership?.(
+        rows.map(({ user }) => user),
+      );
       const counts = {
         all: 0,
         pending: 0,
@@ -75,6 +75,11 @@ export function adminService(
             publicId: application.publicId,
             number: application.number,
             discordUsername: user.discordUsername,
+            discordAccountCreatedAt: discordAccountCreatedAt(user.discordId),
+            discordGuildJoinedAt:
+              (
+                user.discordGuildJoinedAt ?? joinedDates?.get(user.id)
+              )?.toISOString() ?? null,
             discordDisplayName: user.discordGlobalName,
             discordAvatarUrl: discordAvatarUrl(
               user.discordId,
@@ -94,108 +99,6 @@ export function adminService(
           };
         }),
         counts,
-      });
-    },
-    async whitelist() {
-      const rows = await repo.listWhitelistPlayers(db);
-      return adminWhitelistSchema.parse({
-        players: rows.map(({ access, identity, user }) => ({
-          accessId: access.id,
-          minecraftUsername: identity.username,
-          discordUsername: user.discordUsername,
-          discordDisplayName: user.discordGlobalName,
-          discordId: user.discordId,
-          discordAvatarUrl: discordAvatarUrl(
-            user.discordId,
-            user.discordAvatar,
-          ),
-          addedAt: access.createdAt.toISOString(),
-        })),
-        count: rows.length,
-      });
-    },
-    async accounts() {
-      const rows = await repo.listAdminAccounts(db);
-      return adminAccountListSchema.parse({
-        accounts: rows.map(({ account, user }) => ({
-          discordId: account.discordId,
-          discordUsername: user?.discordUsername ?? null,
-          discordDisplayName: user?.discordGlobalName ?? null,
-          discordAvatarUrl: discordAvatarUrl(
-            account.discordId,
-            user?.discordAvatar ?? null,
-          ),
-          canManageAdmins: account.canManageAdmins,
-          createdAt: account.createdAt.toISOString(),
-        })),
-        count: rows.length,
-      });
-    },
-    async addAdmin(input: AdminAccountMutation, admin: WebAdmin) {
-      if (await repo.adminAccountByDiscordId(db, input.discordId))
-        throw new AppError(
-          409,
-          "admin_exists",
-          "Цей Discord уже має права адміністратора.",
-        );
-      try {
-        await db.transaction(async (tx) => {
-          await repo.createAdminAccount(tx, input.discordId);
-          await audit(tx, {
-            actorType: "user",
-            actorId: admin.id,
-            eventType: "web_admin_added",
-            entityType: "admin_account",
-            entityId: admin.id,
-            metadata: {
-              targetDiscordId: input.discordId,
-              actorDiscordId: admin.discordId,
-            },
-          });
-        });
-      } catch (error) {
-        const cause = error as { code?: string; cause?: { code?: string } };
-        if (cause.code === "23505" || cause.cause?.code === "23505")
-          throw new AppError(
-            409,
-            "admin_exists",
-            "Цей Discord уже має права адміністратора.",
-          );
-        throw error;
-      }
-      return adminAccountMutationResultSchema.parse({
-        discordId: input.discordId,
-      });
-    },
-    async removeAdmin(input: AdminAccountMutation, admin: WebAdmin) {
-      const target = await repo.adminAccountByDiscordId(db, input.discordId);
-      if (!target)
-        throw new AppError(404, "not_found", "Адміністратора не знайдено.");
-      if (target.discordId === admin.discordId)
-        throw new AppError(403, "protected_admin", "Не можна видалити себе.");
-      // Головних модерів може видалити лише супер-адмін.
-      if (target.canManageAdmins && !isSuperAdmin(admin.discordId))
-        throw new AppError(
-          403,
-          "protected_admin",
-          "Головного модератора не можна видалити.",
-        );
-      await db.transaction(async (tx) => {
-        await repo.deleteAdminAccount(tx, input.discordId);
-        await audit(tx, {
-          actorType: "user",
-          actorId: admin.id,
-          eventType: "web_admin_removed",
-          entityType: "admin_account",
-          entityId: admin.id,
-          metadata: {
-            targetDiscordId: input.discordId,
-            actorDiscordId: admin.discordId,
-          },
-        });
-      });
-      return adminAccountMutationResultSchema.parse({
-        discordId: input.discordId,
       });
     },
     async setApplicationBlocked(input: AdminApplicationBlock, admin: WebAdmin) {
@@ -235,226 +138,6 @@ export function adminService(
         applicationBlocked: input.blocked,
         applicationBlockedUntil: blockedUntil?.toISOString() ?? null,
       });
-    },
-    async addToWhitelist(input: AdminWhitelistAdd, admin: WebAdmin) {
-      const discordUsername = input.discordUsername.replace(/^@/, "");
-      let result;
-      try {
-        result = await db.transaction(async (tx) => {
-          const user =
-            (await repo.userByDiscordId(tx, input.discordId)) ??
-            (await repo.createUser(tx, input.discordId, discordUsername));
-          await lockUser(tx, user.id);
-
-          const [ownedIdentities, namedIdentity, accesses] = await Promise.all([
-            repo.identitiesByUserId(tx, user.id),
-            repo.identityByName(tx, input.minecraftUsername),
-            repo.accessesByUserId(tx, user.id),
-          ]);
-          if (namedIdentity && namedIdentity.userId !== user.id)
-            throw new AppError(
-              409,
-              "minecraft_identity_exists",
-              "Цей Minecraft-нік уже прив’язаний до іншого Discord.",
-            );
-          if (!namedIdentity) {
-            // Другий Minecraft-акаунт дозволено лише адмінам сайту; той самий ліміт тримає тригер guard_identity_limit.
-            const isAdmin = Boolean(
-              await repo.adminAccountByDiscordId(tx, input.discordId),
-            );
-            if (
-              ownedIdentities.length >=
-              (isAdmin ? ADMIN_MINECRAFT_ACCOUNT_LIMIT : 1)
-            )
-              throw new AppError(
-                409,
-                "discord_identity_exists",
-                isAdmin
-                  ? "Адміністратор уже має два Minecraft-акаунти."
-                  : "Цей Discord уже прив’язаний до іншого Minecraft-ніка.",
-              );
-          }
-          if (accesses.some((access) => access.status === "banned"))
-            throw new AppError(
-              409,
-              "access_banned",
-              "Гравець заблокований. Спочатку потрібне окреме рішення щодо бану.",
-            );
-          const identity =
-            namedIdentity ??
-            (await repo.createIdentity(tx, user.id, input.minecraftUsername));
-          const existingAccess = accesses.find(
-            (access) => access.minecraftIdentityId === identity.id,
-          );
-          if (existingAccess?.status === "active")
-            throw new AppError(
-              409,
-              "access_exists",
-              "Гравець уже є у вайтлісті.",
-            );
-          if (existingAccess?.status === "revoked")
-            await repo.allowAccessRestoration(tx);
-          const access = existingAccess
-            ? await repo.setAccessStatus(tx, existingAccess.id, "active")
-            : await repo.createAccess(tx, user.id, identity.id);
-          await addCommand(
-            tx,
-            access.id,
-            serverId,
-            identity.username,
-            "whitelist_add",
-          );
-          await audit(tx, {
-            actorType: "user",
-            actorId: admin.id,
-            eventType: "whitelist_player_added",
-            entityType: "player_access",
-            entityId: access.id,
-            metadata: { source: "web_admin", discordId: admin.discordId },
-          });
-          return access;
-        });
-      } catch (error) {
-        const cause = error as { code?: string; cause?: { code?: string } };
-        if (cause.code === "23505" || cause.cause?.code === "23505")
-          throw new AppError(
-            409,
-            "whitelist_identity_conflict",
-            "Discord ID або Minecraft-нік уже використовується.",
-          );
-        throw error;
-      }
-      commandQueued(serverId);
-      return {
-        accessId: result.id,
-        status: result.status,
-        synchronization: "waiting" as const,
-      };
-    },
-    async renamePlayer(input: AdminWhitelistRename, admin: WebAdmin) {
-      let result;
-      try {
-        result = await db.transaction(async (tx) => {
-          const found = await repo.accessById(tx, input.accessId);
-          if (!found)
-            throw new AppError(404, "not_found", "Гравця не знайдено.");
-          await lockUser(tx, found.user.id);
-          const fresh = await repo.accessById(tx, input.accessId);
-          if (!fresh)
-            throw new AppError(404, "not_found", "Гравця не знайдено.");
-          if (fresh.access.status !== "active")
-            throw new AppError(
-              409,
-              "access_not_active",
-              "Гравець уже не має активного доступу.",
-            );
-          const oldUsername = fresh.identity.username;
-          if (oldUsername === input.minecraftUsername)
-            throw new AppError(
-              409,
-              "nickname_unchanged",
-              "Гравець уже має цей нік.",
-            );
-          const taken = await repo.identityByName(tx, input.minecraftUsername);
-          if (taken && taken.id !== fresh.identity.id)
-            throw new AppError(
-              409,
-              "minecraft_identity_exists",
-              "Цей Minecraft-нік уже прив’язаний до іншого Discord.",
-            );
-          await repo.renameIdentity(
-            tx,
-            fresh.identity.id,
-            input.minecraftUsername,
-          );
-          // Зміна лише регістру не потребує оновлення вайтліста на сервері.
-          const nameChanged =
-            oldUsername.toLowerCase() !== input.minecraftUsername.toLowerCase();
-          if (nameChanged) {
-            await addCommand(
-              tx,
-              fresh.access.id,
-              serverId,
-              oldUsername,
-              "whitelist_remove",
-            );
-            await addCommand(
-              tx,
-              fresh.access.id,
-              serverId,
-              input.minecraftUsername,
-              "whitelist_add",
-            );
-          }
-          await audit(tx, {
-            actorType: "user",
-            actorId: admin.id,
-            eventType: "whitelist_player_renamed",
-            entityType: "player_access",
-            entityId: fresh.access.id,
-            metadata: {
-              source: "web_admin",
-              discordId: admin.discordId,
-              oldUsername,
-              newUsername: input.minecraftUsername,
-            },
-          });
-          return { access: fresh.access, nameChanged };
-        });
-      } catch (error) {
-        const cause = error as { code?: string; cause?: { code?: string } };
-        if (cause.code === "23505" || cause.cause?.code === "23505")
-          throw new AppError(
-            409,
-            "minecraft_identity_exists",
-            "Цей Minecraft-нік уже прив’язаний до іншого Discord.",
-          );
-        throw error;
-      }
-      if (result.nameChanged) commandQueued(serverId);
-      return {
-        accessId: result.access.id,
-        status: result.access.status,
-        synchronization: "waiting" as const,
-      };
-    },
-    async removeFromWhitelist(accessId: string, admin: WebAdmin) {
-      const result = await db.transaction(async (tx) => {
-        const found = await repo.accessById(tx, accessId);
-        if (!found) throw new AppError(404, "not_found", "Гравця не знайдено.");
-        await lockUser(tx, found.user.id);
-        const fresh = await repo.accessById(tx, accessId);
-        if (!fresh) throw new AppError(404, "not_found", "Гравця не знайдено.");
-        if (fresh.access.status !== "active")
-          throw new AppError(
-            409,
-            "access_not_active",
-            "Гравець уже не має активного доступу.",
-          );
-        const access = await repo.setAccessStatus(tx, accessId, "revoked");
-        await addCommand(
-          tx,
-          access.id,
-          serverId,
-          fresh.identity.username,
-          "whitelist_remove",
-        );
-        await audit(tx, {
-          actorType: "user",
-          actorId: admin.id,
-          eventType: "whitelist_player_removed",
-          entityType: "player_access",
-          entityId: access.id,
-          metadata: { source: "web_admin", discordId: admin.discordId },
-        });
-        return access;
-      });
-      commandQueued(serverId);
-      return {
-        accessId: result.id,
-        status: result.status,
-        synchronization: "waiting" as const,
-      };
     },
     decide: moderation.decideAsWebAdmin,
   };

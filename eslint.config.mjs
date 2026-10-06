@@ -10,4 +10,21 @@ export default tseslint.config(
     ],
   },
   ...tseslint.configs.recommended,
+  {
+    files: ["apps/api/src/modules/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["../**/*.repository.js", "../**/*.service.js"],
+              message:
+                "Імпортуйте публічний index.js модуля замість його внутрішніх файлів.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 );

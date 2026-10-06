@@ -7,6 +7,9 @@ export const users = pgTable("users", {
   discordUsername: varchar("discord_username").notNull(),
   discordGlobalName: varchar("discord_global_name"),
   discordAvatar: varchar("discord_avatar"),
+  discordGuildJoinedAt: timestamp("discord_guild_joined_at", {
+    withTimezone: true,
+  }),
   applicationBlockedAt: timestamp("application_blocked_at", {
     withTimezone: true,
   }),

@@ -1,8 +1,8 @@
 import { expect, it } from "vitest";
 import { setup, login, env } from "./helpers.js";
 import { users, commands, applications } from "../src/db/schema.js";
-import { applicationService } from "../src/modules/applications/application.service.js";
-import { moderationService } from "../src/modules/moderation/moderation.service.js";
+import { applicationService } from "../src/modules/applications/index.js";
+import { moderationService } from "../src/modules/moderation/index.js";
 it("serializes competing submissions and competing moderation decisions", async () => {
   const ctx = await setup();
   try {
@@ -55,7 +55,7 @@ it("a failed player command does not block another player", async () => {
       );
     }
     const { minecraftService } =
-      await import("../src/modules/minecraft/minecraft-command.service.js");
+      await import("../src/modules/minecraft/index.js");
     const service = minecraftService(ctx.db, env.MINECRAFT_SERVER_ID);
     const command = (await service.lease()).commands[0]!;
     await service.acknowledge(

@@ -18,6 +18,8 @@ export const adminApplicationSchema = z.object({
   publicId: z.string(),
   number: z.number().int().positive(),
   discordUsername: z.string(),
+  discordAccountCreatedAt: z.string().datetime().nullable().default(null),
+  discordGuildJoinedAt: z.string().datetime().nullable().default(null),
   discordDisplayName: z.string().nullable(),
   discordAvatarUrl: z.string().url().nullable(),
   minecraftUsername: z.string(),

@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { adminDiscordRoleMessageSchema } from "@okrip/contracts";
 import { AppError } from "../../shared/errors.js";
 import { requireSuperAdmin } from "../../plugins/auth-session.js";
-import type { AuthService } from "../auth/auth.service.js";
+import type { AuthService } from "../auth/index.js";
 import type { discordRolesService } from "./discord-roles.service.js";
 
 type WithRawBody = { rawBody?: string };

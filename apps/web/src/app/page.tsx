@@ -1,13 +1,12 @@
-
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Nav } from "@/components/nav";
 import { Mascot } from "@/components/mascot";
 import { SocialLinks } from "@/components/social-links";
 import { AdminOnly } from "@/features/admin/components/AdminOnly";
-import { HomeStatOnline } from "@/components/home-stat-online";
+import { HomeStatOnline } from "@/features/servers/components/home-stat-online";
 import { ABOUT_PATH, pageMetadata, SITE_DESCRIPTION } from "@/lib/site";
-import { SERVERS } from "@/lib/servers";
+import { SERVERS } from "@/features/servers/config";
 
 export const metadata: Metadata = pageMetadata(
   "Okrip World — український Minecraft-сервер і спільнота",
@@ -54,7 +53,9 @@ export default function HomePage() {
             </div>
             <div className="stat">
               <span className="stat-num">{SERVERS.length}</span>
-              <span className="stat-label">{SERVERS.length === 1 ? "Сервер" : "Сервери"}</span>
+              <span className="stat-label">
+                {SERVERS.length === 1 ? "Сервер" : "Сервери"}
+              </span>
             </div>
             <div className="stat">
               <span className="stat-num">1.21.11</span>

@@ -4,7 +4,7 @@ import { randomToken, tokenHash } from "../../shared/crypto.js";
 import { AppError } from "../../shared/errors.js";
 import type { DiscordProvider } from "./discord.service.js";
 import * as repo from "./auth.repository.js";
-import { audit } from "../audit/audit.repository.js";
+import { audit } from "../audit/index.js";
 export function authService(db: Database, env: Env, discord: DiscordProvider) {
   const hash = (v: string) => tokenHash(v, env.SESSION_SECRET);
   return {
@@ -30,12 +30,12 @@ export function authService(db: Database, env: Env, discord: DiscordProvider) {
           "Спробуйте увійти через Discord ще раз.",
         );
       const profile = await discord.identity(code);
-      if (env.DISCORD_MEMBERSHIP_CHECK) {
-        await discord.membership(profile.id);
-      }
+      const membership = env.DISCORD_MEMBERSHIP_CHECK
+        ? await discord.membership(profile.id)
+        : undefined;
       const token = randomToken();
       await db.transaction(async (tx) => {
-        const user = await repo.upsertUser(tx, profile);
+        const user = await repo.upsertUser(tx, profile, membership?.joinedAt);
         await repo.saveSession(tx, user.id, hash(token));
         await audit(tx, {
           actorType: "user",

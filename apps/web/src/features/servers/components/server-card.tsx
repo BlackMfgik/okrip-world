@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { IpRow } from "@/components/ip-row";
+import { IpRow } from "@/features/servers/components/ip-row";
 import { AdminMapLink } from "@/features/admin/components/AdminMapLink";
-import type { ServerConfig } from "@/lib/servers";
+import type { ServerConfig } from "@/features/servers/config";
 
 export function ServerCard({ server }: { server: ServerConfig }) {
   return (
@@ -15,7 +15,11 @@ export function ServerCard({ server }: { server: ServerConfig }) {
         <IpRow label="Порт" value={String(server.port)} />
       </div>
       <div className="server-card-footer">
-        <Link href={server.mapHref} className="btn btn-map" aria-label={`Мапа сервера ${server.name}`}>
+        <Link
+          href={server.mapHref}
+          className="btn btn-map"
+          aria-label={`Мапа сервера ${server.name}`}
+        >
           Мапа →
         </Link>
       </div>

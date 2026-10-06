@@ -2,14 +2,17 @@ import type { Database } from "../../db/client.js";
 import type { Env } from "../../config/env.js";
 import { sql } from "drizzle-orm";
 import { AppError } from "../../shared/errors.js";
-import { audit } from "../audit/audit.repository.js";
+import { audit } from "../audit/index.js";
 import {
   lockUser,
   accessFor,
-  accessForIdentity,
+  grantApprovedAccess,
+} from "../player-access/index.js";
+import {
   enqueueMessage,
-} from "../applications/application.repository.js";
-import * as repo from "./moderation.repository.js";
+  findApplication,
+  decide,
+} from "../applications/index.js";
 
 interface Reviewer {
   actorType: "telegram_admin" | "user";
@@ -57,10 +60,10 @@ export function moderationService(
         await tx.execute(
           sql`select set_config('okrip.allow_repeat_applications', 'on', true)`,
         );
-      const found = await repo.findApplication(tx, publicId);
+      const found = await findApplication(tx, publicId);
       if (!found) throw new AppError(404, "not_found", "Заявку не знайдено.");
       await lockUser(tx, found.application.userId);
-      const fresh = (await repo.findApplication(tx, publicId))!;
+      const fresh = (await findApplication(tx, publicId))!;
       if (fresh.application.status !== "pending")
         return fresh.application.status;
       const existingAccess = await accessFor(tx, fresh.application.userId);
@@ -72,7 +75,7 @@ export function moderationService(
           "Потрібне окреме рішення щодо доступу.",
         );
       const status = action === "approve" ? "approved" : "rejected";
-      const changed = await repo.decide(
+      const changed = await decide(
         tx,
         fresh.application.id,
         status,
@@ -81,25 +84,17 @@ export function moderationService(
         reason,
       );
       if (!changed.length)
-        return (await repo.findApplication(tx, publicId))!.application.status;
+        return (await findApplication(tx, publicId))!.application.status;
       if (
         status === "approved" &&
         (!existingAccess || revoked || env.APPLICATION_REPEAT_DEBUG)
       ) {
-        // Доступ прив'язаний до ніка із заявки: в адміна з двома акаунтами їх два.
-        const identityAccess = await accessForIdentity(tx, fresh.identity.id);
-        const access = !identityAccess
-          ? await repo.grant(tx, fresh.application.userId, fresh.identity.id)
-          : identityAccess.status === "revoked"
-            ? await repo.reactivate(tx, identityAccess.id)
-            : identityAccess;
-        await repo.addCommand(
-          tx,
-          access.id,
-          env.MINECRAFT_SERVER_ID,
-          fresh.identity.username,
-          "whitelist_add",
-        );
+        await grantApprovedAccess(tx, {
+          userId: fresh.application.userId,
+          identityId: fresh.identity.id,
+          username: fresh.identity.username,
+          serverId: env.MINECRAFT_SERVER_ID,
+        });
         queued = true;
       }
       await audit(tx, {
@@ -123,7 +118,7 @@ export function moderationService(
   return {
     async prepareRejection(publicId: string, adminId: string, chatId: string) {
       assertModerator(adminId, chatId);
-      const found = await repo.findApplication(db, publicId);
+      const found = await findApplication(db, publicId);
       if (!found) throw new AppError(404, "not_found", "Заявку не знайдено.");
       return {
         number: found.application.number,

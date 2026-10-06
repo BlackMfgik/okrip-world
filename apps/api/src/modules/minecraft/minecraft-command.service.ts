@@ -2,13 +2,12 @@ import { randomUUID } from "node:crypto";
 import { commandSchema } from "@okrip/contracts";
 import type { Database } from "../../db/client.js";
 import { AppError } from "../../shared/errors.js";
-import { audit } from "../audit/audit.repository.js";
-import {
-  lockUser,
-  enqueueMessage,
-} from "../applications/application.repository.js";
-import { addCommand } from "../moderation/moderation.repository.js";
-import { allowAccessRestoration } from "../admin/admin.repository.js";
+import { audit } from "../audit/index.js";
+import { lockUser } from "../player-access/index.js";
+import * as playerAccess from "../player-access/index.js";
+import { enqueueMessage, cancelPending } from "../applications/index.js";
+import { enqueueCommand } from "../command-queue/index.js";
+import * as queue from "../command-queue/index.js";
 import * as repo from "./minecraft-command.repository.js";
 export function minecraftService(
   db: Database,
@@ -17,7 +16,7 @@ export function minecraftService(
 ) {
   return {
     async whitelistSnapshot() {
-      const players = await repo.activePlayers(db);
+      const players = await playerAccess.activePlayers(db);
       return {
         // usernames — для звірки вайтліста (старі версії плагіна читають лише його);
         // players — деталі для внутрішньоігрового меню /wlmenu.
@@ -30,9 +29,9 @@ export function minecraftService(
     },
     async lease() {
       return db.transaction(async (tx) => {
-        await repo.lockQueue(tx, serverId);
+        await queue.lockQueue(tx, serverId);
         // Preserve order per player while letting unrelated players make progress.
-        const command = await repo.head(tx, serverId);
+        const command = await queue.head(tx, serverId);
         if (!command) return { commands: [] };
         if (
           command.status === "leased" &&
@@ -41,19 +40,22 @@ export function minecraftService(
         )
           return { commands: [] };
         if (command.availableAt > new Date()) return { commands: [] };
-        const access = await repo.commandAccess(tx, command.playerAccessId);
+        const access = await playerAccess.commandAccess(
+          tx,
+          command.playerAccessId,
+        );
         if (command.type === "whitelist_add" && access.status !== "active") {
-          await repo.complete(tx, command.id);
+          await queue.complete(tx, command.id);
           return { commands: [] };
         }
         const leaseToken = randomUUID();
-        await repo.lease(tx, command.id, leaseToken);
+        await queue.lease(tx, command.id, leaseToken);
         return { commands: [commandSchema.parse({ ...command, leaseToken })] };
       });
     },
     async acknowledge(id: string, leaseToken: string, error?: string) {
       const retryAt = await db.transaction(async (tx) => {
-        const command = await repo.find(tx, id, serverId);
+        const command = await queue.find(tx, id, serverId);
         if (!command)
           throw new AppError(404, "not_found", "Команду не знайдено.");
         if (command.leaseToken !== leaseToken)
@@ -70,9 +72,9 @@ export function minecraftService(
         )
           throw new AppError(409, "stale_lease", "Оренда команди завершилась.");
         const retryAt = error
-          ? await repo.fail(tx, id, error, command.attempts)
+          ? await queue.fail(tx, id, error, command.attempts)
           : undefined;
-        if (!error) await repo.complete(tx, id);
+        if (!error) await queue.complete(tx, id);
         await audit(tx, {
           actorType: "minecraft_server",
           actorId: serverId,
@@ -93,7 +95,7 @@ export function minecraftService(
     },
     async ban(event: { eventId: string; username: string; reason: string }) {
       const queued = await db.transaction(async (tx) => {
-        const identity = await repo.identityByName(tx, event.username);
+        const identity = await playerAccess.identityByName(tx, event.username);
         if (!identity)
           throw new AppError(
             404,
@@ -103,22 +105,22 @@ export function minecraftService(
         await lockUser(tx, identity.userId);
         if (!(await repo.recordBanEvent(tx, event.eventId, serverId)).length)
           return false;
-        const access = await repo.banAccess(
+        const access = await playerAccess.banAccess(
           tx,
           identity.userId,
           identity.id,
           event.reason,
         );
-        for (const app of await repo.cancelPending(tx, identity.userId))
+        for (const app of await cancelPending(tx, identity.userId))
           await enqueueMessage(tx, app.id, "decided");
-        await addCommand(
+        await enqueueCommand(
           tx,
           access.id,
           serverId,
           identity.username,
           "whitelist_remove",
         );
-        await addCommand(
+        await enqueueCommand(
           tx,
           access.id,
           serverId,
@@ -142,23 +144,26 @@ export function minecraftService(
      * доступ одразу стає active і сервер отримує whitelist_add (як «Додати гравця»).
      * Локальний бан на сервері плагін знімає сам до виклику цього методу.
      */
-    async unban(event: { username: string; restoreWhitelist: boolean; actor?: string }) {
+    async unban(event: {
+      username: string;
+      restoreWhitelist: boolean;
+      actor?: string;
+    }) {
       const result = await db.transaction(async (tx) => {
-        const identity = await repo.identityByName(tx, event.username);
+        const identity = await playerAccess.identityByName(tx, event.username);
         if (!identity) return { status: "not_registered" as const };
         await lockUser(tx, identity.userId);
-        const access = await repo.accessByIdentity(tx, identity.id);
+        const access = await playerAccess.accessForIdentity(tx, identity.id);
         if (!access || access.status !== "banned")
           return {
             status: "not_banned" as const,
             username: identity.username,
             access: access?.status ?? null,
           };
-        await repo.unbanAccess(tx, access.id);
+        await playerAccess.unbanAccess(tx, access.id);
         if (event.restoreWhitelist) {
-          await allowAccessRestoration(tx);
-          await repo.activateAccess(tx, access.id);
-          await addCommand(
+          await playerAccess.restoreAccess(tx, access.id);
+          await enqueueCommand(
             tx,
             access.id,
             serverId,
@@ -182,7 +187,9 @@ export function minecraftService(
         return {
           status: "unbanned" as const,
           username: identity.username,
-          access: event.restoreWhitelist ? ("active" as const) : ("revoked" as const),
+          access: event.restoreWhitelist
+            ? ("active" as const)
+            : ("revoked" as const),
         };
       });
       if (result.status === "unbanned" && event.restoreWhitelist)
@@ -192,17 +199,17 @@ export function minecraftService(
     /** /wldel у грі: те саме, що «Видалити» в адмін-панелі сайту. */
     async removeFromWhitelist(event: { username: string; actor?: string }) {
       const result = await db.transaction(async (tx) => {
-        const identity = await repo.identityByName(tx, event.username);
+        const identity = await playerAccess.identityByName(tx, event.username);
         if (!identity) return { status: "not_registered" as const };
         await lockUser(tx, identity.userId);
-        const access = await repo.accessByIdentity(tx, identity.id);
+        const access = await playerAccess.accessForIdentity(tx, identity.id);
         if (!access || access.status !== "active")
           return {
             status: "not_active" as const,
             username: identity.username,
           };
-        await repo.revokeAccess(tx, access.id);
-        await addCommand(
+        await playerAccess.revokeAccess(tx, access.id);
+        await enqueueCommand(
           tx,
           access.id,
           serverId,

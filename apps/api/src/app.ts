@@ -9,32 +9,26 @@ import { sql } from "drizzle-orm";
 import type { Database } from "./db/client.js";
 import type { Env } from "./config/env.js";
 import { AppError } from "./shared/errors.js";
-import { authService } from "./modules/auth/auth.service.js";
-import {
-  discordProvider,
-  type DiscordProvider,
-} from "./modules/auth/discord.service.js";
-import { authRoutes } from "./modules/auth/auth.routes.js";
-import { applicationService } from "./modules/applications/application.service.js";
-import { applicationRoutes } from "./modules/applications/application.routes.js";
-import { moderationService } from "./modules/moderation/moderation.service.js";
+import { authService } from "./modules/auth/index.js";
+import { discordProvider, type DiscordProvider } from "./modules/auth/index.js";
+import { authRoutes } from "./modules/auth/index.js";
+import { applicationService } from "./modules/applications/index.js";
+import { applicationRoutes } from "./modules/applications/index.js";
+import { moderationService } from "./modules/moderation/index.js";
 import {
   telegramProvider,
   type TelegramProvider,
-} from "./modules/moderation/telegram-message.service.js";
-import { telegramRoutes } from "./modules/moderation/telegram.routes.js";
-import { telegramWorker } from "./modules/moderation/telegram-worker.service.js";
-import { minecraftService } from "./modules/minecraft/minecraft-command.service.js";
-import { minecraftRoutes } from "./modules/minecraft/minecraft.routes.js";
-import { MinecraftCommandSignals } from "./modules/minecraft/minecraft-command.signal.js";
-import { adminService } from "./modules/admin/admin.service.js";
-import { adminRoutes } from "./modules/admin/admin.routes.js";
-import {
-  discordBot,
-  type DiscordBot,
-} from "./modules/discord/discord-bot.service.js";
-import { discordRolesService } from "./modules/discord/discord-roles.service.js";
-import { discordRoutes } from "./modules/discord/discord.routes.js";
+} from "./modules/moderation/index.js";
+import { telegramRoutes } from "./modules/moderation/index.js";
+import { telegramWorker } from "./modules/moderation/index.js";
+import { minecraftService } from "./modules/minecraft/index.js";
+import { minecraftRoutes } from "./modules/minecraft/index.js";
+import { MinecraftCommandSignals } from "./modules/minecraft/index.js";
+import { adminService } from "./modules/admin/index.js";
+import { adminRoutes } from "./modules/admin/index.js";
+import { discordBot, type DiscordBot } from "./modules/discord/index.js";
+import { discordRolesService } from "./modules/discord/index.js";
+import { discordRoutes } from "./modules/discord/index.js";
 export async function buildApp(
   env: Env,
   db: Database,
@@ -138,8 +132,12 @@ export async function buildApp(
   adminRoutes(
     app,
     auth,
-    adminService(db, moderation, env.MINECRAFT_SERVER_ID, (serverId) =>
-      commandSignals.notify(serverId),
+    adminService(
+      db,
+      moderation,
+      env.MINECRAFT_SERVER_ID,
+      (serverId) => commandSignals.notify(serverId),
+      discord,
     ),
   );
   discordRoutes(

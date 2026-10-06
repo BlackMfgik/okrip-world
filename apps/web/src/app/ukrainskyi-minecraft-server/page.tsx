@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Nav } from "@/components/nav";
-import { ABOUT_PATH, pageMetadata, SITE_NAME, SITE_SOCIALS, SITE_URL } from "@/lib/site";
-import { SERVERS } from "@/lib/servers";
+import {
+  ABOUT_PATH,
+  pageMetadata,
+  SITE_NAME,
+  SITE_SOCIALS,
+  SITE_URL,
+} from "@/lib/site";
+import { SERVERS } from "@/features/servers/config";
 
 const TITLE = "Український Minecraft-сервер і спільнота | Okrip World";
 const DESCRIPTION =
@@ -69,7 +75,12 @@ const jsonLd = {
     {
       "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: SITE_NAME, item: SITE_URL.toString() },
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: SITE_NAME,
+          item: SITE_URL.toString(),
+        },
         {
           "@type": "ListItem",
           position: 2,
@@ -135,7 +146,9 @@ export default function AboutServerPage() {
               <ul>
                 <li>Minecraft Java Edition 1.21</li>
                 <li>Ванільне виживання без донатних переваг</li>
-                <li>Вайтліст і заявки через Discord — тільки перевірені гравці</li>
+                <li>
+                  Вайтліст і заявки через Discord — тільки перевірені гравці
+                </li>
                 <li>Жива мапа світу (Dynmap) на сайті</li>
                 <li>Україномовні модератори та спільнота</li>
               </ul>
@@ -150,8 +163,8 @@ export default function AboutServerPage() {
                 </li>
                 <li>Подайте заявку, вказавши свій нік у Minecraft.</li>
                 <li>
-                  Після схвалення додайте сервер <code>{VANILLA_ADDRESS}</code> у
-                  «Мережевій грі» та заходьте.
+                  Після схвалення додайте сервер <code>{VANILLA_ADDRESS}</code>{" "}
+                  у «Мережевій грі» та заходьте.
                 </li>
               </ol>
               <p>
@@ -165,8 +178,8 @@ export default function AboutServerPage() {
               <h2>Чому обирають Okrip World серед українських серверів</h2>
               <p>
                 Українських Minecraft-серверів небагато, а ще менше таких, де
-                справді живе спільнота, а не лише онлайн-лічильник. Okrip World —
-                це невеликий затишний сервер, де гравці знають одне одного, а
+                справді живе спільнота, а не лише онлайн-лічильник. Okrip World
+                — це невеликий затишний сервер, де гравці знають одне одного, а
                 вайтліст захищає світ від грифінгу. Хостинг оплачує сама
                 спільнота, тож тут немає реклами й платних привілеїв.
               </p>

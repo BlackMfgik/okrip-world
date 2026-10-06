@@ -5,15 +5,12 @@ import {
   currentApplicationSchema,
 } from "@okrip/contracts";
 import type { Database } from "../../db/client.js";
-import type { DiscordProvider } from "../auth/discord.service.js";
+import { saveDiscordMembership, type DiscordProvider } from "../auth/index.js";
 import { AppError } from "../../shared/errors.js";
-import { audit } from "../audit/audit.repository.js";
-import {
-  addCommand,
-  decide,
-  grant,
-  reactivate,
-} from "../moderation/moderation.repository.js";
+import { audit } from "../audit/index.js";
+import { grantApprovedAccess } from "../player-access/index.js";
+import * as playerAccess from "../player-access/index.js";
+import { lastAdd } from "../command-queue/index.js";
 import * as repo from "./application.repository.js";
 
 export const APPLICATION_SUBMISSION_COOLDOWN_MS = 60_000;
@@ -30,9 +27,9 @@ export function applicationService(
   return {
     async submit(user: { id: string; discordId: string }, input: unknown) {
       const { minecraftUsername } = submitApplicationSchema.parse(input);
-      if (membershipCheckEnabled) {
-        await discord.membership(user.discordId);
-      }
+      const membership = membershipCheckEnabled
+        ? await discord.membership(user.discordId)
+        : undefined;
       let queued = false;
       try {
         await db.transaction(async (tx) => {
@@ -40,7 +37,10 @@ export function applicationService(
             await tx.execute(
               sql`select set_config('okrip.allow_repeat_applications', 'on', true)`,
             );
-          const [lockedUser] = await repo.lockUser(tx, user.id);
+          const [lockedUser] = await playerAccess.lockUser(tx, user.id);
+          if (membership?.joinedAt) {
+            await saveDiscordMembership(tx, user.id, membership.joinedAt);
+          }
           if (lockedUser?.applicationBlockedAt) {
             if (
               !lockedUser.applicationBlockedUntil ||
@@ -55,7 +55,7 @@ export function applicationService(
               );
             await repo.clearApplicationBlock(tx, user.id);
           }
-          const existingAccess = await repo.accessFor(tx, user.id);
+          const existingAccess = await playerAccess.accessFor(tx, user.id);
           // Після відкликання доступу гравець може подати заявку повторно.
           const revoked = existingAccess?.status === "revoked";
           if (!repeatSubmissionEnabled && existingAccess && !revoked)
@@ -91,7 +91,7 @@ export function applicationService(
                 "Наступну заявку можна буде подати після завершення таймера.",
               );
           }
-          const existing = await repo.identityFor(tx, user.id);
+          const existing = await playerAccess.identityFor(tx, user.id);
           if (
             existing &&
             existing.normalizedUsername !== minecraftUsername.toLowerCase() &&
@@ -105,12 +105,12 @@ export function applicationService(
           const identity = existing
             ? existing.normalizedUsername === minecraftUsername.toLowerCase()
               ? existing
-              : await repo.updateIdentityForDebug(
+              : await playerAccess.updateIdentityForDebug(
                   tx,
                   existing.id,
                   minecraftUsername,
                 )
-            : await repo.createIdentity(tx, user.id, minecraftUsername);
+            : await playerAccess.createIdentity(tx, user.id, minecraftUsername);
           const app = await repo.createApplication(
             tx,
             user.id,
@@ -130,7 +130,7 @@ export function applicationService(
               throw new Error(
                 "APPLICATION_AUTO_APPROVE requires MINECRAFT_SERVER_ID",
               );
-            const approved = await decide(
+            const approved = await repo.decide(
               tx,
               app.id,
               "approved",
@@ -141,22 +141,12 @@ export function applicationService(
               throw new Error(
                 "Automatic approval lost its pending application",
               );
-            const identityAccess = await repo.accessForIdentity(
-              tx,
-              identity.id,
-            );
-            const access = !identityAccess
-              ? await grant(tx, user.id, identity.id)
-              : identityAccess.status === "revoked"
-                ? await reactivate(tx, identityAccess.id)
-                : identityAccess;
-            await addCommand(
-              tx,
-              access.id,
-              minecraftServerId,
-              identity.username,
-              "whitelist_add",
-            );
+            await grantApprovedAccess(tx, {
+              userId: user.id,
+              identityId: identity.id,
+              username: identity.username,
+              serverId: minecraftServerId,
+            });
             await repo.enqueueMessage(tx, app.id, "decided");
             await audit(tx, {
               actorType: "system",
@@ -184,9 +174,9 @@ export function applicationService(
     async current(userId: string) {
       const [current, access] = await Promise.all([
         repo.latest(db, userId),
-        repo.accessFor(db, userId),
+        playerAccess.accessFor(db, userId),
       ]);
-      const command = access ? await repo.lastAdd(db, access.id) : undefined;
+      const command = access ? await lastAdd(db, access.id) : undefined;
       const nextSubmission =
         current && !repeatSubmissionEnabled
           ? new Date(

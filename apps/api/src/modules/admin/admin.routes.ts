@@ -12,7 +12,7 @@ import {
   requireAdmin,
   requireAdminManager,
 } from "../../plugins/auth-session.js";
-import type { AuthService } from "../auth/auth.service.js";
+import type { AuthService } from "../auth/index.js";
 import type { adminService } from "./admin.service.js";
 
 export function adminRoutes(

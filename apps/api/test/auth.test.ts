@@ -31,6 +31,9 @@ describe("OAuth and sessions", () => {
     expect(ctx.discord.identity).toHaveBeenCalledTimes(1);
     expect(ctx.discord.membership).toHaveBeenCalledExactlyOnceWith("111");
     expect(
+      (await ctx.db.select().from(users))[0]!.discordGuildJoinedAt,
+    ).toEqual(new Date("2026-09-01T10:20:30.000Z"));
+    expect(
       (
         await ctx.app.inject({
           url: "/v1/me",
@@ -52,8 +55,12 @@ describe("OAuth and sessions", () => {
       global_name: null,
       avatar: null,
     });
+    ctx.discord.membership.mockResolvedValueOnce({ joinedAt: null });
     await login(ctx);
     expect(await ctx.db.select().from(users)).toHaveLength(1);
+    expect(
+      (await ctx.db.select().from(users))[0]!.discordGuildJoinedAt,
+    ).toEqual(new Date("2026-09-01T10:20:30.000Z"));
     const start = await ctx.app.inject({ url: "/v1/auth/discord/start" });
     const state = new URL(start.headers.location!).searchParams.get("state");
     const response = await ctx.app.inject({
@@ -91,7 +98,11 @@ describe("OAuth and sessions", () => {
   });
   it("rejects login outside the Discord guild with a specific error", async () => {
     ctx.discord.membership.mockRejectedValueOnce(
-      new AppError(403, "guild_required", "Спочатку приєднайтеся до Discord-сервера Okrip World."),
+      new AppError(
+        403,
+        "guild_required",
+        "Спочатку приєднайтеся до Discord-сервера Okrip World.",
+      ),
     );
     const start = await ctx.app.inject({ url: "/v1/auth/discord/start" });
     const state = new URL(start.headers.location!).searchParams.get("state");

@@ -1,4 +1,4 @@
-import { dynmapProxy } from "@/lib/dynmap-proxy";
+import { dynmapProxy } from "@/features/maps/server/dynmap-proxy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

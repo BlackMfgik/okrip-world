@@ -9,9 +9,15 @@ const identitySchema = z.object({
   avatar: z.string().nullable(),
 });
 export type DiscordIdentity = z.infer<typeof identitySchema>;
+export interface DiscordMembership {
+  joinedAt: Date | null;
+}
 export interface DiscordProvider {
   identity(code: string): Promise<DiscordIdentity>;
-  membership(discordId: string): Promise<void>;
+  membership(
+    discordId: string,
+    options?: { retries?: number },
+  ): Promise<DiscordMembership>;
 }
 export function discordProvider(env: Env): DiscordProvider {
   return {
@@ -51,13 +57,14 @@ export function discordProvider(env: Env): DiscordProvider {
         );
       return identitySchema.parse(await profile.json());
     },
-    async membership(discordId) {
+    async membership(discordId, options) {
       const response = await externalRequest(
         "https://discord.com/api/v10/guilds/" +
           env.DISCORD_GUILD_ID +
           "/members/" +
           discordId,
         { headers: { Authorization: "Bot " + env.DISCORD_BOT_TOKEN } },
+        options?.retries,
       );
       if (response.status === 404)
         throw new AppError(
@@ -72,7 +79,10 @@ export function discordProvider(env: Env): DiscordProvider {
           "Не вдалося перевірити членство в Discord.",
         );
       const member = z
-        .object({ pending: z.boolean().optional() })
+        .object({
+          pending: z.boolean().optional(),
+          joined_at: z.string().datetime({ offset: true }).nullish(),
+        })
         .parse(await response.json());
       if (member.pending)
         throw new AppError(
@@ -80,6 +90,7 @@ export function discordProvider(env: Env): DiscordProvider {
           "guild_screening",
           "Завершіть перевірку учасника в Discord.",
         );
+      return { joinedAt: member.joined_at ? new Date(member.joined_at) : null };
     },
   };
 }

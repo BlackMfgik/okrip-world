@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyDynmapToken } from "@/lib/dynmap-token";
+import { verifyDynmapToken } from "@/features/maps/server/dynmap-token";
 
 // Проксі до вбудованого вебсервера Dynmap на Minecraft-сервері (Kinetic).
 // Сайт працює по HTTPS, Dynmap — по HTTP на окремому порту, тому iframe напряму
@@ -7,7 +7,11 @@ import { verifyDynmapToken } from "@/lib/dynmap-token";
 // (standalone/config.js, up/…, tiles/…), тож достатньо віддати його з /dynmap/…/.
 // Кожен сервер має свій маршрут і свою змінну середовища з адресою Dynmap.
 
-const FORWARDED_REQUEST_HEADERS = ["accept", "if-none-match", "if-modified-since"];
+const FORWARDED_REQUEST_HEADERS = [
+  "accept",
+  "if-none-match",
+  "if-modified-since",
+];
 const FORWARDED_RESPONSE_HEADERS = ["content-type", "etag", "last-modified"];
 
 // Скін під стиль сайту: public/dynmap-skin.css і dynmap-skin.js. Змініть версію після правок у них.
@@ -39,7 +43,9 @@ function cacheControl(path: string) {
   // up/… — живі оновлення (гравці, чат, час); кешувати не можна.
   if (path.startsWith("up/")) return "no-store";
   if (path.startsWith("tiles/"))
-    return path.endsWith(".json") ? "public, max-age=30" : "public, max-age=600";
+    return path.endsWith(".json")
+      ? "public, max-age=30"
+      : "public, max-age=600";
   // index.html щоразу збирається зі скіном — нехай браузер перевіряє його щоразу.
   if (path === "index.html") return "no-cache";
   // JS/CSS/іконки клієнта Dynmap змінюються лише з оновленням плагіна.
@@ -75,9 +81,7 @@ async function proxy(
   if (
     segments.some(
       (segment) =>
-        segment === "." ||
-        segment === ".." ||
-        /[\\/\0]/.test(segment),
+        segment === "." || segment === ".." || /[\\/\0]/.test(segment),
     )
   )
     return new NextResponse("Bad request", { status: 400 });
@@ -112,7 +116,10 @@ async function proxy(
       request.method === "HEAD"
         ? null
         : skinned
-          ? applySkin(await upstream.text(), request.nextUrl.searchParams.get("theme"))
+          ? applySkin(
+              await upstream.text(),
+              request.nextUrl.searchParams.get("theme"),
+            )
           : upstream.body,
       { status: upstream.status },
     );

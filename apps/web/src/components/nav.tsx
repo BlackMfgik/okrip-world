@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { NavOnline } from "@/components/nav-online";
+import { NavOnline } from "@/features/servers/components/nav-online";
 import { AdminNavLink } from "@/features/admin/components/AdminNavLink";
 import { AccountMenu } from "@/features/auth/components/AccountMenu";
 
