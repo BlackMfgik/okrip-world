@@ -8,12 +8,9 @@ interface McStatusResponse {
   players?: { online?: number };
 }
 
-async function fetchStatus(
-  host: string,
-  port: number,
-): Promise<McStatusResponse> {
+async function fetchStatus(host: string): Promise<McStatusResponse> {
   const res = await fetch(
-    `https://api.mcstatus.io/v2/status/java/${encodeURIComponent(host)}:${port}`,
+    `https://api.mcstatus.io/v2/status/java/${encodeURIComponent(host)}`,
   );
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
@@ -24,10 +21,7 @@ export function useTotalOnline() {
     ...new Map(
       SERVERS.map((server) => {
         const host = server.ip.trim();
-        return [
-          `${host.toLowerCase()}:${server.port}`,
-          { host, port: server.port },
-        ];
+        return [host.toLowerCase(), host];
       }),
     ).values(),
   ];
@@ -35,11 +29,11 @@ export function useTotalOnline() {
   return useQuery({
     queryKey: [
       "total-online",
-      endpoints.map(({ host, port }) => `${host.toLowerCase()}:${port}`),
+      endpoints.map((host) => host.toLowerCase()),
     ],
     queryFn: async () => {
       const results = await Promise.allSettled(
-        endpoints.map(({ host, port }) => fetchStatus(host, port)),
+        endpoints.map((host) => fetchStatus(host)),
       );
       return results.reduce((total, result) => {
         if (result.status === "fulfilled" && result.value.online) {
