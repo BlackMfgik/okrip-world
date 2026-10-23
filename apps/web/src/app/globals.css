@@ -2092,6 +2092,24 @@ body {
   align-self: end;
   min-height: 44px;
 }
+.admin-discord-embed-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  align-self: center;
+}
+.admin-discord-form .admin-discord-embed-option input {
+  width: 18px;
+  min-height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.admin-discord-form .admin-discord-embed-option span {
+  margin: 0;
+  font-size: 0.82rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
 .admin-discord-hint {
   color: var(--text-muted);
   font-size: 0.78rem;

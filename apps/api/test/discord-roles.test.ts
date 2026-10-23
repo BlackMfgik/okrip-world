@@ -86,6 +86,7 @@ it("lets only the super admin post a role message, refusing privileged roles", a
     roleId: "20000000000000001",
     content: "Натисніть, щоб отримати роль гравця",
     buttonLabel: "Отримати роль",
+    suppressEmbeds: true,
   };
   const player = await login(ctx);
   const forbidden = await ctx.app.inject({
@@ -140,6 +141,7 @@ it("lets only the super admin post a role message, refusing privileged roles", a
     "10000000000000001",
     expect.objectContaining({
       content: payload.content,
+      flags: 4,
       allowed_mentions: { parse: [] },
       components: [
         {
@@ -152,7 +154,14 @@ it("lets only the super admin post a role message, refusing privileged roles", a
     }),
   );
 
+  const legacyPayload = { ...payload, suppressEmbeds: undefined };
+  expect((await post(legacyPayload)).statusCode).toBe(200);
+  expect(ctx.discordBot.postMessage).toHaveBeenLastCalledWith(
+    "10000000000000001",
+    expect.not.objectContaining({ flags: expect.anything() }),
+  );
+
   expect((await post({ ...payload, roleId: "20000000000000002" })).statusCode).toBe(409);
   expect((await post({ ...payload, roleId: "29999999999999999" })).statusCode).toBe(404);
-  expect(ctx.discordBot.postMessage).toHaveBeenCalledTimes(1);
+  expect(ctx.discordBot.postMessage).toHaveBeenCalledTimes(2);
 });

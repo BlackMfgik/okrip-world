@@ -13,6 +13,7 @@ const empty: AdminDiscordRoleMessage = {
   roleId: "",
   content: "",
   buttonLabel: "Отримати роль",
+  suppressEmbeds: false,
 };
 
 export function DiscordRoleMessagePanel() {
@@ -26,7 +27,10 @@ export function DiscordRoleMessagePanel() {
       ),
     onSuccess: () => setForm(empty),
   });
-  const set = (key: keyof AdminDiscordRoleMessage, value: string) =>
+  const set = (
+    key: "channelId" | "roleId" | "content" | "buttonLabel",
+    value: string,
+  ) =>
     setForm((current) => ({ ...current, [key]: value }));
 
   return (
@@ -100,6 +104,19 @@ export function DiscordRoleMessagePanel() {
             required
             value={form.buttonLabel}
           />
+        </label>
+        <label className="admin-discord-embed-option">
+          <input
+            checked={form.suppressEmbeds}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                suppressEmbeds: event.target.checked,
+              }))
+            }
+            type="checkbox"
+          />
+          <span>Приховати прев’ю посилань</span>
         </label>
         <button
           className="admin-button admin-button-success"

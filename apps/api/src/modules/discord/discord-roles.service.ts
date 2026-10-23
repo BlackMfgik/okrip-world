@@ -11,6 +11,7 @@ import { audit } from "../audit/index.js";
 import type { DiscordBot } from "./discord-bot.service.js";
 
 const ROLE_BUTTON_PREFIX = "role:";
+const SUPPRESS_EMBEDS = 1 << 2;
 // Administrator, Manage Roles, Manage Guild, Ban і Kick Members: такі ролі кнопкою не видаємо.
 const DANGEROUS_PERMISSIONS = 0x8n | 0x10000000n | 0x20n | 0x4n | 0x2n;
 const EPHEMERAL = 64;
@@ -87,6 +88,7 @@ export function discordRolesService(db: Database, env: Env, bot: DiscordBot) {
 
       const posted = await bot.postMessage(input.channelId, {
         content: input.content,
+        ...(input.suppressEmbeds ? { flags: SUPPRESS_EMBEDS } : {}),
         allowed_mentions: { parse: [] },
         components: [
           {

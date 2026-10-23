@@ -8,6 +8,7 @@ export const adminDiscordRoleMessageSchema = z
     roleId: snowflake,
     content: z.string().trim().min(1).max(2000),
     buttonLabel: z.string().trim().min(1).max(80),
+    suppressEmbeds: z.boolean().default(false),
   })
   .strict();
 
