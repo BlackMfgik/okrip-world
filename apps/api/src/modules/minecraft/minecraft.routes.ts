@@ -16,12 +16,14 @@ import type { MinecraftCommandSignals } from "./minecraft-command.signal.js";
 export function minecraftRoutes(
   app: FastifyInstance,
   env: Env,
-  service: ReturnType<typeof minecraftService>,
+  serviceForServer: (serverId: string) => ReturnType<typeof minecraftService>,
   signals: MinecraftCommandSignals,
 ) {
   const authenticate = async (req: FastifyRequest) => {
     if (
-      req.headers["x-server-id"] !== env.MINECRAFT_SERVER_ID ||
+      ![env.MINECRAFT_SERVER_ID, env.APPLICATION_SERVER_ID].includes(
+        String(req.headers["x-server-id"]),
+      ) ||
       !equalSecret(
         String(req.headers.authorization ?? ""),
         "Bearer " + env.MINECRAFT_SERVER_TOKEN,
@@ -71,10 +73,10 @@ export function minecraftRoutes(
   );
   app.post("/v1/minecraft/commands/lease", options, async (req) => {
     leaseRequestSchema.parse(req.body);
-    return service.lease();
+    return serviceForServer(String(req.headers["x-server-id"])).lease();
   });
-  app.post("/v1/minecraft/whitelist/snapshot", options, async () =>
-    service.whitelistSnapshot(),
+  app.post("/v1/minecraft/whitelist/snapshot", options, async (req) =>
+    serviceForServer(String(req.headers["x-server-id"])).whitelistSnapshot(),
   );
   app.post(
     "/v1/minecraft/commands/:id/complete",
@@ -82,24 +84,37 @@ export function minecraftRoutes(
     async (req, reply) => {
       const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
       const body = acknowledgementSchema.parse(req.body);
-      await service.acknowledge(id, body.leaseToken);
+      await serviceForServer(String(req.headers["x-server-id"])).acknowledge(
+        id,
+        body.leaseToken,
+      );
       return reply.code(204).send();
     },
   );
   app.post("/v1/minecraft/commands/:id/fail", options, async (req, reply) => {
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const body = failureSchema.parse(req.body);
-    await service.acknowledge(id, body.leaseToken, body.error);
+    await serviceForServer(String(req.headers["x-server-id"])).acknowledge(
+      id,
+      body.leaseToken,
+      body.error,
+    );
     return reply.code(204).send();
   });
   app.post("/v1/minecraft/whitelist/remove", options, async (req) =>
-    service.removeFromWhitelist(whitelistRemoveEventSchema.parse(req.body)),
+    serviceForServer(String(req.headers["x-server-id"])).removeFromWhitelist(
+      whitelistRemoveEventSchema.parse(req.body),
+    ),
   );
   app.post("/v1/minecraft/unban", options, async (req) =>
-    service.unban(unbanEventSchema.parse(req.body)),
+    serviceForServer(String(req.headers["x-server-id"])).unban(
+      unbanEventSchema.parse(req.body),
+    ),
   );
   app.post("/v1/minecraft/events/ban", options, async (req, reply) => {
-    await service.ban(banEventSchema.parse(req.body));
+    await serviceForServer(String(req.headers["x-server-id"])).ban(
+      banEventSchema.parse(req.body),
+    );
     return reply.code(204).send();
   });
 }

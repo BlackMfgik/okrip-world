@@ -23,7 +23,11 @@ function applicationActionLabel(
   return "Подати заявку";
 }
 
-export function ServerApplicationAction() {
+export function ServerApplicationAction({
+  serverName = "Ваніла",
+}: {
+  serverName?: string;
+} = {}) {
   const session = useCurrentSession();
   const application = useCurrentApplication(!!session.data?.user);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -72,7 +76,7 @@ export function ServerApplicationAction() {
       )}
       {open && <dialog ref={dialog} className="application-dialog" aria-labelledby="application-dialog-title" onCancel={() => setOpen(false)} onClose={() => setOpen(false)} onClick={(event) => { if (event.target === event.currentTarget) { const bounds = event.currentTarget.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) setOpen(false); } }}>
         <header className="application-dialog-header">
-          <div><p className="application-eyebrow">OKRIP WORLD · ВАНІЛА</p><h2 id="application-dialog-title">{hasApplication ? "Моя заявка" : "Заявка на сервер"}</h2></div>
+          <div><p className="application-eyebrow">OKRIP WORLD · {serverName.toLocaleUpperCase("uk-UA")}</p><h2 id="application-dialog-title">{hasApplication ? "Моя заявка" : "Заявка на сервер"}</h2></div>
         </header>
         <ApplicationPanel />
       </dialog>}

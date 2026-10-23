@@ -25,6 +25,7 @@ export function adminWhitelistService(
       return adminWhitelistSchema.parse({
         players: rows.map(({ access, identity, user }) => ({
           accessId: access.id,
+          serverId: access.serverId,
           minecraftUsername: identity.username,
           discordUsername: user.discordUsername,
           discordDisplayName: user.discordGlobalName,
@@ -80,7 +81,12 @@ export function adminWhitelistService(
                   : "Цей Discord уже прив’язаний до іншого Minecraft-ніка.",
               );
           }
-          if (accesses.some((access) => access.status === "banned"))
+          if (
+            accesses.some(
+              (access) =>
+                access.serverId === serverId && access.status === "banned",
+            )
+          )
             throw new AppError(
               409,
               "access_banned",
@@ -94,7 +100,9 @@ export function adminWhitelistService(
               input.minecraftUsername,
             ));
           const existingAccess = accesses.find(
-            (access) => access.minecraftIdentityId === identity.id,
+            (access) =>
+              access.minecraftIdentityId === identity.id &&
+              access.serverId === serverId,
           );
           if (existingAccess?.status === "active")
             throw new AppError(
@@ -104,7 +112,7 @@ export function adminWhitelistService(
             );
           const access = existingAccess
             ? await playerAccess.restoreAccess(tx, existingAccess.id)
-            : await playerAccess.grant(tx, user.id, identity.id);
+            : await playerAccess.grant(tx, user.id, identity.id, serverId);
           await enqueueCommand(
             tx,
             access.id,
@@ -181,21 +189,34 @@ export function adminWhitelistService(
           // Зміна лише регістру не потребує оновлення вайтліста на сервері.
           const nameChanged =
             oldUsername.toLowerCase() !== input.minecraftUsername.toLowerCase();
+          const serverIds = new Set<string>();
           if (nameChanged) {
-            await enqueueCommand(
+            const accessRows = await playerAccess.accessesByUserId(
               tx,
-              fresh.access.id,
-              serverId,
-              oldUsername,
-              "whitelist_remove",
+              fresh.user.id,
             );
-            await enqueueCommand(
-              tx,
-              fresh.access.id,
-              serverId,
-              input.minecraftUsername,
-              "whitelist_add",
-            );
+            for (const access of accessRows) {
+              if (
+                access.minecraftIdentityId !== fresh.identity.id ||
+                access.status !== "active"
+              )
+                continue;
+              await enqueueCommand(
+                tx,
+                access.id,
+                access.serverId,
+                oldUsername,
+                "whitelist_remove",
+              );
+              await enqueueCommand(
+                tx,
+                access.id,
+                access.serverId,
+                input.minecraftUsername,
+                "whitelist_add",
+              );
+              serverIds.add(access.serverId);
+            }
           }
           await audit(tx, {
             actorType: "user",
@@ -210,7 +231,11 @@ export function adminWhitelistService(
               newUsername: input.minecraftUsername,
             },
           });
-          return { access: fresh.access, nameChanged };
+          return {
+            access: fresh.access,
+            nameChanged,
+            serverIds: [...serverIds],
+          };
         });
       } catch (error) {
         const cause = error as { code?: string; cause?: { code?: string } };
@@ -222,7 +247,9 @@ export function adminWhitelistService(
           );
         throw error;
       }
-      if (result.nameChanged) commandQueued(serverId);
+      if (result.nameChanged)
+        for (const targetServerId of result.serverIds)
+          commandQueued(targetServerId);
       return {
         accessId: result.access.id,
         status: result.access.status,
@@ -250,7 +277,7 @@ export function adminWhitelistService(
         await enqueueCommand(
           tx,
           access.id,
-          serverId,
+          fresh.access.serverId,
           fresh.identity.username,
           "whitelist_remove",
         );
@@ -264,7 +291,7 @@ export function adminWhitelistService(
         });
         return access;
       });
-      commandQueued(serverId);
+      commandQueued(result.serverId);
       return {
         accessId: result.id,
         status: result.status,

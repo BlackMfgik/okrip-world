@@ -1,26 +1,44 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { Executor } from "../../db/client.js";
 import { users, identities, playerAccess } from "../../db/schema.js";
 export const lockUser = (db: Executor, userId: string) =>
   db.select().from(users).where(eq(users.id, userId)).for("update");
 
-export async function accessFor(db: Executor, userId: string) {
+export async function accessFor(
+  db: Executor,
+  userId: string,
+  serverId: string,
+) {
   return (
     await db
       .select()
       .from(playerAccess)
-      .where(eq(playerAccess.userId, userId))
+      .where(
+        and(
+          eq(playerAccess.userId, userId),
+          eq(playerAccess.serverId, serverId),
+        ),
+      )
       .orderBy(sql`${playerAccess.status} = 'revoked'`, playerAccess.createdAt)
       .limit(1)
   )[0];
 }
 
-export async function accessForIdentity(db: Executor, identityId: string) {
+export async function accessForIdentity(
+  db: Executor,
+  identityId: string,
+  serverId: string,
+) {
   return (
     await db
       .select()
       .from(playerAccess)
-      .where(eq(playerAccess.minecraftIdentityId, identityId))
+      .where(
+        and(
+          eq(playerAccess.minecraftIdentityId, identityId),
+          eq(playerAccess.serverId, serverId),
+        ),
+      )
   )[0];
 }
 
@@ -66,11 +84,21 @@ export async function updateIdentityForDebug(
   )[0]!;
 }
 
-export async function grant(db: Executor, userId: string, identityId: string) {
+export async function grant(
+  db: Executor,
+  userId: string,
+  identityId: string,
+  serverId: string,
+) {
   return (
     await db
       .insert(playerAccess)
-      .values({ userId, minecraftIdentityId: identityId, status: "active" })
+      .values({
+        userId,
+        minecraftIdentityId: identityId,
+        serverId,
+        status: "active",
+      })
       .returning()
   )[0]!;
 }
@@ -187,7 +215,7 @@ export async function commandAccess(db: Executor, id: string) {
   )[0]!;
 }
 
-export async function activePlayers(db: Executor) {
+export async function activePlayers(db: Executor, serverId: string) {
   return db
     .select({
       username: identities.username,
@@ -199,7 +227,12 @@ export async function activePlayers(db: Executor) {
     .from(playerAccess)
     .innerJoin(identities, eq(identities.id, playerAccess.minecraftIdentityId))
     .innerJoin(users, eq(users.id, playerAccess.userId))
-    .where(eq(playerAccess.status, "active"))
+    .where(
+      and(
+        eq(playerAccess.status, "active"),
+        eq(playerAccess.serverId, serverId),
+      ),
+    )
     .orderBy(desc(playerAccess.createdAt));
 }
 
@@ -225,6 +258,7 @@ export async function banAccess(
   userId: string,
   identityId: string,
   reason: string,
+  serverId: string,
 ) {
   return (
     await db
@@ -232,12 +266,13 @@ export async function banAccess(
       .values({
         userId,
         minecraftIdentityId: identityId,
+        serverId,
         status: "banned",
         banReason: reason,
         bannedAt: new Date(),
       })
       .onConflictDoUpdate({
-        target: playerAccess.minecraftIdentityId,
+        target: [playerAccess.minecraftIdentityId, playerAccess.serverId],
         set: {
           status: "banned",
           banReason: reason,

@@ -21,7 +21,11 @@ function signed(body: unknown, key = privateKey) {
     headers: {
       "content-type": "application/json",
       "x-signature-timestamp": timestamp,
-      "x-signature-ed25519": sign(null, Buffer.from(timestamp + raw), key).toString("hex"),
+      "x-signature-ed25519": sign(
+        null,
+        Buffer.from(timestamp + raw),
+        key,
+      ).toString("hex"),
     },
     payload: raw,
   };
@@ -66,13 +70,21 @@ it("toggles the role on button click", async () => {
       allowed_mentions: { parse: [] },
     },
   });
-  expect(ctx.discordBot.setMemberRole).toHaveBeenLastCalledWith("111", "20000000000000001", true);
+  expect(ctx.discordBot.setMemberRole).toHaveBeenLastCalledWith(
+    "111",
+    "20000000000000001",
+    true,
+  );
 
   const removed = await ctx.app.inject(signed(click(["20000000000000001"])));
   expect(removed.json().data.content).toBe(
     "❌ Роль <@&20000000000000001> знято.\nЩоб повернути її, натисни кнопку ще раз.",
   );
-  expect(ctx.discordBot.setMemberRole).toHaveBeenLastCalledWith("111", "20000000000000001", false);
+  expect(ctx.discordBot.setMemberRole).toHaveBeenLastCalledWith(
+    "111",
+    "20000000000000001",
+    false,
+  );
 
   ctx.discordBot.setMemberRole.mockResolvedValueOnce(403);
   const denied = await ctx.app.inject(signed(click([])));
@@ -121,7 +133,13 @@ it("lets only the super admin post a role message, refusing privileged roles", a
     avatar: null,
   });
   const admin = await login(ctx);
-  const post = (body: typeof payload) =>
+  const post = (body: {
+    channelId: string;
+    roleId: string;
+    content: string;
+    buttonLabel: string;
+    suppressEmbeds?: boolean;
+  }) =>
     ctx.app.inject({
       method: "POST",
       url: "/v1/admin/discord/role-message",
@@ -147,21 +165,35 @@ it("lets only the super admin post a role message, refusing privileged roles", a
         {
           type: 1,
           components: [
-            { type: 2, style: 1, label: "Отримати роль", custom_id: "role:20000000000000001" },
+            {
+              type: 2,
+              style: 1,
+              label: "Отримати роль",
+              custom_id: "role:20000000000000001",
+            },
           ],
         },
       ],
     }),
   );
 
-  const legacyPayload = { ...payload, suppressEmbeds: undefined };
+  const legacyPayload = {
+    channelId: payload.channelId,
+    roleId: payload.roleId,
+    content: payload.content,
+    buttonLabel: payload.buttonLabel,
+  };
   expect((await post(legacyPayload)).statusCode).toBe(200);
   expect(ctx.discordBot.postMessage).toHaveBeenLastCalledWith(
     "10000000000000001",
     expect.not.objectContaining({ flags: expect.anything() }),
   );
 
-  expect((await post({ ...payload, roleId: "20000000000000002" })).statusCode).toBe(409);
-  expect((await post({ ...payload, roleId: "29999999999999999" })).statusCode).toBe(404);
+  expect(
+    (await post({ ...payload, roleId: "20000000000000002" })).statusCode,
+  ).toBe(409);
+  expect(
+    (await post({ ...payload, roleId: "29999999999999999" })).statusCode,
+  ).toBe(404);
   expect(ctx.discordBot.postMessage).toHaveBeenCalledTimes(2);
 });

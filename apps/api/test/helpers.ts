@@ -23,6 +23,7 @@ export const env = envSchema.parse({
   TELEGRAM_ADMIN_CHAT_ID: "-100",
   TELEGRAM_ADMIN_USER_IDS: "77",
   MINECRAFT_SERVER_ID: "vanilla",
+  APPLICATION_SERVER_ID: "vanilla",
   MINECRAFT_SERVER_TOKEN: "m".repeat(32),
 });
 export async function setup(overrides: Partial<typeof env> = {}) {

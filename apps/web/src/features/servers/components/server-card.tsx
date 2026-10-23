@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { IpRow } from "@/features/servers/components/ip-row";
 import { AdminMapLink } from "@/features/admin/components/AdminMapLink";
+import { ServerApplicationAction } from "@/features/application/components/ServerApplicationAction";
 import type { ServerConfig } from "@/features/servers/config";
 
 export function ServerCard({ server }: { server: ServerConfig }) {
@@ -15,43 +16,21 @@ export function ServerCard({ server }: { server: ServerConfig }) {
         <IpRow label="Порт" value={String(server.port)} />
       </div>
       <div className="server-card-footer">
-        <Link
-          href={server.mapHref}
-          className="btn btn-map"
-          aria-label={`Мапа сервера ${server.name}`}
-        >
-          Мапа →
-        </Link>
+        {server.id === "modded" ? (
+          <AdminMapLink href={server.mapHref} name={server.name} />
+        ) : (
+          <Link
+            href={server.mapHref}
+            className="btn btn-map"
+            aria-label={`Мапа сервера ${server.name}`}
+          >
+            Мапа →
+          </Link>
+        )}
       </div>
-    </div>
-  );
-}
-
-export function UpcomingServerCard({
-  name,
-  mapHref,
-}: Pick<ServerConfig, "name" | "mapHref">) {
-  return (
-    <div className="server-card server-card-upcoming">
-      <div className="server-card-header">
-        <h2 className="server-name">{name}</h2>
-        <div className="server-soon-label">SOON</div>
-      </div>
-      <div className="server-ip-section">
-        <IpRow label="IP Адреса" value="Soon…" placeholder />
-        <IpRow label="Порт" value="Soon…" placeholder />
-      </div>
-      {/* Поки сервер не запущено, подача заявки вимкнена, а мапу бачать лише адміни. Щоб увімкнути,
-          поверніть <Link href={mapHref}> і <ServerApplicationAction /> (заявки ведуть на MINECRAFT_SERVER_ID)
-          та приберіть adminOnly у app/dynmap/[...path]/route.ts. */}
-      <div className="server-card-footer">
-        <AdminMapLink href={mapHref} name={name} />
-      </div>
-      <div className="server-application">
-        <button className="btn btn-primary" disabled type="button">
-          Заявки — скоро
-        </button>
-      </div>
+      {server.applicationsEnabled && (
+        <ServerApplicationAction serverName={server.name} />
+      )}
     </div>
   );
 }

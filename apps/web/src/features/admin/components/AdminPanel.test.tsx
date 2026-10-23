@@ -29,6 +29,7 @@ vi.mock("@/features/auth/hooks/useCurrentSession", () => ({
 
 const application = {
   publicId: "abcdefghijklmnop",
+  serverId: "vanilla",
   number: 1,
   discordUsername: "player",
   discordAccountCreatedAt: "2016-04-30T11:18:25.796Z",

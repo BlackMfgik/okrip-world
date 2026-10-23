@@ -123,7 +123,7 @@ export async function buildApp(
       discord,
       env.APPLICATION_REPEAT_DEBUG,
       env.APPLICATION_AUTO_APPROVE,
-      env.MINECRAFT_SERVER_ID,
+      env.APPLICATION_SERVER_ID,
       env.DISCORD_MEMBERSHIP_CHECK,
       (serverId) => commandSignals.notify(serverId),
     ),
@@ -148,9 +148,10 @@ export async function buildApp(
   minecraftRoutes(
     app,
     env,
-    minecraftService(db, env.MINECRAFT_SERVER_ID, (serverId) =>
-      commandSignals.notify(serverId),
-    ),
+    (serverId) =>
+      minecraftService(db, serverId, (serverId) =>
+        commandSignals.notify(serverId),
+      ),
     commandSignals,
   );
   app.get("/health", async () => ({ ok: true }));

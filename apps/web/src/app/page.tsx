@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Nav } from "@/components/nav";
 import { Mascot } from "@/components/mascot";
 import { SocialLinks } from "@/components/social-links";
-import { AdminOnly } from "@/features/admin/components/AdminOnly";
 import { HomeStatOnline } from "@/features/servers/components/home-stat-online";
 import { ABOUT_PATH, pageMetadata, SITE_DESCRIPTION } from "@/lib/site";
 import { SERVERS } from "@/features/servers/config";
@@ -40,11 +39,9 @@ export default function HomePage() {
             <Link href="/servers" className="btn btn-primary">
               Обрати сервер →
             </Link>
-            <AdminOnly>
-              <Link href={ABOUT_PATH} className="btn">
-                Про сервер
-              </Link>
-            </AdminOnly>
+            <Link href={ABOUT_PATH} className="btn">
+              Про сервер
+            </Link>
           </div>
           <div className="home-stats">
             <div className="stat">

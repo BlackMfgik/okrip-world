@@ -500,6 +500,7 @@ it("adds, lists and removes whitelist players through the plugin command queue",
     count: 1,
     players: [
       {
+        serverId: "vanilla",
         minecraftUsername: "Manual_Player",
         discordUsername: "manual.user",
         discordId: "123456789012345678",

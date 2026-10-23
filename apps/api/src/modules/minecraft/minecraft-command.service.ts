@@ -16,7 +16,7 @@ export function minecraftService(
 ) {
   return {
     async whitelistSnapshot() {
-      const players = await playerAccess.activePlayers(db);
+      const players = await playerAccess.activePlayers(db, serverId);
       return {
         // usernames — для звірки вайтліста (старі версії плагіна читають лише його);
         // players — деталі для внутрішньоігрового меню /wlmenu.
@@ -110,8 +110,9 @@ export function minecraftService(
           identity.userId,
           identity.id,
           event.reason,
+          serverId,
         );
-        for (const app of await cancelPending(tx, identity.userId))
+        for (const app of await cancelPending(tx, identity.userId, serverId))
           await enqueueMessage(tx, app.id, "decided");
         await enqueueCommand(
           tx,
@@ -153,7 +154,11 @@ export function minecraftService(
         const identity = await playerAccess.identityByName(tx, event.username);
         if (!identity) return { status: "not_registered" as const };
         await lockUser(tx, identity.userId);
-        const access = await playerAccess.accessForIdentity(tx, identity.id);
+        const access = await playerAccess.accessForIdentity(
+          tx,
+          identity.id,
+          serverId,
+        );
         if (!access || access.status !== "banned")
           return {
             status: "not_banned" as const,
@@ -202,7 +207,11 @@ export function minecraftService(
         const identity = await playerAccess.identityByName(tx, event.username);
         if (!identity) return { status: "not_registered" as const };
         await lockUser(tx, identity.userId);
-        const access = await playerAccess.accessForIdentity(tx, identity.id);
+        const access = await playerAccess.accessForIdentity(
+          tx,
+          identity.id,
+          serverId,
+        );
         if (!access || access.status !== "active")
           return {
             status: "not_active" as const,

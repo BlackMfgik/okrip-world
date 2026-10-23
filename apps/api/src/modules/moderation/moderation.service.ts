@@ -54,7 +54,7 @@ export function moderationService(
         "invalid_rejection_reason",
         "Причина відмови має містити від 1 до 256 символів.",
       );
-    let queued = false;
+    let queuedServerId: string | undefined;
     const result = await db.transaction(async (tx) => {
       if (env.APPLICATION_REPEAT_DEBUG)
         await tx.execute(
@@ -66,7 +66,11 @@ export function moderationService(
       const fresh = (await findApplication(tx, publicId))!;
       if (fresh.application.status !== "pending")
         return fresh.application.status;
-      const existingAccess = await accessFor(tx, fresh.application.userId);
+      const existingAccess = await accessFor(
+        tx,
+        fresh.application.userId,
+        fresh.application.serverId,
+      );
       const revoked = existingAccess?.status === "revoked";
       if (existingAccess && !revoked && !env.APPLICATION_REPEAT_DEBUG)
         throw new AppError(
@@ -93,9 +97,9 @@ export function moderationService(
           userId: fresh.application.userId,
           identityId: fresh.identity.id,
           username: fresh.identity.username,
-          serverId: env.MINECRAFT_SERVER_ID,
+          serverId: fresh.application.serverId,
         });
-        queued = true;
+        queuedServerId = fresh.application.serverId;
       }
       await audit(tx, {
         actorType: reviewer.actorType,
@@ -111,7 +115,7 @@ export function moderationService(
       await enqueueMessage(tx, fresh.application.id, "decided");
       return status;
     });
-    if (queued) commandQueued(env.MINECRAFT_SERVER_ID);
+    if (queuedServerId) commandQueued(queuedServerId);
     return result;
   }
 

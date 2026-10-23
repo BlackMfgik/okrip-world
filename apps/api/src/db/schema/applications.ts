@@ -25,6 +25,7 @@ export const applications = pgTable(
     minecraftIdentityId: uuid("minecraft_identity_id")
       .notNull()
       .references(() => identities.id),
+    serverId: varchar("server_id").notNull().default("vanilla"),
     status: applicationStatus("status").notNull().default("pending"),
     rejectionReason: text("rejection_reason"),
     telegramChatId: varchar("telegram_chat_id"),
@@ -37,7 +38,7 @@ export const applications = pgTable(
   },
   (t) => [
     uniqueIndex("one_pending_application")
-      .on(t.userId)
+      .on(t.userId, t.serverId)
       .where(sql`status = 'pending'`),
     index("application_user_status").on(t.userId, t.status),
   ],

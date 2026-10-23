@@ -114,6 +114,48 @@ it("submits, durably sends Telegram, approves exactly once, leases and completes
     }),
   );
 });
+it("routes an SMP application and whitelist snapshot only to the SMP server", async () => {
+  await ctx.close();
+  ctx = await setup({ APPLICATION_SERVER_ID: "modded" });
+  const { cookie } = await login(ctx);
+  const submitted = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/applications",
+    cookies: { okrip_session: cookie },
+    headers: browserHeaders,
+    payload: { minecraftUsername: "Smp_Player" },
+  });
+  expect(submitted.statusCode, submitted.body).toBe(201);
+  const publicId = submitted.json().application.publicId;
+  await ctx.app.inject({
+    method: "POST",
+    url: "/v1/integrations/telegram/webhook",
+    headers: {
+      "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET,
+    },
+    payload: telegramBody(publicId),
+  });
+  const [access] = await ctx.db.select().from(playerAccess);
+  expect(access?.serverId).toBe("modded");
+  const [command] = await ctx.db.select().from(commands);
+  expect(command?.serverId).toBe("modded");
+
+  const smpHeaders = { ...serverHeaders, "x-server-id": "modded" };
+  const smpSnapshot = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/minecraft/whitelist/snapshot",
+    headers: smpHeaders,
+    payload: {},
+  });
+  const vanillaSnapshot = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/minecraft/whitelist/snapshot",
+    headers: serverHeaders,
+    payload: {},
+  });
+  expect(smpSnapshot.json().usernames).toEqual(["Smp_Player"]);
+  expect(vanillaSnapshot.json().usernames).toEqual([]);
+});
 it("auto-approves a submission, queues whitelist_add, and includes it in snapshot", async () => {
   await ctx.close();
   ctx = await setup({ APPLICATION_AUTO_APPROVE: true });

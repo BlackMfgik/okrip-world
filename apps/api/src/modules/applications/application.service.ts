@@ -20,7 +20,7 @@ export function applicationService(
   discord: DiscordProvider,
   repeatSubmissionEnabled = false,
   autoApproveEnabled = false,
-  minecraftServerId = "",
+  minecraftServerId = "vanilla",
   membershipCheckEnabled = false,
   commandQueued: (serverId: string) => void = () => undefined,
 ) {
@@ -55,7 +55,11 @@ export function applicationService(
               );
             await repo.clearApplicationBlock(tx, user.id);
           }
-          const existingAccess = await playerAccess.accessFor(tx, user.id);
+          const existingAccess = await playerAccess.accessFor(
+            tx,
+            user.id,
+            minecraftServerId,
+          );
           // Після відкликання доступу гравець може подати заявку повторно.
           const revoked = existingAccess?.status === "revoked";
           if (!repeatSubmissionEnabled && existingAccess && !revoked)
@@ -65,11 +69,15 @@ export function applicationService(
               "Доступ уже розглянуто. Зверніться до адміністрації.",
             );
           if (repeatSubmissionEnabled) {
-            const cancelled = await repo.cancelPending(tx, user.id);
+            const cancelled = await repo.cancelPending(
+              tx,
+              user.id,
+              minecraftServerId,
+            );
             for (const application of cancelled)
               await repo.enqueueMessage(tx, application.id, "decided");
           } else {
-            const current = await repo.latest(tx, user.id);
+            const current = await repo.latest(tx, user.id, minecraftServerId);
             if (
               current?.application.status === "pending" ||
               (current?.application.status === "approved" && !revoked)
@@ -116,6 +124,7 @@ export function applicationService(
             user.id,
             identity.id,
             randomBytes(12).toString("base64url"),
+            minecraftServerId,
           );
           await repo.enqueueMessage(tx, app.id, "created");
           await audit(tx, {
@@ -128,7 +137,7 @@ export function applicationService(
           if (autoApproveEnabled) {
             if (!minecraftServerId)
               throw new Error(
-                "APPLICATION_AUTO_APPROVE requires MINECRAFT_SERVER_ID",
+                "APPLICATION_AUTO_APPROVE requires APPLICATION_SERVER_ID",
               );
             const approved = await repo.decide(
               tx,
@@ -173,8 +182,8 @@ export function applicationService(
     },
     async current(userId: string) {
       const [current, access] = await Promise.all([
-        repo.latest(db, userId),
-        playerAccess.accessFor(db, userId),
+        repo.latest(db, userId, minecraftServerId),
+        playerAccess.accessFor(db, userId, minecraftServerId),
       ]);
       const command = access ? await lastAdd(db, access.id) : undefined;
       const nextSubmission =

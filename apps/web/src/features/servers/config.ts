@@ -4,19 +4,23 @@ export interface ServerConfig {
   ip: string;
   port: number;
   mapHref: string;
+  applicationsEnabled?: boolean;
 }
 
 export const SERVERS: ServerConfig[] = [
   {
     id: "vanilla",
     name: "Vanilla",
-    ip: "OkripWorld.mcserver.host",
+    ip: "okrip.world",
     port: 25594,
     mapHref: "/map-vanilla",
   },
+  {
+    id: "modded",
+    name: "SMP",
+    ip: "okrip.world",
+    port: 25594,
+    mapHref: "/map-modded",
+    applicationsEnabled: true,
+  },
 ];
-
-/** Сервери, які ще готуються: картку «Soon» на сторінці серверів і мапу бачать лише адміни; в онлайн і лічильник не входять. */
-export const UPCOMING_SERVERS: Array<
-  Pick<ServerConfig, "id" | "name" | "mapHref">
-> = [{ id: "modded", name: "SMP", mapHref: "/map-modded" }];

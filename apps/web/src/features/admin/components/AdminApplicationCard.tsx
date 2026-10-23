@@ -92,6 +92,12 @@ export function AdminApplicationCard({
           <dd>{formatDate(application.createdAt)}</dd>
         </div>
         <div>
+          <dt>Сервер</dt>
+          <dd>
+            {application.serverId === "modded" ? "SMP" : application.serverId}
+          </dd>
+        </div>
+        <div>
           <dt>Акаунт Discord створено</dt>
           <dd>
             <DiscordDate value={application.discordAccountCreatedAt} />

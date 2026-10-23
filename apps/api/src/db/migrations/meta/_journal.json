@@ -134,6 +134,13 @@
       "when": 1791244800000,
       "tag": "0018_discord_membership_dates",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792713600000,
+      "tag": "0019_server_scoped_access",
+      "breakpoints": true
     }
   ]
 }

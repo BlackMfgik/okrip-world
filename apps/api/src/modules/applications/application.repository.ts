@@ -17,7 +17,7 @@ export const clearApplicationBlock = (db: Executor, userId: string) =>
     })
     .where(eq(users.id, userId));
 
-export async function latest(db: Executor, userId: string) {
+export async function latest(db: Executor, userId: string, serverId: string) {
   return (
     await db
       .select({ application: applications, username: identities.username })
@@ -26,7 +26,12 @@ export async function latest(db: Executor, userId: string) {
         identities,
         eq(identities.id, applications.minecraftIdentityId),
       )
-      .where(eq(applications.userId, userId))
+      .where(
+        and(
+          eq(applications.userId, userId),
+          eq(applications.serverId, serverId),
+        ),
+      )
       .orderBy(desc(applications.createdAt))
       .limit(1)
   )[0];
@@ -37,21 +42,30 @@ export async function createApplication(
   userId: string,
   identityId: string,
   publicId: string,
+  serverId: string,
 ) {
   return (
     await db
       .insert(applications)
-      .values({ userId, minecraftIdentityId: identityId, publicId })
+      .values({ userId, minecraftIdentityId: identityId, publicId, serverId })
       .returning()
   )[0]!;
 }
 
-export async function cancelPending(db: Executor, userId: string) {
+export async function cancelPending(
+  db: Executor,
+  userId: string,
+  serverId: string,
+) {
   return db
     .update(applications)
     .set({ status: "cancelled", updatedAt: new Date() })
     .where(
-      and(eq(applications.userId, userId), eq(applications.status, "pending")),
+      and(
+        eq(applications.userId, userId),
+        eq(applications.serverId, serverId),
+        eq(applications.status, "pending"),
+      ),
     )
     .returning({ id: applications.id });
 }

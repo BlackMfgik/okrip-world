@@ -12,9 +12,13 @@ export async function grantApprovedAccess(
     serverId: string;
   },
 ) {
-  const existing = await repo.accessForIdentity(tx, input.identityId);
+  const existing = await repo.accessForIdentity(
+    tx,
+    input.identityId,
+    input.serverId,
+  );
   const access = !existing
-    ? await repo.grant(tx, input.userId, input.identityId)
+    ? await repo.grant(tx, input.userId, input.identityId, input.serverId)
     : existing.status === "revoked"
       ? await repo.reactivate(tx, existing.id)
       : existing;

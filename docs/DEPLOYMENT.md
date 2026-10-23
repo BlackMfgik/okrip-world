@@ -19,13 +19,15 @@ API variables — усі API-поля з .env.example, з production значе�
 - DISCORD_REDIRECT_URI — адреса web callback вище.
 - SESSION_SECRET, WEB_PROXY_SECRET, TELEGRAM_WEBHOOK_SECRET, MINECRAFT_SERVER_TOKEN — різні криптографічно випадкові значення, не коротші 32 символів. Telegram secret тільки A–Z/a–z/0–9/_/-.
 - Discord/Telegram IDs і tokens; MINECRAFT_SERVER_ID=vanilla.
+- `APPLICATION_SERVER_ID=modded` спрямовує нові заявки та їх схвалення на SMP. API за замовчуванням використовує `modded`; задавайте інше значення лише якщо ціль заявок відрізняється.
+- Залиште Vanilla плагін із `serverId=vanilla`; додайте SMP плагін із `serverId=modded` і тим самим `MINECRAFT_SERVER_TOKEN`. API приймає команди окремо за кожним із цих server ID.
 - `APPLICATION_AUTO_APPROVE=false` залишає ручну Telegram-модерацію. `true` одразу схвалює нову заявку, створює active access і `whitelist_add`; це поточний перемикач режиму, окремої адмін-панелі немає.
 
 Web variables: NODE_ENV=production, PORT=3000, API_INTERNAL_URL=`http://api.railway.internal:3001` і той самий WEB_PROXY_SECRET. Використайте фактичне private DNS ім'я вашого API. RAILWAY_ENVIRONMENT_ID надає платформа. Web не отримує DB, Discord або Telegram secrets.
 
 Додайте public domains для web і api (наприклад, world.example.com / api.example.com), застосуйте DNS-записи з Railway й дочекайтеся TLS. API public domain потрібен Telegram і Kinetic; браузер користується web origin. Після зміни web domain оновіть APP_BASE_URL, WEB_ORIGIN і Discord redirect разом.
 
-API pre-deploy: `pnpm --filter @okrip/api db:migrate`. Міграції не запускаються під час build. Deployment healthcheck — /ready; для web — /health, timeout 60 секунд. API одна репліка, без sleeping/serverless: внутрішній Telegram worker повинен доставляти збережені jobs. У налаштуваннях сервісів задайте restart policy ON_FAILURE, максимум 10 повторів. Після зміни параметрів збірки запускайте нову збірку з source; повтор старого deployment може використати попередню конфігурацію.
+API pre-deploy: `pnpm --filter @okrip/api db:migrate` (міграція `0019` додає доступи, прив’язані до сервера). Міграції не запускаються під час build. Deployment healthcheck — /ready; для web — /health, timeout 60 секунд. API одна репліка, без sleeping/serverless: внутрішній Telegram worker повинен доставляти збережені jobs. У налаштуваннях сервісів задайте restart policy ON_FAILURE, максимум 10 повторів. Після зміни параметрів збірки запускайте нову збірку з source; повтор старого deployment може використати попередню конфігурацію.
 
 ## 3. Telegram webhook
 

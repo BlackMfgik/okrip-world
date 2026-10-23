@@ -30,13 +30,20 @@ export const envSchema = z
       .default(""),
     TELEGRAM_BOT_TOKEN: z.string().min(1),
     TELEGRAM_WEBHOOK_SECRET: secret.regex(/^[A-Za-z0-9_-]+$/),
-    TELEGRAM_ADMIN_CHAT_ID: z.string().regex(/^$|^-?\d+$/).default(""),
-    TELEGRAM_ADMIN_USER_IDS: z.string().regex(/^$|^\d+(,\d+)*$/).default(""),
+    TELEGRAM_ADMIN_CHAT_ID: z
+      .string()
+      .regex(/^$|^-?\d+$/)
+      .default(""),
+    TELEGRAM_ADMIN_USER_IDS: z
+      .string()
+      .regex(/^$|^\d+(,\d+)*$/)
+      .default(""),
     TELEGRAM_EXTRA_ADMIN_USER_IDS: z
       .string()
       .regex(/^$|^\d+(,\d+)*$/)
       .default(""),
     MINECRAFT_SERVER_ID: z.string().min(1),
+    APPLICATION_SERVER_ID: z.string().min(1).default("modded"),
     MINECRAFT_SERVER_TOKEN: secret,
     APPLICATION_REPEAT_DEBUG: z
       .union([z.boolean(), z.enum(["true", "false"])])

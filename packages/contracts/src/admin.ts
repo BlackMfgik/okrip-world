@@ -16,6 +16,7 @@ export const adminApplicationFilterSchema = z.enum([
 
 export const adminApplicationSchema = z.object({
   publicId: z.string(),
+  serverId: z.string().default("vanilla"),
   number: z.number().int().positive(),
   discordUsername: z.string(),
   discordAccountCreatedAt: z.string().datetime().nullable().default(null),
@@ -103,6 +104,7 @@ export const adminAccountMutationResultSchema = z.object({
 
 export const adminWhitelistPlayerSchema = z.object({
   accessId: z.string().uuid(),
+  serverId: z.string().default("vanilla"),
   minecraftUsername: minecraftUsernameSchema,
   discordUsername: z.string(),
   discordDisplayName: z.string().nullable(),

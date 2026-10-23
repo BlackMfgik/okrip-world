@@ -73,6 +73,7 @@ export function adminService(
               user.applicationBlockedUntil.getTime() > now);
           return {
             publicId: application.publicId,
+            serverId: application.serverId,
             number: application.number,
             discordUsername: user.discordUsername,
             discordAccountCreatedAt: discordAccountCreatedAt(user.discordId),
