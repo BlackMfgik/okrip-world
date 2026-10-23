@@ -9,9 +9,13 @@ interface McStatusResponse {
 }
 
 async function fetchStatus(host: string): Promise<McStatusResponse> {
-  const res = await fetch(
+  const url = new URL(
     `https://api.mcstatus.io/v2/status/java/${encodeURIComponent(host)}`,
   );
+  url.searchParams.set("query", "false");
+  url.searchParams.set("timeout", "2");
+
+  const res = await fetch(url, { signal: AbortSignal.timeout(3_000) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -31,6 +35,7 @@ export function useTotalOnline() {
       "total-online",
       endpoints.map((host) => host.toLowerCase()),
     ],
+    retry: false,
     queryFn: async () => {
       const results = await Promise.allSettled(
         endpoints.map((host) => fetchStatus(host)),
