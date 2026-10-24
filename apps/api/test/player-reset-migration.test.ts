@@ -12,6 +12,7 @@ const migration = (file: string) =>
     .filter(Boolean);
 const REVOKE = migration("0021_revoke_non_admin_access.sql");
 const DELETE = migration("0022_delete_non_admin_data.sql");
+const RENUMBER = migration("0023_renumber_applications.sql");
 
 const ADMIN_DISCORD_ID = "900000000000000001";
 
@@ -222,4 +223,38 @@ it("refuses to delete anything while the plugins have not removed the players", 
   await completeCommands();
   await runMigration(DELETE);
   expect(await count("users")).toBe(0);
+});
+
+it("renumbers applications from 1 and continues the sequence after the reset", async () => {
+  await database.db.execute(
+    sql`select setval(pg_get_serial_sequence('applications', 'number'), 31)`,
+  );
+  const first = await pendingApplication(await player("First_Player"));
+  const second = await pendingApplication(await player("Second_Player"));
+  const numberOf = async (id: string) =>
+    Number(
+      (
+        await rows<{ number: string }>(
+          sql`select number from applications where id = ${id}`,
+        )
+      )[0]!.number,
+    );
+  expect([await numberOf(first), await numberOf(second)]).toEqual([32, 33]);
+
+  await runMigration(RENUMBER);
+  expect([await numberOf(first), await numberOf(second)]).toEqual([1, 2]);
+  const third = await pendingApplication(await player("Third_Player"));
+  expect(await numberOf(third)).toBe(3);
+
+  // Тригер знову забороняє змінювати номер, навіть із прапорцем міграції.
+  await expect(
+    database.db.transaction(async (tx) => {
+      await tx.execute(
+        sql`select set_config('okrip.renumber_applications', 'on', true)`,
+      );
+      await tx.execute(
+        sql`update applications set number = 10 where id = ${first}`,
+      );
+    }),
+  ).rejects.toThrow();
 });

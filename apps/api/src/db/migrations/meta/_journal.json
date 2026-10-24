@@ -162,6 +162,13 @@
       "when": 1792972800000,
       "tag": "0022_delete_non_admin_data",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793059200000,
+      "tag": "0023_renumber_applications",
+      "breakpoints": true
     }
   ]
 }
