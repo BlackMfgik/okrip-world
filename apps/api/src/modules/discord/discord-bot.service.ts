@@ -21,7 +21,8 @@ export interface DiscordChannel {
 
 /** REST-виклики від імені бота. Повертають HTTP-статус, щоб сервіс сам дав зрозумілу помилку. */
 export interface DiscordBot {
-  guildRoles(): Promise<DiscordRole[] | null>;
+  /** retries — кількість повторів; для відповіді на кнопку 0, бо Discord чекає лише 3 секунди. */
+  guildRoles(retries?: number): Promise<DiscordRole[] | null>;
   guildChannels(): Promise<DiscordChannel[] | null>;
   /** Ролі самого бота на сервері: від найвищої залежить, які ролі він може видати. */
   botRoleIds(): Promise<string[] | null>;
@@ -42,10 +43,11 @@ export function discordBot(env: Env): DiscordBot {
     "Content-Type": "application/json",
   };
   return {
-    async guildRoles() {
+    async guildRoles(retries) {
       const response = await externalRequest(
         `${API}/guilds/${env.DISCORD_GUILD_ID}/roles`,
         { headers },
+        retries,
       );
       if (!response.ok) return null;
       return (await response.json()) as DiscordRole[];

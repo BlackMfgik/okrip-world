@@ -3,7 +3,7 @@ import {
   adminAccountMutationResultSchema,
   type AdminAccountMutation,
 } from "@okrip/contracts";
-import { isSuperAdmin } from "../../shared/super-admin.js";
+import { isSuperAdmin, OWNER_DISCORD_ID } from "../../shared/super-admin.js";
 import type { Database } from "../../db/client.js";
 import { AppError } from "../../shared/errors.js";
 import { audit } from "../audit/index.js";
@@ -25,6 +25,13 @@ export function adminAccountsService(db: Database) {
             user?.discordAvatar ?? null,
           ),
           canManageAdmins: account.canManageAdmins,
+          role: isSuperAdmin(account.discordId)
+            ? "super_admin"
+            : account.discordId === OWNER_DISCORD_ID
+              ? "owner"
+              : account.canManageAdmins
+                ? "head_moderator"
+                : "admin",
           createdAt: account.createdAt.toISOString(),
         })),
         count: rows.length,

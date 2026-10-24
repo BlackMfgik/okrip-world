@@ -12,9 +12,12 @@ const publicKeyHex = publicKey
 let ctx: Awaited<ReturnType<typeof setup>>;
 afterEach(async () => ctx.close());
 
-function signed(body: unknown, key = privateKey) {
+function signed(
+  body: unknown,
+  key = privateKey,
+  timestamp = String(Math.floor(Date.now() / 1000)),
+) {
   const raw = JSON.stringify(body);
-  const timestamp = String(Math.floor(Date.now() / 1000));
   return {
     method: "POST" as const,
     url: "/v1/integrations/discord/interactions",
@@ -31,10 +34,10 @@ function signed(body: unknown, key = privateKey) {
   };
 }
 
-const click = (roles: string[]) => ({
+const click = (roles: string[], roleId = "20000000000000001") => ({
   type: 3,
   guild_id: "456",
-  data: { custom_id: "role:20000000000000001" },
+  data: { custom_id: "role:" + roleId },
   member: { user: { id: "111" }, roles },
 });
 
@@ -56,6 +59,44 @@ it("answers Discord PING and rejects unsigned or forged interactions", async () 
       })
     ).statusCode,
   ).toBe(401);
+
+  // Валідний підпис зі старою міткою часу — повтор перехопленого запиту.
+  const stale = String(Math.floor(Date.now() / 1000) - 301);
+  expect(
+    (await ctx.app.inject(signed({ type: 1 }, privateKey, stale))).statusCode,
+  ).toBe(401);
+});
+
+it("refuses to grant a role that became privileged or disappeared, but still removes it", async () => {
+  ctx = await setup({ DISCORD_PUBLIC_KEY: publicKeyHex });
+  const stale = "⚠️ Ця кнопка більше не працює. Напиши адміністрації.";
+
+  // «Модератор» має Administrator: стара кнопка не повинна його видати.
+  const privileged = await ctx.app.inject(
+    signed(click([], "20000000000000002")),
+  );
+  expect(privileged.json().data.content).toBe(stale);
+  const missing = await ctx.app.inject(signed(click([], "29999999999999999")));
+  expect(missing.json().data.content).toBe(stale);
+  expect(ctx.discordBot.setMemberRole).not.toHaveBeenCalled();
+
+  ctx.discordBot.guildRoles.mockResolvedValueOnce(null as never);
+  const unavailable = await ctx.app.inject(signed(click([])));
+  expect(unavailable.json().data.content).toContain("Не вдалося змінити роль");
+  expect(ctx.discordBot.setMemberRole).not.toHaveBeenCalled();
+
+  // Зняти небезпечну роль безпечно, тож це працює без перевірки.
+  const callsBefore = ctx.discordBot.guildRoles.mock.calls.length;
+  const removed = await ctx.app.inject(
+    signed(click(["20000000000000002"], "20000000000000002")),
+  );
+  expect(removed.json().data.content).toContain("знято");
+  expect(ctx.discordBot.setMemberRole).toHaveBeenLastCalledWith(
+    "111",
+    "20000000000000002",
+    false,
+  );
+  expect(ctx.discordBot.guildRoles.mock.calls.length).toBe(callsBefore);
 });
 
 it("toggles the role on button click", async () => {

@@ -86,6 +86,8 @@ export const adminAccountSchema = z.object({
   discordDisplayName: z.string().nullable(),
   discordAvatarUrl: z.string().url().nullable(),
   canManageAdmins: z.boolean(),
+  // Необов'язкове: старий API його не віддає. Сайт показує за ним бейдж і кнопку видалення.
+  role: z.enum(["super_admin", "owner", "head_moderator", "admin"]).optional(),
   createdAt: z.string().datetime(),
 });
 

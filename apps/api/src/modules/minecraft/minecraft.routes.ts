@@ -19,14 +19,23 @@ export function minecraftRoutes(
   serviceForServer: (serverId: string) => ReturnType<typeof minecraftService>,
   signals: MinecraftCommandSignals,
 ) {
+  // Кожен сервер має свій токен, щоб витік токена одного сервера не давав керувати іншим.
+  // Без APPLICATION_SERVER_TOKEN обидва сервери, як раніше, приймають MINECRAFT_SERVER_TOKEN.
+  const serverTokens = [
+    { serverId: env.MINECRAFT_SERVER_ID, token: env.MINECRAFT_SERVER_TOKEN },
+    {
+      serverId: env.APPLICATION_SERVER_ID,
+      token: env.APPLICATION_SERVER_TOKEN ?? env.MINECRAFT_SERVER_TOKEN,
+    },
+  ];
   const authenticate = async (req: FastifyRequest) => {
+    const serverId = String(req.headers["x-server-id"]);
+    const authorization = String(req.headers.authorization ?? "");
     if (
-      ![env.MINECRAFT_SERVER_ID, env.APPLICATION_SERVER_ID].includes(
-        String(req.headers["x-server-id"]),
-      ) ||
-      !equalSecret(
-        String(req.headers.authorization ?? ""),
-        "Bearer " + env.MINECRAFT_SERVER_TOKEN,
+      !serverTokens.some(
+        (server) =>
+          server.serverId === serverId &&
+          equalSecret(authorization, "Bearer " + server.token),
       )
     )
       throw new AppError(401, "unauthorized", "Unauthorized");

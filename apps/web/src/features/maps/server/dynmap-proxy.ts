@@ -141,10 +141,10 @@ async function proxy(
     // Контент із Minecraft-сервера не повинен виконуватися з origin сайту
     // (інакше скрипт мапи мав би доступ до сесії адміна). sandbox дає документу
     // opaque origin навіть при прямому відкритті, а CORS * дозволяє такому
-    // документу читати тайли та оновлення без cookies.
+    // документу читати тайли та оновлення без cookies. frame-ancestors пускає лише сторінки сайту.
     response.headers.set(
       "Content-Security-Policy",
-      "sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox",
+      "sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox; frame-ancestors 'self'",
     );
     response.headers.set("Access-Control-Allow-Origin", "*");
     response.headers.set("X-Robots-Tag", "noindex");

@@ -24,6 +24,8 @@ const EPHEMERAL = 64;
 const POSTABLE_CHANNEL_TYPES = new Set([0, 5]);
 const CATEGORY_CHANNEL_TYPE = 4;
 const DEFAULT_BUTTON_LABEL = "Отримати роль";
+// Запит Discord із старішою міткою часу вважаємо повтором перехопленого запиту.
+const MAX_INTERACTION_AGE_SECONDS = 300;
 
 const interactionSchema = z.object({
   type: z.number().int(),
@@ -32,7 +34,8 @@ const interactionSchema = z.object({
   member: z
     .object({
       user: z.object({ id: z.string().regex(/^\d+$/) }),
-      roles: z.array(z.string()),
+      // На Discord-сервері не більше 250 ролей.
+      roles: z.array(z.string().max(20)).max(250),
     })
     .optional(),
 });
@@ -96,7 +99,14 @@ export function discordRolesService(db: Database, env: Env, bot: DiscordBot) {
     interactionsConfigured: () => publicKey !== null,
     /** Discord підписує кожен запит Ed25519-ключем застосунку; без валідного підпису нічого не робимо. */
     verifySignature(signature: string, timestamp: string, rawBody: string) {
-      if (!publicKey || !/^[0-9a-f]{128}$/i.test(signature)) return false;
+      if (
+        !publicKey ||
+        !/^[0-9a-f]{128}$/i.test(signature) ||
+        !/^\d{1,12}$/.test(timestamp) ||
+        Math.abs(Date.now() / 1000 - Number(timestamp)) >
+          MAX_INTERACTION_AGE_SECONDS
+      )
+        return false;
       return verify(
         null,
         Buffer.from(timestamp + rawBody),
@@ -226,8 +236,23 @@ export function discordRolesService(db: Database, env: Env, bot: DiscordBot) {
         !interaction.member
       )
         return reply("⚠️ Ця кнопка більше не працює.");
-      // Повторне натискання знімає роль.
+      // Повторне натискання знімає роль. Зняти можна завжди, а перед видачею перевіряємо роль
+      // ще раз: після публікації кнопки їй могли дати адмінські права або видалити її.
       const has = interaction.member.roles.includes(roleId);
+      if (!has) {
+        const roles = await bot.guildRoles(0);
+        if (!roles)
+          return reply(
+            "⚠️ Не вдалося змінити роль. Спробуй ще раз за хвилину.",
+          );
+        const target = roles.find((item) => item.id === roleId);
+        if (
+          !target ||
+          target.id === env.DISCORD_GUILD_ID ||
+          !isAssignable(target)
+        )
+          return reply("⚠️ Ця кнопка більше не працює. Напиши адміністрації.");
+      }
       const status = await bot.setMemberRole(
         interaction.member.user.id,
         roleId,

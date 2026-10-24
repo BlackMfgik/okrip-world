@@ -156,6 +156,40 @@ it("routes an Amega application and whitelist snapshot only to the Amega server"
   expect(smpSnapshot.json().usernames).toEqual(["Smp_Player"]);
   expect(vanillaSnapshot.json().usernames).toEqual([]);
 });
+it("accepts each Minecraft server only with its own token when APPLICATION_SERVER_TOKEN is set", async () => {
+  await ctx.close();
+  const amegaToken = "a".repeat(32);
+  ctx = await setup({
+    APPLICATION_SERVER_ID: "modded",
+    APPLICATION_SERVER_TOKEN: amegaToken,
+  });
+  const snapshot = (headers: Record<string, string>) =>
+    ctx.app.inject({
+      method: "POST",
+      url: "/v1/minecraft/whitelist/snapshot",
+      headers,
+      payload: {},
+    });
+  const amegaHeaders = {
+    authorization: "Bearer " + amegaToken,
+    "x-server-id": "modded",
+  };
+
+  // Витік токена Vanilla не дає керувати Amega, і навпаки.
+  expect(
+    (await snapshot({ ...serverHeaders, "x-server-id": "modded" })).statusCode,
+  ).toBe(401);
+  expect(
+    (
+      await snapshot({
+        ...amegaHeaders,
+        "x-server-id": env.MINECRAFT_SERVER_ID,
+      })
+    ).statusCode,
+  ).toBe(401);
+  expect((await snapshot(amegaHeaders)).statusCode).toBe(200);
+  expect((await snapshot(serverHeaders)).statusCode).toBe(200);
+});
 it("auto-approves a submission, queues whitelist_add, and includes it in snapshot", async () => {
   await ctx.close();
   ctx = await setup({ APPLICATION_AUTO_APPROVE: true });

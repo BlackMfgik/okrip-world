@@ -51,4 +51,8 @@ it("keeps a public map open without a token", async () => {
   );
   expect(response.status).toBe(200);
   expect(response.headers.get("Cache-Control")).toBe("public, max-age=600");
+  // Документ Dynmap ізольовано sandbox і вбудовується лише в сторінки сайту.
+  expect(response.headers.get("Content-Security-Policy")).toBe(
+    "sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox; frame-ancestors 'self'",
+  );
 });

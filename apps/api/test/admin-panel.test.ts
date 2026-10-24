@@ -254,6 +254,15 @@ it("lets only protected head moderators add and remove regular web admins", asyn
         Boolean(account.canManageAdmins),
       ),
   ).toHaveLength(4);
+  const roleOf = (discordId: string) =>
+    initial
+      .json()
+      .accounts.find(
+        (account: { discordId: string }) => account.discordId === discordId,
+      )?.role;
+  expect(roleOf("554465791358140417")).toBe("super_admin");
+  expect(roleOf("302714744626741248")).toBe("owner");
+  expect(roleOf("303118455635312641")).toBe("head_moderator");
 
   const regularAdminId = "99999999999999999";
   const added = await ctx.app.inject({

@@ -1,5 +1,5 @@
 import { rateLimitKey } from "./plugins/rate-limit.js";
-import Fastify from "fastify";
+import Fastify, { LogController } from "fastify";
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
@@ -40,7 +40,7 @@ export async function buildApp(
 ) {
   const app = Fastify({
     bodyLimit: 16384,
-    disableRequestLogging: true,
+    logController: new LogController({ disableRequestLogging: true }),
     logger:
       env.NODE_ENV !== "test"
         ? {
@@ -65,15 +65,14 @@ export async function buildApp(
   });
   app.addHook("onRequest", async (req, reply) => {
     reply.header("Cache-Control", "no-store");
+    // Кожна POST-мутація з браузера має прийти з origin сайту. Виняток — інтеграції,
+    // що приходять не з браузера й автентифікуються власним секретом або підписом.
+    const route = req.routeOptions.url;
     if (
       req.method === "POST" &&
-      (req.routeOptions.url === "/v1/applications" ||
-        req.routeOptions.url === "/v1/auth/logout" ||
-        req.routeOptions.url === "/v1/admin/applications/decision" ||
-        req.routeOptions.url === "/v1/admin/whitelist/add" ||
-        req.routeOptions.url === "/v1/admin/whitelist/remove" ||
-        req.routeOptions.url === "/v1/admin/whitelist/rename" ||
-        req.routeOptions.url === "/v1/admin/discord/role-message") &&
+      route !== undefined &&
+      !route.startsWith("/v1/integrations/") &&
+      !route.startsWith("/v1/minecraft/") &&
       req.headers.origin !== env.WEB_ORIGIN
     )
       throw new AppError(403, "invalid_origin", "Запит заблоковано.");

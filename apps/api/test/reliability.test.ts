@@ -211,3 +211,30 @@ it("rejects missing integration secrets, foreign server tokens and CSRF query by
     ).statusCode,
   ).toBe(401);
 });
+it("checks Origin on every browser POST, including admin account and block mutations", async () => {
+  const { cookie } = await login(ctx);
+  for (const url of [
+    "/v1/admin/accounts/add",
+    "/v1/admin/accounts/remove",
+    "/v1/admin/applications/block",
+  ]) {
+    for (const headers of [{}, { origin: "https://evil.example" }]) {
+      const response = await ctx.app.inject({
+        method: "POST",
+        url,
+        cookies: { okrip_session: cookie },
+        headers,
+        payload: {},
+      });
+      expect(response.statusCode, url).toBe(403);
+      expect(response.json().code, url).toBe("invalid_origin");
+    }
+  }
+  const logout = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/auth/logout",
+    cookies: { okrip_session: cookie },
+    headers: browserHeaders,
+  });
+  expect(logout.statusCode, logout.body).toBeLessThan(300);
+});

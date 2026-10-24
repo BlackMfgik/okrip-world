@@ -26,7 +26,9 @@ it("accepts only its own unexpired tokens", () => {
 it("expires tokens and refuses to work without a secret", () => {
   vi.useFakeTimers();
   const token = createDynmapToken()!;
-  vi.advanceTimersByTime(13 * 60 * 60 * 1000);
+  vi.advanceTimersByTime(2 * 60 * 60 * 1000 - 1000);
+  expect(verifyDynmapToken(token)).toBe(true);
+  vi.advanceTimersByTime(2000);
   expect(verifyDynmapToken(token)).toBe(false);
 
   vi.stubEnv("WEB_PROXY_SECRET", "");

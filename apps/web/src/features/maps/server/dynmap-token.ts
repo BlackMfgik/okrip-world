@@ -4,7 +4,9 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // /dynmap/<токен>/index.html. Документ Dynmap працює в sandbox з opaque origin і
 // не шле cookies, тож сесію адміна перевіряє сторінка мапи, а проксі — лише підпис.
 
-const TOKEN_TTL_MS = 12 * 60 * 60 * 1000;
+// Посилання з токеном — bearer: хто його має, бачить мапу без входу. Сторінка мапи видає
+// новий токен при кожному відкритті, тож строк короткий.
+const TOKEN_TTL_MS = 2 * 60 * 60 * 1000;
 
 function sign(expires: string, secret: string) {
   return createHmac("sha256", secret)

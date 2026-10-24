@@ -45,6 +45,14 @@ export const envSchema = z
     MINECRAFT_SERVER_ID: z.string().min(1),
     APPLICATION_SERVER_ID: z.string().min(1).default("modded"),
     MINECRAFT_SERVER_TOKEN: secret,
+    // Окремий токен сервера заявок. Якщо задано, APPLICATION_SERVER_ID приймається лише з ним,
+    // а MINECRAFT_SERVER_TOKEN — лише для MINECRAFT_SERVER_ID.
+    APPLICATION_SERVER_TOKEN: z.preprocess(
+      (value) => (value === "" ? undefined : value),
+      secret.optional(),
+    ),
+    // Railway задає його сам; тоді X-Real-IP перезаписує edge Railway і йому можна довіряти.
+    RAILWAY_ENVIRONMENT_ID: z.string().optional(),
     APPLICATION_REPEAT_DEBUG: z
       .union([z.boolean(), z.enum(["true", "false"])])
       .default("false")

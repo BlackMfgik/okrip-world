@@ -17,10 +17,11 @@ API variables — усі API-поля з .env.example, з production значе�
 - NODE_ENV=production; PORT=3001.
 - APP_BASE_URL і WEB_ORIGIN — однакова HTTPS адреса сайту без кінцевого слеша.
 - DISCORD_REDIRECT_URI — адреса web callback вище.
-- SESSION_SECRET, WEB_PROXY_SECRET, TELEGRAM_WEBHOOK_SECRET, MINECRAFT_SERVER_TOKEN — різні криптографічно випадкові значення, не коротші 32 символів. Telegram secret тільки A–Z/a–z/0–9/_/-.
+- SESSION_SECRET, WEB_PROXY_SECRET, TELEGRAM_WEBHOOK_SECRET, MINECRAFT_SERVER_TOKEN, APPLICATION_SERVER_TOKEN — різні криптографічно випадкові значення, не коротші 32 символів. Telegram secret тільки A–Z/a–z/0–9/_/-.
 - Discord/Telegram IDs і tokens; MINECRAFT_SERVER_ID=vanilla.
 - `APPLICATION_SERVER_ID=modded` спрямовує нові заявки та їх схвалення на SMP. API за замовчуванням використовує `modded`; задавайте інше значення лише якщо ціль заявок відрізняється.
-- Залиште Vanilla плагін із `serverId=vanilla`; додайте SMP плагін із `serverId=modded` і тим самим `MINECRAFT_SERVER_TOKEN`. API приймає команди окремо за кожним із цих server ID.
+- Залиште Vanilla плагін із `serverId=vanilla` і `MINECRAFT_SERVER_TOKEN`; SMP плагін (Amega) має `serverId=modded`. API приймає команди окремо за кожним із цих server ID.
+- `APPLICATION_SERVER_TOKEN` (необов'язковий, рекомендований) — окремий токен сервера заявок, щоб витік токена Vanilla не давав керувати вайтлістом і банами Amega. Якщо він заданий, `modded` приймається лише з ним, а `MINECRAFT_SERVER_TOKEN` — лише для `vanilla`. Якщо порожній, обидва сервери використовують `MINECRAFT_SERVER_TOKEN`. Порядок увімкнення: згенеруйте новий токен (≥32 символи), задайте його в Railway API, дочекайтеся deploy і одразу пропишіть той самий токен у `server-token` config.yml плагіна Amega та перезапустіть сервер (до перезапуску плагін Amega отримуватиме 401 і повторюватиме запити). Плагін оновлювати не треба.
 - `APPLICATION_AUTO_APPROVE=false` залишає ручну Telegram-модерацію. `true` одразу схвалює нову заявку, створює active access і `whitelist_add`; це поточний перемикач режиму, окремої адмін-панелі немає.
 
 Web variables: NODE_ENV=production, PORT=3000, API_INTERNAL_URL=`http://api.railway.internal:3001` і той самий WEB_PROXY_SECRET. Використайте фактичне private DNS ім'я вашого API. RAILWAY_ENVIRONMENT_ID надає платформа. Web не отримує DB, Discord або Telegram secrets.
@@ -49,7 +50,7 @@ Invoke-RestMethod -Method Post -Uri ('https://api.telegram.org/bot' + $env:TELEG
 1. Ціль цієї збірки — Paper/Purpur 1.21.11, Java 21. Для інших версій API спочатку перебудуйте й перевірте сумісність. Folia не підтримується.
 2. Зберіть `apps/minecraft-plugin` через Gradle wrapper; завантажте `build/libs/OkripWhitelist-1.5.0.jar` у /plugins (старий JAR видаліть). Спочатку задеплойте сервіс api: `/wlmenu`, `/wldel` і `/wlunban` потребують його нових endpoint.
 3. Запустіть один раз, щоб створити plugins/OkripWhitelist/config.yml. При placeholder token плагін відключиться до налаштування.
-4. Укажіть HTTPS public API URL, server-id, той самий MINECRAFT_SERVER_TOKEN і timeout 8 секунд. Переконайтеся, що public domain/proxy API пропускає WebSocket upgrade, і перезапустіть сервер.
+4. Укажіть HTTPS public API URL, server-id, токен цього сервера (MINECRAFT_SERVER_TOKEN для vanilla; APPLICATION_SERVER_TOKEN для modded, якщо заданий) і timeout 8 секунд. Переконайтеся, що public domain/proxy API пропускає WebSocket upgrade, і перезапустіть сервер.
 5. У server.properties встановіть white-list=true. Для offline-mode встановіть і налаштуйте AuthMe/аналог; користувачі мають вводити нік із первісним регістром.
 6. Збережіть plugins/OkripWhitelist/delivery-journal.json у backup, не видаляйте його при оновленні JAR. Запускайте один екземпляр плагіна на serverId.
 
