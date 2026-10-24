@@ -593,6 +593,47 @@ it("adds, lists and removes whitelist players through the plugin command queue",
   expect(await ctx.db.select().from(commands)).toHaveLength(3);
 });
 
+it("adds a whitelist player from the admin panel to the application server", async () => {
+  await ctx.close();
+  ctx = await setup({ APPLICATION_SERVER_ID: "modded" });
+  ctx.discord.identity.mockResolvedValue({
+    id: "554465791358140417",
+    username: "WebAdmin",
+    global_name: null,
+    avatar: null,
+  });
+  const { cookie } = await login(ctx);
+  const added = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/admin/whitelist/add",
+    cookies: { okrip_session: cookie },
+    headers: browserHeaders,
+    payload: {
+      minecraftUsername: "Amega_Player",
+      discordUsername: "amega.user",
+      discordId: "123456789012345679",
+    },
+  });
+  expect(added.statusCode, added.body).toBe(200);
+
+  const [access] = await ctx.db.select().from(playerAccess);
+  expect(access?.serverId).toBe("modded");
+  const [command] = await ctx.db.select().from(commands);
+  expect(command).toMatchObject({ serverId: "modded", type: "whitelist_add" });
+
+  const snapshot = (serverId: string) =>
+    ctx.app.inject({
+      method: "POST",
+      url: "/v1/minecraft/whitelist/snapshot",
+      headers: { ...serverHeaders, "x-server-id": serverId },
+      payload: {},
+    });
+  expect((await snapshot("modded")).json().usernames).toEqual(["Amega_Player"]);
+  expect((await snapshot(env.MINECRAFT_SERVER_ID)).json().usernames).toEqual(
+    [],
+  );
+});
+
 it("lets a player re-apply after access was revoked and restores the same access on approval", async () => {
   const applicant = await login(ctx);
   const applicantCookies = { okrip_session: applicant.cookie };

@@ -134,7 +134,8 @@ export async function buildApp(
     adminService(
       db,
       moderation,
-      env.MINECRAFT_SERVER_ID,
+      // Ручне додавання з адмінки йде на той самий сервер, що й заявки (Amega).
+      env.APPLICATION_SERVER_ID,
       (serverId) => commandSignals.notify(serverId),
       discord,
     ),
