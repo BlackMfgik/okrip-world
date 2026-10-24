@@ -10,8 +10,8 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   ...pageMetadata(
-    "Мапа сервера SMP | Okrip World",
-    "Жива мапа сервера SMP спільноти Okrip World.",
+    "Мапа сервера Amega | Okrip World",
+    "Жива мапа сервера Amega спільноти Okrip World.",
     "/map-modded",
   ),
   robots: {
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export default async function MapModdedPage() {
-  // Поки сервер SMP не запущено, мапу бачать лише адміни сайту: сторінка перевіряє
+  // Поки сервер Amega не запущено, мапу бачать лише адміни сайту: сторінка перевіряє
   // сесію і видає токен, без якого проксі /dynmap/ нічого не віддає.
   const isAdmin = await isAdminSession();
   const token =
@@ -32,12 +32,12 @@ export default async function MapModdedPage() {
       <Nav />
 
       <main className="body">
-        <h1 className="sr-only">Мапа сервера SMP Okrip World</h1>
+        <h1 className="sr-only">Мапа сервера Amega Okrip World</h1>
         <MapFrame
           base={token ? `/dynmap/${token}/` : undefined}
-          title="Dynmap — сервер SMP Okrip World"
+          title="Dynmap — сервер Amega Okrip World"
           unavailableText={
-            isAdmin ? undefined : "МАПА SMP ПОКИ ДОСТУПНА ЛИШЕ АДМІНІСТРАЦІЇ"
+            isAdmin ? undefined : "МАПА AMEGA ПОКИ ДОСТУПНА ЛИШЕ АДМІНІСТРАЦІЇ"
           }
         />
       </main>

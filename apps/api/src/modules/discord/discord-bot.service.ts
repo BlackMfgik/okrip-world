@@ -8,11 +8,23 @@ export interface DiscordRole {
   name: string;
   permissions: string;
   managed: boolean;
+  position: number;
+}
+
+export interface DiscordChannel {
+  id: string;
+  name: string;
+  type: number;
+  position: number;
+  parent_id?: string | null;
 }
 
 /** REST-виклики від імені бота. Повертають HTTP-статус, щоб сервіс сам дав зрозумілу помилку. */
 export interface DiscordBot {
   guildRoles(): Promise<DiscordRole[] | null>;
+  guildChannels(): Promise<DiscordChannel[] | null>;
+  /** Ролі самого бота на сервері: від найвищої залежить, які ролі він може видати. */
+  botRoleIds(): Promise<string[] | null>;
   postMessage(
     channelId: string,
     body: unknown,
@@ -37,6 +49,23 @@ export function discordBot(env: Env): DiscordBot {
       );
       if (!response.ok) return null;
       return (await response.json()) as DiscordRole[];
+    },
+    async guildChannels() {
+      const response = await externalRequest(
+        `${API}/guilds/${env.DISCORD_GUILD_ID}/channels`,
+        { headers },
+      );
+      if (!response.ok) return null;
+      return (await response.json()) as DiscordChannel[];
+    },
+    async botRoleIds() {
+      // ID застосунку збігається з ID його бота.
+      const response = await externalRequest(
+        `${API}/guilds/${env.DISCORD_GUILD_ID}/members/${env.DISCORD_CLIENT_ID}`,
+        { headers },
+      );
+      if (!response.ok) return null;
+      return ((await response.json()) as { roles: string[] }).roles;
     },
     async postMessage(channelId, body) {
       const response = await externalRequest(

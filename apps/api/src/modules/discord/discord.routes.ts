@@ -12,6 +12,16 @@ export function discordRoutes(
   auth: AuthService,
   service: ReturnType<typeof discordRolesService>,
 ) {
+  // Кожен запит — три виклики Discord API, тому ліміт нижчий за загальний.
+  app.get(
+    "/v1/admin/discord/options",
+    { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } },
+    async (req) => {
+      await requireSuperAdmin(auth, req);
+      return service.options();
+    },
+  );
+
   app.post(
     "/v1/admin/discord/role-message",
     { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },

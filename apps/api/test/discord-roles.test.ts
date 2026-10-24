@@ -196,4 +196,68 @@ it("lets only the super admin post a role message, refusing privileged roles", a
     (await post({ ...payload, roleId: "29999999999999999" })).statusCode,
   ).toBe(404);
   expect(ctx.discordBot.postMessage).toHaveBeenCalledTimes(2);
+
+  const withoutLabel = await post({ ...payload, buttonLabel: "  " });
+  expect(withoutLabel.statusCode, withoutLabel.body).toBe(200);
+  expect(ctx.discordBot.postMessage).toHaveBeenLastCalledWith(
+    "10000000000000001",
+    expect.objectContaining({
+      components: [
+        {
+          type: 1,
+          components: [expect.objectContaining({ label: "Отримати роль" })],
+        },
+      ],
+    }),
+  );
+
+  const plain = await post({ ...payload, roleId: "", buttonLabel: "" });
+  expect(plain.statusCode, plain.body).toBe(200);
+  expect(plain.json()).toEqual({
+    messageId: "30000000000000001",
+    channelId: "10000000000000001",
+  });
+  expect(ctx.discordBot.postMessage).toHaveBeenLastCalledWith(
+    "10000000000000001",
+    expect.not.objectContaining({ components: expect.anything() }),
+  );
+
+  expect((await post({ ...payload, roleId: "" })).statusCode).toBe(400);
+  expect(ctx.discordBot.postMessage).toHaveBeenCalledTimes(4);
+});
+
+it("lists postable channels and roles the bot can assign to the super admin only", async () => {
+  ctx = await setup();
+  const get = (cookie: string) =>
+    ctx.app.inject({
+      method: "GET",
+      url: "/v1/admin/discord/options",
+      cookies: { okrip_session: cookie },
+    });
+
+  const player = await login(ctx);
+  expect((await get(player.cookie)).statusCode).toBe(403);
+  expect(ctx.discordBot.guildChannels).not.toHaveBeenCalled();
+
+  ctx.discord.identity.mockResolvedValue({
+    id: "554465791358140417",
+    username: "SuperAdmin",
+    global_name: null,
+    avatar: null,
+  });
+  const admin = await login(ctx);
+  const options = await get(admin.cookie);
+  expect(options.statusCode, options.body).toBe(200);
+  expect(options.json()).toEqual({
+    channels: [
+      { id: "10000000000000004", name: "новини", category: null },
+      { id: "10000000000000002", name: "загальний", category: "Чат" },
+      { id: "10000000000000001", name: "правила", category: "Інфо" },
+    ],
+    // Без @everyone, адмінської, службової та вищої за бота ролей.
+    roles: [{ id: "20000000000000001", name: "Гравець" }],
+  });
+
+  ctx.discordBot.botRoleIds.mockResolvedValueOnce(null);
+  expect((await get(admin.cookie)).statusCode).toBe(503);
 });

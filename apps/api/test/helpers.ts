@@ -44,19 +44,70 @@ export async function setup(overrides: Partial<typeof env> = {}) {
   const telegram = { call: vi.fn(async () => ({ message_id: 123 })) };
   const discordBot = {
     guildRoles: vi.fn(async () => [
-      { id: "456", name: "@everyone", permissions: "0", managed: false },
+      {
+        id: "456",
+        name: "@everyone",
+        permissions: "0",
+        managed: false,
+        position: 0,
+      },
       {
         id: "20000000000000001",
         name: "Гравець",
         permissions: "0",
         managed: false,
+        position: 1,
       },
       {
         id: "20000000000000002",
         name: "Модератор",
         permissions: "8",
         managed: false,
+        position: 2,
       },
+      {
+        id: "20000000000000003",
+        name: "Okrip Bot",
+        permissions: "268435456",
+        managed: true,
+        position: 3,
+      },
+      {
+        id: "20000000000000004",
+        name: "Власник",
+        permissions: "0",
+        managed: false,
+        position: 4,
+      },
+    ]),
+    guildChannels: vi.fn(async () => [
+      { id: "10000000000000009", name: "Інфо", type: 4, position: 1 },
+      { id: "10000000000000008", name: "Чат", type: 4, position: 0 },
+      {
+        id: "10000000000000001",
+        name: "правила",
+        type: 0,
+        position: 0,
+        parent_id: "10000000000000009",
+      },
+      {
+        id: "10000000000000002",
+        name: "загальний",
+        type: 0,
+        position: 0,
+        parent_id: "10000000000000008",
+      },
+      {
+        id: "10000000000000003",
+        name: "голосовий",
+        type: 2,
+        position: 1,
+        parent_id: "10000000000000008",
+      },
+      { id: "10000000000000004", name: "новини", type: 5, position: 0 },
+    ]),
+    botRoleIds: vi.fn(async (): Promise<string[] | null> => [
+      "20000000000000003",
     ]),
     postMessage: vi.fn(async () => ({ status: 200, id: "30000000000000001" })),
     setMemberRole: vi.fn(async () => 204),

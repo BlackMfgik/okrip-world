@@ -1,6 +1,7 @@
 import { createPublicKey, verify } from "node:crypto";
 import { z } from "zod";
 import {
+  adminDiscordOptionsSchema,
   adminDiscordRoleMessageResultSchema,
   type AdminDiscordRoleMessage,
 } from "@okrip/contracts";
@@ -8,13 +9,21 @@ import type { Database } from "../../db/client.js";
 import type { Env } from "../../config/env.js";
 import { AppError } from "../../shared/errors.js";
 import { audit } from "../audit/index.js";
-import type { DiscordBot } from "./discord-bot.service.js";
+import type {
+  DiscordBot,
+  DiscordChannel,
+  DiscordRole,
+} from "./discord-bot.service.js";
 
 const ROLE_BUTTON_PREFIX = "role:";
 const SUPPRESS_EMBEDS = 1 << 2;
 // Administrator, Manage Roles, Manage Guild, Ban і Kick Members: такі ролі кнопкою не видаємо.
 const DANGEROUS_PERMISSIONS = 0x8n | 0x10000000n | 0x20n | 0x4n | 0x2n;
 const EPHEMERAL = 64;
+// Текстові канали й канали оголошень; 4 — категорія.
+const POSTABLE_CHANNEL_TYPES = new Set([0, 5]);
+const CATEGORY_CHANNEL_TYPE = 4;
+const DEFAULT_BUTTON_LABEL = "Отримати роль";
 
 const interactionSchema = z.object({
   type: z.number().int(),
@@ -27,6 +36,18 @@ const interactionSchema = z.object({
     })
     .optional(),
 });
+
+function discordUnavailable() {
+  return new AppError(
+    503,
+    "discord_unavailable",
+    "Не вдалося отримати дані Discord-сервера.",
+  );
+}
+
+function byPosition(a: DiscordChannel, b: DiscordChannel) {
+  return a.position - b.position || a.id.localeCompare(b.id);
+}
 
 function reply(content: string) {
   return {
@@ -48,6 +69,29 @@ export function discordRolesService(db: Database, env: Env, bot: DiscordBot) {
       })
     : null;
 
+  // Службові ролі інтеграцій і ролі з адмінськими правами кнопкою не видаємо.
+  const isAssignable = (role: DiscordRole) =>
+    !role.managed && !(BigInt(role.permissions) & DANGEROUS_PERMISSIONS);
+
+  async function assignableRole(roleId: string) {
+    const roles = await bot.guildRoles();
+    if (!roles) throw discordUnavailable();
+    const role = roles.find((item) => item.id === roleId);
+    if (!role || role.id === env.DISCORD_GUILD_ID)
+      throw new AppError(
+        404,
+        "role_not_found",
+        "Такої ролі немає на Discord-сервері.",
+      );
+    if (!isAssignable(role))
+      throw new AppError(
+        409,
+        "role_not_allowed",
+        "Цю роль не можна видавати кнопкою: вона службова або має адмінські права.",
+      );
+    return role;
+  }
+
   return {
     interactionsConfigured: () => publicKey !== null,
     /** Discord підписує кожен запит Ed25519-ключем застосунку; без валідного підпису нічого не робимо. */
@@ -61,48 +105,83 @@ export function discordRolesService(db: Database, env: Env, bot: DiscordBot) {
       );
     },
 
+    /** Канали, куди можна написати, і ролі, які бот здатен видати кнопкою. */
+    async options() {
+      const [channels, roles, botRoleIds] = await Promise.all([
+        bot.guildChannels(),
+        bot.guildRoles(),
+        bot.botRoleIds(),
+      ]);
+      if (!channels || !roles || !botRoleIds) throw discordUnavailable();
+
+      const categories = new Map(
+        channels
+          .filter((channel) => channel.type === CATEGORY_CHANNEL_TYPE)
+          .map((category) => [category.id, category]),
+      );
+      const categoryPosition = (channel: DiscordChannel) =>
+        channel.parent_id
+          ? (categories.get(channel.parent_id)?.position ?? -1)
+          : -1;
+      // Бот змінює лише ролі, що стоять нижче за його найвищу роль.
+      const botTop = Math.max(
+        0,
+        ...roles
+          .filter((role) => botRoleIds.includes(role.id))
+          .map((role) => role.position),
+      );
+
+      return adminDiscordOptionsSchema.parse({
+        channels: channels
+          .filter((channel) => POSTABLE_CHANNEL_TYPES.has(channel.type))
+          .sort(
+            (a, b) =>
+              categoryPosition(a) - categoryPosition(b) || byPosition(a, b),
+          )
+          .map((channel) => ({
+            id: channel.id,
+            name: channel.name,
+            category:
+              (channel.parent_id && categories.get(channel.parent_id)?.name) ||
+              null,
+          })),
+        roles: roles
+          .filter(
+            (role) =>
+              role.id !== env.DISCORD_GUILD_ID &&
+              role.position < botTop &&
+              isAssignable(role),
+          )
+          .sort((a, b) => b.position - a.position)
+          .map((role) => ({ id: role.id, name: role.name })),
+      });
+    },
+
     async postRoleMessage(
       input: AdminDiscordRoleMessage,
       admin: { id: string; discordId: string },
     ) {
-      const roles = await bot.guildRoles();
-      if (!roles)
-        throw new AppError(
-          503,
-          "discord_unavailable",
-          "Не вдалося отримати ролі Discord-сервера.",
-        );
-      const role = roles.find((item) => item.id === input.roleId);
-      if (!role || role.id === env.DISCORD_GUILD_ID)
-        throw new AppError(
-          404,
-          "role_not_found",
-          "Такої ролі немає на Discord-сервері.",
-        );
-      if (role.managed || BigInt(role.permissions) & DANGEROUS_PERMISSIONS)
-        throw new AppError(
-          409,
-          "role_not_allowed",
-          "Цю роль не можна видавати кнопкою: вона службова або має адмінські права.",
-        );
+      const role = input.roleId ? await assignableRole(input.roleId) : null;
 
       const posted = await bot.postMessage(input.channelId, {
         content: input.content,
         ...(input.suppressEmbeds ? { flags: SUPPRESS_EMBEDS } : {}),
         allowed_mentions: { parse: [] },
-        components: [
-          {
-            type: 1,
-            components: [
-              {
-                type: 2,
-                style: 1,
-                label: input.buttonLabel,
-                custom_id: ROLE_BUTTON_PREFIX + role.id,
-              },
-            ],
-          },
-        ],
+        ...(role && {
+          components: [
+            {
+              type: 1,
+              components: [
+                {
+                  type: 2,
+                  style: 1,
+                  label: input.buttonLabel ?? DEFAULT_BUTTON_LABEL,
+                  custom_id: ROLE_BUTTON_PREFIX + role.id,
+                },
+              ],
+            },
+          ],
+        }),
       });
       if (!posted.id)
         throw new AppError(
@@ -124,13 +203,13 @@ export function discordRolesService(db: Database, env: Env, bot: DiscordBot) {
           messageId: posted.id,
           actorDiscordId: admin.discordId,
           channelId: input.channelId,
-          roleId: role.id,
+          roleId: role?.id ?? null,
         },
       });
       return adminDiscordRoleMessageResultSchema.parse({
         messageId: posted.id,
         channelId: input.channelId,
-        roleName: role.name,
+        roleName: role?.name,
       });
     },
 

@@ -17,7 +17,7 @@ export const SERVERS: ServerConfig[] = [
   },
   {
     id: "modded",
-    name: "SMP",
+    name: "Amega",
     ip: "okrip.world",
     port: 25594,
     mapHref: "/map-modded",

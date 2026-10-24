@@ -2073,6 +2073,7 @@ body {
   text-transform: uppercase;
 }
 .admin-discord-form input,
+.admin-discord-form select,
 .admin-discord-form textarea {
   width: 100%;
   min-height: 44px;
@@ -2086,11 +2087,20 @@ body {
   resize: vertical;
 }
 .admin-discord-form input:focus,
+.admin-discord-form select:focus,
 .admin-discord-form textarea:focus {
   outline: none;
   border-color: var(--border-strong);
   background: var(--field-bg-focus);
   box-shadow: 0 0 0 3px var(--focus-ring);
+}
+.admin-discord-form select:disabled {
+  opacity: 0.6;
+}
+.admin-discord-form option,
+.admin-discord-form optgroup {
+  background: var(--bg);
+  color: var(--text);
 }
 .admin-discord-form-wide {
   grid-column: 1 / -1;

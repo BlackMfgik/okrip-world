@@ -114,7 +114,7 @@ it("submits, durably sends Telegram, approves exactly once, leases and completes
     }),
   );
 });
-it("routes an SMP application and whitelist snapshot only to the SMP server", async () => {
+it("routes an Amega application and whitelist snapshot only to the Amega server", async () => {
   await ctx.close();
   ctx = await setup({ APPLICATION_SERVER_ID: "modded" });
   const { cookie } = await login(ctx);

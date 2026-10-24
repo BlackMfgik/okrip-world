@@ -94,7 +94,7 @@ export function AdminApplicationCard({
         <div>
           <dt>Сервер</dt>
           <dd>
-            {application.serverId === "modded" ? "SMP" : application.serverId}
+            {application.serverId === "modded" ? "Amega" : application.serverId}
           </dd>
         </div>
         <div>

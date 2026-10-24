@@ -246,7 +246,7 @@ export function WhitelistPanel() {
                 <div>
                   <strong>{player.minecraftUsername}</strong>
                   <small>
-                    {player.serverId === "modded" ? "SMP" : player.serverId} ·
+                    {player.serverId === "modded" ? "Amega" : player.serverId} ·
                     Додано {formatDate(player.addedAt)}
                   </small>
                 </div>

@@ -6,4 +6,5 @@ export const queryKeys = {
     ["admin", "applications", filter] as const,
   adminWhitelist: ["admin", "whitelist"] as const,
   adminAccounts: ["admin", "accounts"] as const,
+  adminDiscordOptions: ["admin", "discord", "options"] as const,
 };

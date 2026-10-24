@@ -1,25 +1,53 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { Fragment, useMemo, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
+  adminDiscordOptionsSchema,
   adminDiscordRoleMessageResultSchema,
-  type AdminDiscordRoleMessage,
 } from "@okrip/contracts";
 import { apiRequest } from "@/lib/api-client";
+import { queryKeys } from "@/lib/query-keys";
 
-const empty: AdminDiscordRoleMessage = {
+// Порожні roleId і buttonLabel API трактує як «без кнопки» та «напис за замовчуванням».
+interface RoleMessageForm {
+  channelId: string;
+  roleId: string;
+  content: string;
+  buttonLabel: string;
+  suppressEmbeds: boolean;
+}
+
+const empty: RoleMessageForm = {
   channelId: "",
   roleId: "",
   content: "",
-  buttonLabel: "Отримати роль",
+  buttonLabel: "",
   suppressEmbeds: false,
 };
 
 export function DiscordRoleMessagePanel() {
-  const [form, setForm] = useState<AdminDiscordRoleMessage>(empty);
+  const [form, setForm] = useState<RoleMessageForm>(empty);
+  const options = useQuery({
+    queryKey: queryKeys.adminDiscordOptions,
+    queryFn: () =>
+      apiRequest("/admin/discord/options", adminDiscordOptionsSchema),
+    staleTime: 60_000,
+  });
+  // API віддає канали вже впорядкованими так, як у Discord; групуємо за категорією.
+  const channels = options.data?.channels;
+  const channelGroups = useMemo(() => {
+    if (!channels) return null;
+    const groups = new Map<string | null, typeof channels>();
+    for (const channel of channels)
+      groups.set(channel.category, [
+        ...(groups.get(channel.category) ?? []),
+        channel,
+      ]);
+    return [...groups];
+  }, [channels]);
   const post = useMutation({
-    mutationFn: (body: AdminDiscordRoleMessage) =>
+    mutationFn: (body: RoleMessageForm) =>
       apiRequest(
         "/admin/discord/role-message",
         adminDiscordRoleMessageResultSchema,
@@ -30,18 +58,17 @@ export function DiscordRoleMessagePanel() {
   const set = (
     key: "channelId" | "roleId" | "content" | "buttonLabel",
     value: string,
-  ) =>
-    setForm((current) => ({ ...current, [key]: value }));
+  ) => setForm((current) => ({ ...current, [key]: value }));
 
   return (
     <section className="admin-whitelist-section">
       <header className="admin-whitelist-header">
         <div>
-          <strong>Кнопка видачі ролі</strong>
+          <strong>Повідомлення від бота</strong>
         </div>
         <p>
-          Бот опублікує повідомлення з кнопкою. Натискання видає роль, повторне
-          — знімає.
+          Якщо вказати роль, під повідомленням буде кнопка: натискання видає
+          роль, повторне — знімає.
         </p>
       </header>
 
@@ -49,59 +76,68 @@ export function DiscordRoleMessagePanel() {
         className="admin-discord-form"
         onSubmit={(event) => {
           event.preventDefault();
-          post.mutate(form);
+          post.mutate(form.roleId ? form : { ...form, buttonLabel: "" });
         }}
       >
         <label>
-          <span>ID каналу</span>
-          <input
-            autoComplete="off"
-            inputMode="numeric"
-            maxLength={20}
-            minLength={17}
-            onChange={(event) =>
-              set("channelId", event.target.value.replace(/\D/g, ""))
-            }
-            pattern="\d{17,20}"
-            placeholder="123456789012345678"
+          <span>Канал</span>
+          <select
+            disabled={!channelGroups}
+            onChange={(event) => set("channelId", event.target.value)}
             required
             value={form.channelId}
-          />
+          >
+            <option disabled value="">
+              {channelGroups ? "Оберіть канал" : "Завантаження…"}
+            </option>
+            {channelGroups?.map(([category, channels], index) => {
+              const items = channels.map((channel) => (
+                <option key={channel.id} value={channel.id}>
+                  #{channel.name}
+                </option>
+              ));
+              return category ? (
+                <optgroup key={index} label={category}>
+                  {items}
+                </optgroup>
+              ) : (
+                <Fragment key={index}>{items}</Fragment>
+              );
+            })}
+          </select>
         </label>
         <label>
-          <span>ID ролі</span>
-          <input
-            autoComplete="off"
-            inputMode="numeric"
-            maxLength={20}
-            minLength={17}
-            onChange={(event) =>
-              set("roleId", event.target.value.replace(/\D/g, ""))
-            }
-            pattern="\d{17,20}"
-            placeholder="123456789012345678"
-            required
+          <span>Роль (необов’язково)</span>
+          <select
+            disabled={!options.data}
+            onChange={(event) => set("roleId", event.target.value)}
             value={form.roleId}
-          />
+          >
+            <option value="">Без кнопки</option>
+            {options.data?.roles.map((role) => (
+              <option key={role.id} value={role.id}>
+                @{role.name}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="admin-discord-form-wide">
           <span>Текст повідомлення</span>
           <textarea
             maxLength={2000}
             onChange={(event) => set("content", event.target.value)}
-            placeholder="Натисніть кнопку нижче, щоб отримати роль…"
             required
             rows={5}
             value={form.content}
           />
         </label>
         <label>
-          <span>Напис на кнопці</span>
+          <span>Напис на кнопці (необов’язково)</span>
           <input
             autoComplete="off"
+            disabled={!form.roleId}
             maxLength={80}
             onChange={(event) => set("buttonLabel", event.target.value)}
-            required
             value={form.buttonLabel}
           />
         </label>
@@ -127,6 +163,19 @@ export function DiscordRoleMessagePanel() {
         </button>
       </form>
 
+      {options.error && (
+        <p className="admin-action-error" role="alert">
+          {options.error.message}{" "}
+          <button
+            className="admin-button"
+            disabled={options.isFetching}
+            onClick={() => options.refetch()}
+            type="button"
+          >
+            Повторити
+          </button>
+        </p>
+      )}
       {post.error && (
         <p className="admin-action-error" role="alert">
           {post.error.message}
@@ -134,13 +183,14 @@ export function DiscordRoleMessagePanel() {
       )}
       {post.data && (
         <p className="admin-compact-state" role="status">
-          Опубліковано. Кнопка видає роль «{post.data.roleName}».
+          {post.data.roleName
+            ? `Опубліковано. Кнопка видає роль «${post.data.roleName}».`
+            : "Опубліковано."}
         </p>
       )}
       <p className="admin-discord-hint">
-        ID каналу й ролі: увімкніть у Discord «Режим розробника» (Налаштування →
-        Розширені), потім ПКМ по каналу чи ролі → «Копіювати ID». Роль бота має
-        стояти вище за роль, яку він видає.
+        У списку ролей лише ті, які бот може видати: без адмінських прав і нижчі
+        за роль бота.
       </p>
     </section>
   );
