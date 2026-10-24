@@ -148,6 +148,13 @@
       "when": 1792800000000,
       "tag": "0020_move_legacy_access_to_modded",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792886400000,
+      "tag": "0021_revoke_non_admin_access",
+      "breakpoints": true
     }
   ]
 }
