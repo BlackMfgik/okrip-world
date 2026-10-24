@@ -57,6 +57,8 @@ export function ApplicationPanel() {
           ) : (
             !data.nextSubmissionAt &&
             (data.repeatSubmissionEnabled ||
+              // Доступ, виданий і відкликаний з адмінки, не має заявки, з якої взяти нік, — показуємо форму.
+              (access === "revoked" && !data.application) ||
               (!access &&
                 (!data.application ||
                   ["rejected", "cancelled"].includes(
