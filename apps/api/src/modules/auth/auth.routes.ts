@@ -1,4 +1,4 @@
-import { isSuperAdmin } from "../../shared/super-admin.js";
+import { canManageDiscord, isSuperAdmin } from "../../shared/super-admin.js";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { Env } from "../../config/env.js";
@@ -78,6 +78,8 @@ export function authRoutes(app: FastifyInstance, auth: AuthService, env: Env) {
             isAdmin: Boolean(admin),
             canManageAdmins: admin?.canManageAdmins ?? false,
             isSuperAdmin: Boolean(admin) && isSuperAdmin(user.discordId),
+            canManageDiscord:
+              Boolean(admin) && canManageDiscord(user.discordId),
           }
         : null,
     };

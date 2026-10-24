@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { adminDiscordRoleMessageSchema } from "@okrip/contracts";
 import { AppError } from "../../shared/errors.js";
-import { requireSuperAdmin } from "../../plugins/auth-session.js";
+import { requireDiscordManager } from "../../plugins/auth-session.js";
 import type { AuthService } from "../auth/index.js";
 import type { discordRolesService } from "./discord-roles.service.js";
 
@@ -17,7 +17,7 @@ export function discordRoutes(
     "/v1/admin/discord/options",
     { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } },
     async (req) => {
-      await requireSuperAdmin(auth, req);
+      await requireDiscordManager(auth, req);
       return service.options();
     },
   );
@@ -28,7 +28,7 @@ export function discordRoutes(
     async (req) =>
       service.postRoleMessage(
         adminDiscordRoleMessageSchema.parse(req.body),
-        await requireSuperAdmin(auth, req),
+        await requireDiscordManager(auth, req),
       ),
   );
 

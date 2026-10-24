@@ -67,7 +67,12 @@ it("exposes the admin panel API only to Discord IDs stored as admins", async () 
   expect(
     (await ctx.app.inject({ url: "/v1/me", cookies: adminCookies })).json()
       .user,
-  ).toMatchObject({ isAdmin: true, canManageAdmins: true });
+  ).toMatchObject({
+    isAdmin: true,
+    canManageAdmins: true,
+    isSuperAdmin: false,
+    canManageDiscord: false,
+  });
 
   const list = await ctx.app.inject({
     url: "/v1/admin/applications?status=pending",

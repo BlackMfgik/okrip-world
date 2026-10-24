@@ -226,7 +226,7 @@ it("lets only the super admin post a role message, refusing privileged roles", a
   expect(ctx.discordBot.postMessage).toHaveBeenCalledTimes(4);
 });
 
-it("lists postable channels and roles the bot can assign to the super admin only", async () => {
+it("lists postable channels and assignable roles to the super admin and the owner only", async () => {
   ctx = await setup();
   const get = (cookie: string) =>
     ctx.app.inject({
@@ -260,4 +260,30 @@ it("lists postable channels and roles the bot can assign to the super admin only
 
   ctx.discordBot.botRoleIds.mockResolvedValueOnce(null);
   expect((await get(admin.cookie)).statusCode).toBe(503);
+
+  // Власник має доступ до розділу Discord, але не стає суперадміном.
+  ctx.discord.identity.mockResolvedValue({
+    id: "302714744626741248",
+    username: "Owner",
+    global_name: null,
+    avatar: null,
+  });
+  const owner = await login(ctx);
+  expect(
+    (
+      await ctx.app.inject({
+        url: "/v1/me",
+        cookies: { okrip_session: owner.cookie },
+      })
+    ).json().user,
+  ).toMatchObject({ isSuperAdmin: false, canManageDiscord: true });
+  expect((await get(owner.cookie)).statusCode).toBe(200);
+  const posted = await ctx.app.inject({
+    method: "POST",
+    url: "/v1/admin/discord/role-message",
+    cookies: { okrip_session: owner.cookie },
+    headers: browserHeaders,
+    payload: { channelId: "10000000000000001", content: "Привіт" },
+  });
+  expect(posted.statusCode, posted.body).toBe(200);
 });

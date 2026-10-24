@@ -35,9 +35,12 @@ export function AdminPanel() {
       </section>
     );
 
+  // Старий API не надсилає canManageDiscord: тоді доступ має лише суперадмін.
+  const canManageDiscord =
+    session.data.user.canManageDiscord ?? session.data.user.isSuperAdmin;
   const activeSection =
     (section === "accounts" && !session.data.user.canManageAdmins) ||
-    (section === "discord" && !session.data.user.isSuperAdmin)
+    (section === "discord" && !canManageDiscord)
       ? "applications"
       : section;
   return (
@@ -69,7 +72,7 @@ export function AdminPanel() {
               Адміни
             </button>
           )}
-          {session.data.user.isSuperAdmin && (
+          {canManageDiscord && (
             <button
               className={activeSection === "discord" ? "is-active" : undefined}
               onClick={() => setSection("discord")}

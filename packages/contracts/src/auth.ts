@@ -8,6 +8,8 @@ export const sessionSchema = z.object({
       isAdmin: z.boolean(),
       canManageAdmins: z.boolean(),
       isSuperAdmin: z.boolean(),
+      // Необов'язкове, поки старий API ще може відповідати без нього.
+      canManageDiscord: z.boolean().optional(),
     })
     .nullable(),
 });
