@@ -60,6 +60,7 @@ public final class WhitelistRemoveCommand {
         for (OfflinePlayer player : Bukkit.getWhitelistedPlayers()) {
             if (username.equalsIgnoreCase(player.getName())) {
                 player.setWhitelisted(false);
+                CommandExecutor.kickIfNoLongerWhitelisted(player.getPlayer());
                 return "; прибрано з локального вайтліста сервера.";
             }
         }

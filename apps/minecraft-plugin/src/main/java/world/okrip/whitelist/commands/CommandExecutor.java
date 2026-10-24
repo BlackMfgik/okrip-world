@@ -42,7 +42,10 @@ public final class CommandExecutor {
         ProfileBanList bans = Bukkit.getBanList(BanList.Type.PROFILE);
         switch (command.type()) {
             case "whitelist_add" -> { if (bans.isBanned(profile)) return "local_ban"; if (!player.isWhitelisted()) player.setWhitelisted(true); }
-            case "whitelist_remove" -> { if (player.isWhitelisted()) player.setWhitelisted(false); }
+            case "whitelist_remove" -> {
+                if (player.isWhitelisted()) player.setWhitelisted(false);
+                kickIfNoLongerWhitelisted(Bukkit.getPlayer(profile.getUniqueId()));
+            }
             case "kick" -> { var online = Bukkit.getPlayer(profile.getUniqueId()); if (online != null) online.kick(Component.text(command.reason())); }
             case "ban" -> {
                 if (player.isWhitelisted()) player.setWhitelisted(false);
@@ -52,5 +55,13 @@ public final class CommandExecutor {
             default -> throw new IllegalArgumentException("Unknown command");
         }
         return null;
+    }
+    /**
+     * setWhitelisted не застосовує enforce-whitelist (це робить лише ванільний /whitelist remove),
+     * тож кікаємо онлайн-гравця самі за тими самими правилами: вайтліст увімкнено й примусовий, гравець не op.
+     */
+    public static void kickIfNoLongerWhitelisted(org.bukkit.entity.Player online) {
+        if (online != null && WhitelistEnforcement.shouldKick(Bukkit.hasWhitelist(), Bukkit.isWhitelistEnforced(), online.isWhitelisted(), online.isOp()))
+            online.kick(Component.text("Вас прибрано з вайтліста сервера."));
     }
 }
