@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import { Nav } from "@/components/nav";
 import { MapFrame } from "@/features/maps/components/map-frame";
-import { isAdminSession } from "@/lib/admin-session";
-import { createDynmapToken } from "@/features/maps/server/dynmap-token";
 import { pageMetadata } from "@/lib/site";
 
-// DYNMAP_ORIGIN і сесія адміна читаються під час запиту, щоб змінна з Railway діяла без перезбирання.
+// DYNMAP_ORIGIN читається під час запиту, щоб змінна з Railway діяла без перезбирання.
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -20,13 +18,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function MapModdedPage() {
-  // Поки сервер Amega не запущено, мапу бачать лише адміни сайту: сторінка перевіряє
-  // сесію і видає токен, без якого проксі /dynmap/ нічого не віддає.
-  const isAdmin = await isAdminSession();
-  const token =
-    isAdmin && process.env.DYNMAP_ORIGIN ? createDynmapToken() : null;
-
+export default function MapModdedPage() {
   return (
     <div style={{ height: "100vh" }}>
       <Nav />
@@ -34,11 +26,8 @@ export default async function MapModdedPage() {
       <main className="body">
         <h1 className="sr-only">Мапа сервера Amega Okrip World</h1>
         <MapFrame
-          base={token ? `/dynmap/${token}/` : undefined}
+          base={process.env.DYNMAP_ORIGIN ? "/dynmap/" : undefined}
           title="Dynmap — сервер Amega Okrip World"
-          unavailableText={
-            isAdmin ? undefined : "МАПА AMEGA ПОКИ ДОСТУПНА ЛИШЕ АДМІНІСТРАЦІЇ"
-          }
         />
       </main>
     </div>

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { IpRow } from "@/features/servers/components/ip-row";
-import { AdminMapLink } from "@/features/admin/components/AdminMapLink";
 import { ServerApplicationAction } from "@/features/application/components/ServerApplicationAction";
 import type { ServerConfig } from "@/features/servers/config";
 
@@ -16,17 +15,13 @@ export function ServerCard({ server }: { server: ServerConfig }) {
         <IpRow label="Порт" value={String(server.port)} />
       </div>
       <div className="server-card-footer">
-        {server.id === "modded" ? (
-          <AdminMapLink href={server.mapHref} name={server.name} />
-        ) : (
-          <Link
-            href={server.mapHref}
-            className="btn btn-map"
-            aria-label={`Мапа сервера ${server.name}`}
-          >
-            Мапа →
-          </Link>
-        )}
+        <Link
+          href={server.mapHref}
+          className="btn btn-map"
+          aria-label={`Мапа сервера ${server.name}`}
+        >
+          Мапа →
+        </Link>
       </div>
       {server.applicationsEnabled && (
         <ServerApplicationAction serverName={server.name} />

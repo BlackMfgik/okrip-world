@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   adminWhitelistMutationResultSchema,
   adminWhitelistSchema,
+  type AdminWhitelist,
   type AdminWhitelistAdd,
   type AdminWhitelistRemove,
   type AdminWhitelistRename,
@@ -14,11 +15,51 @@ import { queryKeys } from "@/lib/query-keys";
 import { AdminConfirmDialog } from "./AdminConfirmDialog";
 import { DiscordAvatar } from "./DiscordAvatar";
 
+type AdminWhitelistPlayer = AdminWhitelist["players"][number];
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("uk-UA", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: "Europe/Kyiv",
   }).format(new Date(value));
+}
+
+const sortOptions = {
+  newest: "Спочатку нові",
+  oldest: "Спочатку старі",
+  "name-asc": "Нік: А → Я",
+  "name-desc": "Нік: Я → А",
+} as const;
+
+type WhitelistSort = keyof typeof sortOptions;
+
+const compareNames = (a: AdminWhitelistPlayer, b: AdminWhitelistPlayer) =>
+  a.minecraftUsername.localeCompare(b.minecraftUsername, "en", {
+    sensitivity: "base",
+    numeric: true,
+  });
+
+const compareDates = (a: AdminWhitelistPlayer, b: AdminWhitelistPlayer) =>
+  Date.parse(a.addedAt) - Date.parse(b.addedAt);
+
+const comparators: Record<
+  WhitelistSort,
+  (a: AdminWhitelistPlayer, b: AdminWhitelistPlayer) => number
+> = {
+  newest: (a, b) => compareDates(b, a) || compareNames(a, b),
+  oldest: (a, b) => compareDates(a, b) || compareNames(a, b),
+  "name-asc": compareNames,
+  "name-desc": (a, b) => compareNames(b, a),
+};
+
+function matchesSearch(player: AdminWhitelistPlayer, query: string) {
+  return [
+    player.minecraftUsername,
+    player.discordUsername,
+    player.discordDisplayName,
+    player.discordId,
+  ].some((value) => value?.toLowerCase().includes(query));
 }
 
 export function WhitelistPanel() {
@@ -35,10 +76,22 @@ export function WhitelistPanel() {
     discordId: "",
   });
 
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<WhitelistSort>("newest");
+
   const whitelist = useQuery({
     queryKey: queryKeys.adminWhitelist,
     queryFn: () => apiRequest("/admin/whitelist", adminWhitelistSchema),
   });
+  const players = whitelist.data?.players;
+  const visiblePlayers = useMemo(() => {
+    if (!players) return [];
+    const query = search.trim().toLowerCase();
+    const filtered = query
+      ? players.filter((player) => matchesSearch(player, query))
+      : [...players];
+    return filtered.sort(comparators[sort]);
+  }, [players, search, sort]);
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: queryKeys.adminWhitelist });
   const addPlayer = useMutation({
@@ -186,12 +239,44 @@ export function WhitelistPanel() {
           </button>
         </div>
       )}
-      {whitelist.data?.players.length === 0 && (
+      {players && players.length > 0 && (
+        <div className="admin-whitelist-toolbar">
+          <label className="admin-whitelist-search">
+            <span className="sr-only">Пошук у вайтлісті</span>
+            <input
+              autoComplete="off"
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Пошук за ніком, Discord або ID"
+              type="search"
+              value={search}
+            />
+          </label>
+          <label className="admin-whitelist-sort">
+            <span className="sr-only">Сортування</span>
+            <select
+              onChange={(event) => setSort(event.target.value as WhitelistSort)}
+              value={sort}
+            >
+              {Object.entries(sortOptions).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+      {players?.length === 0 && (
         <p className="admin-compact-state">Вайтліст поки порожній.</p>
+      )}
+      {players && players.length > 0 && visiblePlayers.length === 0 && (
+        <p className="admin-compact-state" role="status">
+          За запитом «{search.trim()}» нікого не знайдено.
+        </p>
       )}
 
       <div className="admin-player-list">
-        {whitelist.data?.players.map((player) => (
+        {visiblePlayers.map((player) => (
           <article className="admin-player-row" key={player.accessId}>
             <div className="admin-player-main">
               <DiscordAvatar

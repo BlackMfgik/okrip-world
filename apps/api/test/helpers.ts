@@ -6,6 +6,7 @@ import type {
   DiscordIdentity,
   DiscordMembership,
 } from "../src/modules/auth/index.js";
+import type { DiscordMessage } from "../src/modules/discord/index.js";
 export const env = envSchema.parse({
   NODE_ENV: "test",
   DATABASE_URL: "postgres://test",
@@ -110,6 +111,34 @@ export async function setup(overrides: Partial<typeof env> = {}) {
       "20000000000000003",
     ]),
     postMessage: vi.fn(async () => ({ status: 200, id: "30000000000000001" })),
+    getMessage: vi.fn(
+      async (
+        channelId: string,
+        messageId: string,
+      ): Promise<{ status: number; message?: DiscordMessage }> => ({
+        status: 200,
+        message: {
+          id: messageId,
+          channel_id: channelId,
+          content: "Натисніть, щоб отримати роль гравця",
+          flags: 4,
+          author: { id: "123" },
+          components: [
+            {
+              type: 1,
+              components: [
+                {
+                  type: 2,
+                  label: "Отримати роль",
+                  custom_id: "role:20000000000000001",
+                },
+              ],
+            },
+          ],
+        },
+      }),
+    ),
+    editMessage: vi.fn(async () => 200),
     setMemberRole: vi.fn(async () => 204),
   };
   const { app, worker } = await buildApp(activeEnv, db, {

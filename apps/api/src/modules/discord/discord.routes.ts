@@ -1,5 +1,9 @@
 import type { FastifyInstance } from "fastify";
-import { adminDiscordRoleMessageSchema } from "@okrip/contracts";
+import {
+  adminDiscordMessageRefSchema,
+  adminDiscordRoleMessageEditSchema,
+  adminDiscordRoleMessageSchema,
+} from "@okrip/contracts";
 import { AppError } from "../../shared/errors.js";
 import { requireDiscordManager } from "../../plugins/auth-session.js";
 import type { AuthService } from "../auth/index.js";
@@ -28,6 +32,25 @@ export function discordRoutes(
     async (req) =>
       service.postRoleMessage(
         adminDiscordRoleMessageSchema.parse(req.body),
+        await requireDiscordManager(auth, req),
+      ),
+  );
+
+  app.get(
+    "/v1/admin/discord/role-message",
+    { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } },
+    async (req) => {
+      await requireDiscordManager(auth, req);
+      return service.roleMessage(adminDiscordMessageRefSchema.parse(req.query));
+    },
+  );
+
+  app.post(
+    "/v1/admin/discord/role-message/edit",
+    { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
+    async (req) =>
+      service.editRoleMessage(
+        adminDiscordRoleMessageEditSchema.parse(req.body),
         await requireDiscordManager(auth, req),
       ),
   );

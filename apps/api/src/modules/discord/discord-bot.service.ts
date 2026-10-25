@@ -19,6 +19,18 @@ export interface DiscordChannel {
   parent_id?: string | null;
 }
 
+export interface DiscordMessage {
+  id: string;
+  channel_id: string;
+  content: string;
+  flags?: number;
+  author: { id: string };
+  components?: {
+    type: number;
+    components?: { type: number; label?: string; custom_id?: string }[];
+  }[];
+}
+
 /** REST-виклики від імені бота. Повертають HTTP-статус, щоб сервіс сам дав зрозумілу помилку. */
 export interface DiscordBot {
   /** retries — кількість повторів; для відповіді на кнопку 0, бо Discord чекає лише 3 секунди. */
@@ -30,6 +42,15 @@ export interface DiscordBot {
     channelId: string,
     body: unknown,
   ): Promise<{ status: number; id?: string }>;
+  getMessage(
+    channelId: string,
+    messageId: string,
+  ): Promise<{ status: number; message?: DiscordMessage }>;
+  editMessage(
+    channelId: string,
+    messageId: string,
+    body: unknown,
+  ): Promise<number>;
   setMemberRole(
     userId: string,
     roleId: string,
@@ -81,6 +102,29 @@ export function discordBot(env: Env): DiscordBot {
       }
       const message = (await response.json()) as { id: string };
       return { status: response.status, id: message.id };
+    },
+    async getMessage(channelId, messageId) {
+      const response = await externalRequest(
+        `${API}/channels/${channelId}/messages/${messageId}`,
+        { headers },
+      );
+      if (!response.ok) {
+        await response.body?.cancel();
+        return { status: response.status };
+      }
+      return {
+        status: response.status,
+        message: (await response.json()) as DiscordMessage,
+      };
+    },
+    async editMessage(channelId, messageId, body) {
+      const response = await externalRequest(
+        `${API}/channels/${channelId}/messages/${messageId}`,
+        { method: "PATCH", headers, body: JSON.stringify(body) },
+        0,
+      );
+      await response.body?.cancel();
+      return response.status;
     },
     async setMemberRole(userId, roleId, present) {
       // Відповідь на натискання кнопки має дійти до Discord за 3 секунди, тому без повторів.

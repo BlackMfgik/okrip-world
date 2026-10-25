@@ -9,7 +9,7 @@ src/app/            маршрути й layouts; v1/[...path] — проксі �
 src/features/       auth, application, admin, servers, maps
                     (<feature>/components, <feature>/hooks, maps/server)
 src/components/     спільний UI без знання домену (nav, toast, theme-toggle…)
-src/lib/            api-client, query-keys, proxy-request, admin-session, site
+src/lib/            api-client, query-keys, proxy-request, site
 src/store/          глобальні Zustand-стани (тема, toast)
 ```
 

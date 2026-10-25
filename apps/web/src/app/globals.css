@@ -41,7 +41,11 @@
 
   /* Скло: поверхні на сторінці (картки, секції, таби) */
   --glass-surface:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.015)),
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.07),
+      rgba(255, 255, 255, 0.015)
+    ),
     rgba(8, 10, 14, 0.4);
   --glass-border: rgba(255, 255, 255, 0.12);
   --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -51,7 +55,11 @@
 
   /* Скло: оверлеї (модалки, поповери, тости) — щільніше за поверхні */
   --glass-overlay:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02) 55%),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.02) 55%
+    ),
     rgba(10, 13, 19, 0.82);
   --glass-overlay-border: rgba(255, 255, 255, 0.18);
   --glass-overlay-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.14);
@@ -92,7 +100,11 @@
   --info-text: #1d4ed8;
 
   --glass-surface:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.32)),
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(255, 255, 255, 0.32)
+    ),
     rgba(255, 255, 255, 0.36);
   --glass-border: rgba(255, 255, 255, 0.7);
   --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
@@ -100,7 +112,11 @@
   --shadow-surface-hover: 0 20px 50px rgba(20, 30, 45, 0.16);
 
   --glass-overlay:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.7) 55%),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.95),
+      rgba(255, 255, 255, 0.7) 55%
+    ),
     rgba(246, 248, 251, 0.82);
   --glass-overlay-border: rgba(255, 255, 255, 0.85);
   --glass-overlay-highlight: inset 0 1px 0 #ffffff;
@@ -221,9 +237,7 @@ body {
   background: var(--glass-surface);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  box-shadow:
-    var(--glass-highlight),
-    var(--shadow-surface);
+  box-shadow: var(--glass-highlight), var(--shadow-surface);
 }
 .server-card,
 .admin-application-card,
@@ -244,9 +258,7 @@ body {
   background: var(--glass-overlay);
   backdrop-filter: var(--glass-overlay-blur);
   -webkit-backdrop-filter: var(--glass-overlay-blur);
-  box-shadow:
-    var(--glass-overlay-highlight),
-    var(--shadow-overlay);
+  box-shadow: var(--glass-overlay-highlight), var(--shadow-overlay);
   color: var(--text);
 }
 .application-dialog,
@@ -267,7 +279,12 @@ body {
   position: absolute;
   inset: 0 24px auto;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--glass-line), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--glass-line),
+    transparent
+  );
   pointer-events: none;
 }
 
@@ -531,7 +548,9 @@ body {
 .verification-form input,
 .admin-reject-form textarea,
 .admin-add-player-form input,
-.admin-account-form input {
+.admin-account-form input,
+.admin-whitelist-toolbar input,
+.admin-whitelist-toolbar select {
   width: 100%;
   min-height: 44px;
   padding: 10px 14px;
@@ -549,13 +568,16 @@ body {
 .verification-form input::placeholder,
 .admin-reject-form textarea::placeholder,
 .admin-add-player-form input::placeholder,
-.admin-account-form input::placeholder {
+.admin-account-form input::placeholder,
+.admin-whitelist-toolbar input::placeholder {
   color: var(--text-muted);
 }
 .verification-form input:focus,
 .admin-reject-form textarea:focus,
 .admin-add-player-form input:focus,
-.admin-account-form input:focus {
+.admin-account-form input:focus,
+.admin-whitelist-toolbar input:focus,
+.admin-whitelist-toolbar select:focus {
   outline: none;
   border-color: var(--border-strong);
   background: var(--field-bg-focus);
@@ -885,7 +907,11 @@ body {
     linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 60px 60px;
   mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
-  -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(
+    ellipse at center,
+    black 0%,
+    transparent 70%
+  );
   z-index: 1;
   pointer-events: none;
 }
@@ -1100,9 +1126,7 @@ body {
 }
 .server-card:hover {
   transform: translateY(-4px);
-  box-shadow:
-    var(--glass-highlight),
-    var(--shadow-surface-hover);
+  box-shadow: var(--glass-highlight), var(--shadow-surface-hover);
 }
 .server-card-header {
   display: flex;
@@ -1347,7 +1371,6 @@ body {
   .support-banner-text p {
     display: none;
   }
-
 }
 
 /* «Скоро» — картка майбутнього сервера */
@@ -1976,6 +1999,19 @@ body {
   min-height: 44px;
   white-space: nowrap;
 }
+.admin-whitelist-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
+  gap: 10px;
+  margin: 14px 0 6px;
+}
+.admin-whitelist-toolbar select {
+  cursor: pointer;
+}
+.admin-whitelist-toolbar option {
+  background: var(--bg);
+  color: var(--text);
+}
 .admin-player-list,
 .admin-account-list {
   display: grid;
@@ -2271,8 +2307,7 @@ body {
     right: -16px;
     /* Вкладений backdrop-filter не розмиває сторінку під «пігулкою», тож фон суцільний. */
     background:
-      linear-gradient(rgb(255 255 255 / 0.05), transparent),
-      var(--bg);
+      linear-gradient(rgb(255 255 255 / 0.05), transparent), var(--bg);
   }
   .body {
     padding-top: 72px;
@@ -2502,7 +2537,8 @@ body {
     gap: 5px;
   }
   .admin-add-player-form,
-  .admin-account-form {
+  .admin-account-form,
+  .admin-whitelist-toolbar {
     grid-template-columns: 1fr;
   }
   .admin-accounts-section .admin-whitelist-header > p {

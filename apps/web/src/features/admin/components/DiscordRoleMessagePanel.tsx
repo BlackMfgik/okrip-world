@@ -4,7 +4,9 @@ import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   adminDiscordOptionsSchema,
+  adminDiscordRoleMessageDetailsSchema,
   adminDiscordRoleMessageResultSchema,
+  type AdminDiscordMessageRef,
 } from "@okrip/contracts";
 import { apiRequest } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
@@ -26,8 +28,20 @@ const empty: RoleMessageForm = {
   suppressEmbeds: false,
 };
 
+// «Копіювати посилання на повідомлення» в Discord: …/channels/<сервер>/<канал>/<повідомлення>.
+const MESSAGE_LINK = /\/channels\/(?:\d+|@me)\/(\d{17,20})\/(\d{17,20})\/?$/;
+
+export function parseMessageLink(link: string): AdminDiscordMessageRef | null {
+  const match = MESSAGE_LINK.exec(link.trim());
+  return match ? { channelId: match[1]!, messageId: match[2]! } : null;
+}
+
 export function DiscordRoleMessagePanel() {
   const [form, setForm] = useState<RoleMessageForm>(empty);
+  // Повідомлення, яке зараз редагується; null — публікуємо нове.
+  const [editing, setEditing] = useState<AdminDiscordMessageRef | null>(null);
+  const [link, setLink] = useState("");
+  const [linkError, setLinkError] = useState<string | null>(null);
   const options = useQuery({
     queryKey: queryKeys.adminDiscordOptions,
     queryFn: () =>
@@ -46,19 +60,61 @@ export function DiscordRoleMessagePanel() {
       ]);
     return [...groups];
   }, [channels]);
-  const post = useMutation({
-    mutationFn: (body: RoleMessageForm) =>
+  const load = useMutation({
+    mutationFn: (ref: AdminDiscordMessageRef) =>
       apiRequest(
-        "/admin/discord/role-message",
-        adminDiscordRoleMessageResultSchema,
-        body,
+        "/admin/discord/role-message?" + new URLSearchParams({ ...ref }),
+        adminDiscordRoleMessageDetailsSchema,
       ),
-    onSuccess: () => setForm(empty),
+    onSuccess: (message) => {
+      save.reset();
+      setEditing({
+        channelId: message.channelId,
+        messageId: message.messageId,
+      });
+      setForm({
+        channelId: message.channelId,
+        roleId: message.roleId ?? "",
+        content: message.content,
+        buttonLabel: message.buttonLabel ?? "",
+        suppressEmbeds: message.suppressEmbeds,
+      });
+      setLink("");
+    },
+  });
+  const save = useMutation({
+    mutationFn: (body: RoleMessageForm) =>
+      editing
+        ? apiRequest(
+            "/admin/discord/role-message/edit",
+            adminDiscordRoleMessageResultSchema,
+            { ...body, messageId: editing.messageId },
+          )
+        : apiRequest(
+            "/admin/discord/role-message",
+            adminDiscordRoleMessageResultSchema,
+            body,
+          ),
+    onSuccess: () => {
+      if (!editing) setForm(empty);
+    },
   });
   const set = (
     key: "channelId" | "roleId" | "content" | "buttonLabel",
     value: string,
   ) => setForm((current) => ({ ...current, [key]: value }));
+  const stopEditing = () => {
+    setEditing(null);
+    setForm(empty);
+    save.reset();
+    load.reset();
+  };
+  const saved = save.data;
+  // Роль кнопки могли зробити адмінською чи видалити: показуємо її, щоб форма не скидала вибір мовчки.
+  const unknownRole =
+    form.roleId !== "" &&
+    options.data !== undefined &&
+    !options.data.roles.some((role) => role.id === form.roleId);
 
   return (
     <section className="admin-whitelist-section">
@@ -76,13 +132,58 @@ export function DiscordRoleMessagePanel() {
         className="admin-discord-form"
         onSubmit={(event) => {
           event.preventDefault();
-          post.mutate(form.roleId ? form : { ...form, buttonLabel: "" });
+          const ref = parseMessageLink(link);
+          setLinkError(
+            ref ? null : "Вставте посилання на повідомлення з Discord.",
+          );
+          if (ref) load.mutate(ref);
+        }}
+      >
+        <label className="admin-discord-form-wide">
+          <span>Редагувати опубліковане повідомлення бота</span>
+          <input
+            autoComplete="off"
+            onChange={(event) => setLink(event.target.value)}
+            placeholder="https://discord.com/channels/…"
+            required
+            value={link}
+          />
+        </label>
+        <button
+          className="admin-button"
+          disabled={load.isPending}
+          type="submit"
+        >
+          {load.isPending ? "Завантаження…" : "Відкрити для редагування"}
+        </button>
+      </form>
+      {(linkError ?? load.error) && (
+        <p className="admin-action-error" role="alert">
+          {linkError ?? load.error?.message}
+        </p>
+      )}
+
+      {editing && (
+        <p className="admin-compact-state" role="status">
+          Редагування опублікованого повідомлення.{" "}
+          <button className="admin-button" onClick={stopEditing} type="button">
+            Нове повідомлення
+          </button>
+        </p>
+      )}
+
+      <form
+        className="admin-discord-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          save.mutate(form.roleId ? form : { ...form, buttonLabel: "" });
         }}
       >
         <label>
           <span>Канал</span>
           <select
-            disabled={!channelGroups}
+            // Повідомлення не можна перенести в інший канал.
+            disabled={!channelGroups || editing !== null}
             onChange={(event) => set("channelId", event.target.value)}
             required
             value={form.channelId}
@@ -114,6 +215,11 @@ export function DiscordRoleMessagePanel() {
             value={form.roleId}
           >
             <option value="">Без кнопки</option>
+            {unknownRole && (
+              <option value={form.roleId}>
+                Поточна роль (бот більше не може її видавати)
+              </option>
+            )}
             {options.data?.roles.map((role) => (
               <option key={role.id} value={role.id}>
                 @{role.name}
@@ -156,10 +262,16 @@ export function DiscordRoleMessagePanel() {
         </label>
         <button
           className="admin-button admin-button-success"
-          disabled={post.isPending}
+          disabled={save.isPending}
           type="submit"
         >
-          {post.isPending ? "Публікуємо…" : "Опублікувати"}
+          {editing
+            ? save.isPending
+              ? "Зберігаємо…"
+              : "Зберегти зміни"
+            : save.isPending
+              ? "Публікуємо…"
+              : "Опублікувати"}
         </button>
       </form>
 
@@ -176,21 +288,35 @@ export function DiscordRoleMessagePanel() {
           </button>
         </p>
       )}
-      {post.error && (
+      {save.error && (
         <p className="admin-action-error" role="alert">
-          {post.error.message}
+          {save.error.message}
         </p>
       )}
-      {post.data && (
+      {saved && (
         <p className="admin-compact-state" role="status">
-          {post.data.roleName
-            ? `Опубліковано. Кнопка видає роль «${post.data.roleName}».`
-            : "Опубліковано."}
+          {editing ? "Зміни збережено." : "Опубліковано."}
+          {saved.roleName && ` Кнопка видає роль «${saved.roleName}».`}{" "}
+          {!editing && (
+            <button
+              className="admin-button"
+              disabled={load.isPending}
+              onClick={() =>
+                load.mutate({
+                  channelId: saved.channelId,
+                  messageId: saved.messageId,
+                })
+              }
+              type="button"
+            >
+              Редагувати
+            </button>
+          )}
         </p>
       )}
       <p className="admin-discord-hint">
         У списку ролей лише ті, які бот може видати: без адмінських прав і нижчі
-        за роль бота.
+        за роль бота. Редагувати можна лише повідомлення, які написав бот.
       </p>
     </section>
   );

@@ -260,7 +260,7 @@ it("lets only the super admin post a role message, refusing privileged roles", a
   });
   expect(ctx.discordBot.postMessage).toHaveBeenLastCalledWith(
     "10000000000000001",
-    expect.not.objectContaining({ components: expect.anything() }),
+    expect.objectContaining({ components: [] }),
   );
 
   expect((await post({ ...payload, roleId: "" })).statusCode).toBe(400);
@@ -327,4 +327,150 @@ it("lists postable channels and assignable roles to the super admin and the owne
     payload: { channelId: "10000000000000001", content: "Привіт" },
   });
   expect(posted.statusCode, posted.body).toBe(200);
+});
+
+it("loads and edits only the bot's own messages for Discord managers", async () => {
+  ctx = await setup();
+  const ref = "channelId=10000000000000001&messageId=30000000000000001";
+  const edit = {
+    channelId: "10000000000000001",
+    messageId: "30000000000000001",
+    roleId: "",
+    content: "Оновлені правила",
+    buttonLabel: "",
+    suppressEmbeds: false,
+  };
+  const load = (cookie: string, query = ref) =>
+    ctx.app.inject({
+      url: "/v1/admin/discord/role-message?" + query,
+      cookies: { okrip_session: cookie },
+    });
+  const save = (cookie: string, body: Record<string, unknown> = edit) =>
+    ctx.app.inject({
+      method: "POST",
+      url: "/v1/admin/discord/role-message/edit",
+      cookies: { okrip_session: cookie },
+      headers: browserHeaders,
+      payload: body,
+    });
+
+  const player = await login(ctx);
+  expect((await load(player.cookie)).statusCode).toBe(403);
+  expect((await save(player.cookie)).statusCode).toBe(403);
+  expect(ctx.discordBot.getMessage).not.toHaveBeenCalled();
+  expect(ctx.discordBot.editMessage).not.toHaveBeenCalled();
+
+  ctx.discord.identity.mockResolvedValue({
+    id: "554465791358140417",
+    username: "SuperAdmin",
+    global_name: null,
+    avatar: null,
+  });
+  const admin = await login(ctx);
+
+  const loaded = await load(admin.cookie);
+  expect(loaded.statusCode, loaded.body).toBe(200);
+  expect(loaded.json()).toEqual({
+    messageId: "30000000000000001",
+    channelId: "10000000000000001",
+    content: "Натисніть, щоб отримати роль гравця",
+    roleId: "20000000000000001",
+    buttonLabel: "Отримати роль",
+    suppressEmbeds: true,
+  });
+
+  // Прибираємо кнопку й повертаємо прев'ю посилань.
+  const saved = await save(admin.cookie);
+  expect(saved.statusCode, saved.body).toBe(200);
+  expect(saved.json()).toEqual({
+    messageId: "30000000000000001",
+    channelId: "10000000000000001",
+  });
+  expect(ctx.discordBot.editMessage).toHaveBeenLastCalledWith(
+    "10000000000000001",
+    "30000000000000001",
+    {
+      content: "Оновлені правила",
+      allowed_mentions: { parse: [] },
+      components: [],
+      flags: 0,
+    },
+  );
+
+  const withRole = await save(admin.cookie, {
+    ...edit,
+    roleId: "20000000000000001",
+    buttonLabel: "Гравець",
+    suppressEmbeds: true,
+  });
+  expect(withRole.json()).toMatchObject({ roleName: "Гравець" });
+  expect(ctx.discordBot.editMessage).toHaveBeenLastCalledWith(
+    "10000000000000001",
+    "30000000000000001",
+    expect.objectContaining({
+      flags: 4,
+      components: [
+        {
+          type: 1,
+          components: [
+            expect.objectContaining({
+              label: "Гравець",
+              custom_id: "role:20000000000000001",
+            }),
+          ],
+        },
+      ],
+    }),
+  );
+  expect(ctx.discordBot.editMessage).toHaveBeenCalledTimes(2);
+
+  // Привілейовану роль не можна поставити й під час редагування.
+  expect(
+    (await save(admin.cookie, { ...edit, roleId: "20000000000000002" }))
+      .statusCode,
+  ).toBe(409);
+
+  // Чуже повідомлення Discord редагувати не дає — перевіряємо до запиту на зміну.
+  ctx.discordBot.getMessage.mockResolvedValueOnce({
+    status: 200,
+    message: {
+      id: "30000000000000001",
+      channel_id: "10000000000000001",
+      content: "Чуже",
+      author: { id: "999" },
+    },
+  });
+  const foreign = await save(admin.cookie);
+  expect(foreign.statusCode).toBe(409);
+  expect(foreign.json().code).toBe("discord_message_not_own");
+
+  // Канал не з цього сервера (або голосовий) — повідомлення навіть не читаємо.
+  const callsBefore = ctx.discordBot.getMessage.mock.calls.length;
+  expect(
+    (
+      await load(
+        admin.cookie,
+        "channelId=10000000000000003&messageId=30000000000000001",
+      )
+    ).statusCode,
+  ).toBe(404);
+  expect(
+    (
+      await load(
+        admin.cookie,
+        "channelId=19999999999999999&messageId=30000000000000001",
+      )
+    ).statusCode,
+  ).toBe(404);
+  expect(ctx.discordBot.getMessage.mock.calls.length).toBe(callsBefore);
+
+  ctx.discordBot.getMessage.mockResolvedValueOnce({ status: 404 });
+  expect((await load(admin.cookie)).statusCode).toBe(404);
+  expect((await load(admin.cookie, "channelId=1&messageId=2")).statusCode).toBe(
+    400,
+  );
+
+  ctx.discordBot.editMessage.mockResolvedValueOnce(403);
+  expect((await save(admin.cookie)).statusCode).toBe(409);
+  expect(ctx.discordBot.editMessage).toHaveBeenCalledTimes(3);
 });

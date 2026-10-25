@@ -2,8 +2,11 @@ import { createPublicKey, verify } from "node:crypto";
 import { z } from "zod";
 import {
   adminDiscordOptionsSchema,
+  adminDiscordRoleMessageDetailsSchema,
   adminDiscordRoleMessageResultSchema,
+  type AdminDiscordMessageRef,
   type AdminDiscordRoleMessage,
+  type AdminDiscordRoleMessageEdit,
 } from "@okrip/contracts";
 import type { Database } from "../../db/client.js";
 import type { Env } from "../../config/env.js";
@@ -52,6 +55,29 @@ function byPosition(a: DiscordChannel, b: DiscordChannel) {
   return a.position - b.position || a.id.localeCompare(b.id);
 }
 
+/** Тіло повідомлення бота для публікації й редагування; без ролі — без кнопки. */
+function messageBody(input: AdminDiscordRoleMessage, role: DiscordRole | null) {
+  return {
+    content: input.content,
+    allowed_mentions: { parse: [] },
+    components: role
+      ? [
+          {
+            type: 1,
+            components: [
+              {
+                type: 2,
+                style: 1,
+                label: input.buttonLabel ?? DEFAULT_BUTTON_LABEL,
+                custom_id: ROLE_BUTTON_PREFIX + role.id,
+              },
+            ],
+          },
+        ]
+      : [],
+  };
+}
+
 function reply(content: string) {
   return {
     type: 4,
@@ -93,6 +119,40 @@ export function discordRolesService(db: Database, env: Env, bot: DiscordBot) {
         "Цю роль не можна видавати кнопкою: вона службова або має адмінські права.",
       );
     return role;
+  }
+
+  /** Повідомлення, яке бот написав у текстовому каналі цього сервера: лише такі можна редагувати. */
+  async function ownMessage({ channelId, messageId }: AdminDiscordMessageRef) {
+    const channels = await bot.guildChannels();
+    if (!channels) throw discordUnavailable();
+    if (
+      !channels.some(
+        (channel) =>
+          channel.id === channelId && POSTABLE_CHANNEL_TYPES.has(channel.type),
+      )
+    )
+      throw new AppError(
+        404,
+        "discord_message_not_found",
+        "Канал не знайдено на Discord-сервері.",
+      );
+    const result = await bot.getMessage(channelId, messageId);
+    if (!result.message)
+      throw result.status === 404 || result.status === 403
+        ? new AppError(
+            404,
+            "discord_message_not_found",
+            "Повідомлення не знайдено. Перевірте посилання.",
+          )
+        : discordUnavailable();
+    // ID застосунку збігається з ID його бота; чужі повідомлення Discord редагувати не дає.
+    if (result.message.author.id !== env.DISCORD_CLIENT_ID)
+      throw new AppError(
+        409,
+        "discord_message_not_own",
+        "Редагувати можна лише повідомлення, які написав бот.",
+      );
+    return result.message;
   }
 
   return {
@@ -174,24 +234,8 @@ export function discordRolesService(db: Database, env: Env, bot: DiscordBot) {
       const role = input.roleId ? await assignableRole(input.roleId) : null;
 
       const posted = await bot.postMessage(input.channelId, {
-        content: input.content,
+        ...messageBody(input, role),
         ...(input.suppressEmbeds ? { flags: SUPPRESS_EMBEDS } : {}),
-        allowed_mentions: { parse: [] },
-        ...(role && {
-          components: [
-            {
-              type: 1,
-              components: [
-                {
-                  type: 2,
-                  style: 1,
-                  label: input.buttonLabel ?? DEFAULT_BUTTON_LABEL,
-                  custom_id: ROLE_BUTTON_PREFIX + role.id,
-                },
-              ],
-            },
-          ],
-        }),
       });
       if (!posted.id)
         throw new AppError(
@@ -218,6 +262,63 @@ export function discordRolesService(db: Database, env: Env, bot: DiscordBot) {
       });
       return adminDiscordRoleMessageResultSchema.parse({
         messageId: posted.id,
+        channelId: input.channelId,
+        roleName: role?.name,
+      });
+    },
+
+    /** Поточний текст, кнопка ролі й прев'ю посилань повідомлення бота — для форми редагування. */
+    async roleMessage(ref: AdminDiscordMessageRef) {
+      const message = await ownMessage(ref);
+      const button = message.components
+        ?.flatMap((row) => row.components ?? [])
+        .find((item) => item.custom_id?.startsWith(ROLE_BUTTON_PREFIX));
+      return adminDiscordRoleMessageDetailsSchema.parse({
+        messageId: message.id,
+        channelId: ref.channelId,
+        content: message.content,
+        roleId: button?.custom_id?.slice(ROLE_BUTTON_PREFIX.length) ?? null,
+        buttonLabel: button?.label ?? null,
+        suppressEmbeds: Boolean((message.flags ?? 0) & SUPPRESS_EMBEDS),
+      });
+    },
+
+    async editRoleMessage(
+      input: AdminDiscordRoleMessageEdit,
+      admin: { id: string; discordId: string },
+    ) {
+      await ownMessage(input);
+      const role = input.roleId ? await assignableRole(input.roleId) : null;
+      // components: [] прибирає кнопку, flags: 0 повертає прев'ю посилань.
+      const status = await bot.editMessage(input.channelId, input.messageId, {
+        ...messageBody(input, role),
+        flags: input.suppressEmbeds ? SUPPRESS_EMBEDS : 0,
+      });
+      if (status < 200 || status >= 300)
+        throw new AppError(
+          status === 404 ? 404 : 409,
+          "discord_edit_failed",
+          status === 404
+            ? "Повідомлення вже видалено."
+            : status === 403
+              ? "Бот не може редагувати це повідомлення."
+              : "Discord не прийняв зміни.",
+        );
+      await audit(db, {
+        actorType: "user",
+        actorId: admin.id,
+        eventType: "discord_role_message_edited",
+        entityType: "user",
+        entityId: admin.id,
+        metadata: {
+          messageId: input.messageId,
+          actorDiscordId: admin.discordId,
+          channelId: input.channelId,
+          roleId: role?.id ?? null,
+        },
+      });
+      return adminDiscordRoleMessageResultSchema.parse({
+        messageId: input.messageId,
         channelId: input.channelId,
         roleName: role?.name,
       });
