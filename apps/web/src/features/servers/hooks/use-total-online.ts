@@ -31,10 +31,7 @@ export function useTotalOnline() {
   ];
 
   return useQuery({
-    queryKey: [
-      "total-online",
-      endpoints.map((host) => host.toLowerCase()),
-    ],
+    queryKey: ["total-online", endpoints.map((host) => host.toLowerCase())],
     retry: false,
     queryFn: async () => {
       const results = await Promise.allSettled(

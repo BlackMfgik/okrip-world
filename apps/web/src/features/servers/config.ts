@@ -4,6 +4,8 @@ export interface ServerConfig {
   ip: string;
   port: number;
   mapHref: string;
+  /** Шлях проксі Dynmap цього сервера; з нього береться окремий онлайн. */
+  dynmapPath: string;
   applicationsEnabled?: boolean;
 }
 
@@ -14,6 +16,7 @@ export const SERVERS: ServerConfig[] = [
     ip: "okrip.world",
     port: 25594,
     mapHref: "/map-vanilla",
+    dynmapPath: "/dynmap-vanilla",
   },
   {
     id: "modded",
@@ -21,6 +24,7 @@ export const SERVERS: ServerConfig[] = [
     ip: "okrip.world",
     port: 25594,
     mapHref: "/map-modded",
+    dynmapPath: "/dynmap",
     applicationsEnabled: true,
   },
 ];

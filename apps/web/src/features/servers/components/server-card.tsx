@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { IpRow } from "@/features/servers/components/ip-row";
+import { ServerOnline } from "@/features/servers/components/server-online";
 import { ServerApplicationAction } from "@/features/application/components/ServerApplicationAction";
 import type { ServerConfig } from "@/features/servers/config";
 
@@ -8,7 +9,7 @@ export function ServerCard({ server }: { server: ServerConfig }) {
     <div className="server-card">
       <div className="server-card-header">
         <h2 className="server-name">{server.name}</h2>
-        <div className="server-status">ONLINE</div>
+        <ServerOnline dynmapPath={server.dynmapPath} />
       </div>
       <div className="server-ip-section">
         <IpRow label="IP Адреса" value={server.ip} />
