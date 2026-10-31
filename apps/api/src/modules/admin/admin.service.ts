@@ -9,10 +9,14 @@ import {
   type DiscordProvider,
 } from "../auth/index.js";
 import { discordAccountCreatedAt } from "../../shared/discord-account.js";
+import { enqueueMessage } from "../applications/index.js";
 import { lockUser } from "../player-access/index.js";
 import type { moderationService } from "../moderation/index.js";
 import { adminAccountsService } from "./admin-accounts.service.js";
-import { adminWhitelistService } from "./admin-whitelist.service.js";
+import {
+  adminWhitelistService,
+  revokeUserWhitelist,
+} from "./admin-whitelist.service.js";
 import type { Database } from "../../db/client.js";
 import { AppError } from "../../shared/errors.js";
 import { audit } from "../audit/index.js";
@@ -107,7 +111,7 @@ export function adminService(
         input.blocked && input.durationMinutes
           ? new Date(Date.now() + input.durationMinutes * 60_000)
           : null;
-      await db.transaction(async (tx) => {
+      const queuedServerIds = await db.transaction(async (tx) => {
         const found = await repo.applicationUserByPublicId(tx, input.publicId);
         if (!found) throw new AppError(404, "not_found", "Заявку не знайдено.");
         await lockUser(tx, found.user.id);
@@ -117,6 +121,17 @@ export function adminService(
           input.blocked ? admin.discordId : null,
           blockedUntil,
         );
+        // Лише постійний блок забирає доступ. Заявки на розгляді скасовуємо,
+        // інакше їхнє схвалення повернуло б заблокованого у вайтліст.
+        const permanent = input.blocked && !blockedUntil;
+        const serverIds = permanent
+          ? await revokeUserWhitelist(tx, found.user.id, admin)
+          : [];
+        const cancelled = permanent
+          ? await repo.cancelUserPendingApplications(tx, found.user.id)
+          : [];
+        for (const application of cancelled)
+          await enqueueMessage(tx, application.id, "decided");
         await audit(tx, {
           actorType: "user",
           actorId: admin.id,
@@ -131,9 +146,13 @@ export function adminService(
             applicationPublicId: input.publicId,
             actorDiscordId: admin.discordId,
             blockedUntil: blockedUntil?.toISOString() ?? null,
+            cancelledApplications: cancelled.length,
           },
         });
+        return serverIds;
       });
+      for (const queuedServerId of queuedServerIds)
+        commandQueued(queuedServerId);
       return adminApplicationBlockResultSchema.parse({
         publicId: input.publicId,
         applicationBlocked: input.blocked,

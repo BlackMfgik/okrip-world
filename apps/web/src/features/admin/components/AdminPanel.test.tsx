@@ -166,6 +166,65 @@ test("requires confirmation before approving and refreshes the whitelist", async
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 });
 
+test("requires confirmation before blocking a user and closes the dialog after success", async () => {
+  client.setQueryData(["admin", "whitelist"], { players: [], count: 0 });
+  openPanel();
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Заблокувати користувача" }),
+  );
+  expect(
+    request.mock.calls.some(([url]) => String(url).endsWith("/block")),
+  ).toBe(false);
+  const dialog = screen.getByRole("dialog", {
+    name: "Заблокувати користувача?",
+  });
+  expect(dialog.textContent).toContain("буде прибрано з вайтліста");
+  fireEvent.click(within(dialog).getByRole("button", { name: "Заблокувати" }));
+  await waitFor(() =>
+    expect(request).toHaveBeenCalledWith(
+      "/v1/admin/applications/block",
+      expect.objectContaining({
+        body: JSON.stringify({
+          publicId: application.publicId,
+          blocked: true,
+        }),
+      }),
+    ),
+  );
+  await waitFor(() =>
+    expect(client.getQueryState(["admin", "whitelist"])?.isInvalidated).toBe(
+      true,
+    ),
+  );
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+});
+
+test("shows a failed block inside the open dialog and clears it after cancelling", async () => {
+  openPanel();
+  const openDialog = async () => {
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Заблокувати користувача" }),
+    );
+    return screen.getByRole("dialog", { name: "Заблокувати користувача?" });
+  };
+  const dialog = await openDialog();
+  request.mockImplementationOnce(async () =>
+    Response.json(
+      { code: "forbidden", message: "Недостатньо прав." },
+      { status: 403 },
+    ),
+  );
+  fireEvent.click(within(dialog).getByRole("button", { name: "Заблокувати" }));
+  expect((await within(dialog).findByRole("alert")).textContent).toBe(
+    "Недостатньо прав.",
+  );
+
+  fireEvent.click(within(dialog).getByRole("button", { name: "Скасувати" }));
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(screen.queryByText("Недостатньо прав.")).toBeNull();
+  expect(within(await openDialog()).queryByRole("alert")).toBeNull();
+});
+
 test("submits the rejection reason from the extracted application card", async () => {
   openPanel();
   fireEvent.click(await screen.findByRole("button", { name: "Відхилити" }));

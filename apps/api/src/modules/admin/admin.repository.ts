@@ -99,6 +99,16 @@ export async function setApplicationBlocked(
   )[0]!;
 }
 
+export function cancelUserPendingApplications(db: Executor, userId: string) {
+  return db
+    .update(applications)
+    .set({ status: "cancelled", updatedAt: new Date() })
+    .where(
+      and(eq(applications.userId, userId), eq(applications.status, "pending")),
+    )
+    .returning({ id: applications.id });
+}
+
 export function listAdminAccounts(db: Executor) {
   return db
     .select({ account: adminAccounts, user: users })

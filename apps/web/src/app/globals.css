@@ -1960,6 +1960,9 @@ body {
   color: var(--danger-text);
   font-size: 0.86rem;
 }
+.admin-confirm .admin-action-error {
+  margin: 14px 0 0;
+}
 
 /* Вайтліст і адміни */
 .admin-whitelist-section {

@@ -6,7 +6,7 @@ import {
 import { lockUser } from "../player-access/index.js";
 import * as playerAccess from "../player-access/index.js";
 import { enqueueCommand } from "../command-queue/index.js";
-import type { Database } from "../../db/client.js";
+import type { Database, Executor } from "../../db/client.js";
 import { AppError } from "../../shared/errors.js";
 import { audit } from "../audit/index.js";
 import { discordAvatarUrl } from "../../shared/discord-avatar.js";
@@ -14,6 +14,44 @@ import type { WebAdmin } from "./admin.types.js";
 import * as repo from "./admin.repository.js";
 
 const ADMIN_MINECRAFT_ACCOUNT_LIMIT = 2;
+
+/** Прибирає всі активні доступи користувача в транзакції виклику; повертає сервери для сигналу плагіну після commit. */
+export async function revokeUserWhitelist(
+  tx: Executor,
+  userId: string,
+  admin: WebAdmin,
+) {
+  const [accesses, identities] = await Promise.all([
+    playerAccess.accessesByUserId(tx, userId),
+    playerAccess.identitiesByUserId(tx, userId),
+  ]);
+  const serverIds = new Set<string>();
+  for (const access of accesses) {
+    if (access.status !== "active") continue;
+    const identity = identities.find(
+      (candidate) => candidate.id === access.minecraftIdentityId,
+    )!;
+    await playerAccess.setAccessStatus(tx, access.id, "revoked");
+    await enqueueCommand(
+      tx,
+      access.id,
+      access.serverId,
+      identity.username,
+      "whitelist_remove",
+    );
+    await audit(tx, {
+      actorType: "user",
+      actorId: admin.id,
+      eventType: "whitelist_player_removed",
+      entityType: "player_access",
+      entityId: access.id,
+      metadata: { source: "application_block", discordId: admin.discordId },
+    });
+    serverIds.add(access.serverId);
+  }
+  return [...serverIds];
+}
+
 export function adminWhitelistService(
   db: Database,
   serverId: string,

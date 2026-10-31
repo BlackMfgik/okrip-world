@@ -66,9 +66,12 @@ export function useAdminApplications(active: boolean) {
       ),
     onSuccess: async () => {
       setBlockConfirmation(null);
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.adminApplicationsRoot,
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.adminApplicationsRoot,
+        }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.adminWhitelist }),
+      ]);
     },
   });
 

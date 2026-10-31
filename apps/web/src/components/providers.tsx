@@ -8,10 +8,14 @@ export function Providers({ children }: { children: ReactNode }) {
     () =>
       new QueryClient({
         defaultOptions: {
+          // Без "always" офлайн-запит чекає мережі без жодного повідомлення,
+          // а дія адміністратора виконалася б сама після відновлення зв'язку.
           queries: {
+            networkMode: "always",
             refetchOnWindowFocus: false,
             retry: 1,
           },
+          mutations: { networkMode: "always" },
         },
       }),
   );

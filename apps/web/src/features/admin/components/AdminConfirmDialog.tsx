@@ -10,6 +10,7 @@ interface AdminConfirmDialogProps {
   eyebrow?: string;
   tone: "danger" | "hour" | "neutral" | "success";
   pending: boolean;
+  error?: string | null;
   onCancel: () => void;
   onConfirm: () => void;
 }
@@ -21,6 +22,7 @@ export function AdminConfirmDialog({
   eyebrow = "КЕРУВАННЯ ДОСТУПОМ",
   tone,
   pending,
+  error,
   onCancel,
   onConfirm,
 }: AdminConfirmDialogProps) {
@@ -60,6 +62,11 @@ export function AdminConfirmDialog({
         <p className="application-eyebrow">{eyebrow}</p>
         <h2 id={titleId}>{title}</h2>
         <p>{description}</p>
+        {error && (
+          <div className="admin-action-error" role="alert">
+            {error}
+          </div>
+        )}
         <div className="admin-confirm-actions">
           <button
             className="admin-button admin-button-ghost"

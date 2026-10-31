@@ -473,6 +473,121 @@ it("blocks applications permanently or for one hour", async () => {
   expect(refreshedUser.applicationBlockedUntil).toBeNull();
 });
 
+it("removes a permanently blocked user from every whitelist and cancels pending applications", async () => {
+  const applicant = await login(ctx);
+  const submit = (username: string) =>
+    ctx.app.inject({
+      method: "POST",
+      url: "/v1/applications",
+      cookies: { okrip_session: applicant.cookie },
+      headers: browserHeaders,
+      payload: { minecraftUsername: username },
+    });
+  const first = await submit("Blocked_Player");
+  expect(first.statusCode, first.body).toBe(201);
+  const publicId = first.json().application.publicId;
+
+  ctx.discord.identity.mockResolvedValue({
+    id: "876509255308541977",
+    username: "WebAdmin",
+    global_name: null,
+    avatar: null,
+  });
+  const admin = await login(ctx);
+  const adminCookies = { okrip_session: admin.cookie };
+  const decide = (id: string) =>
+    ctx.app.inject({
+      method: "POST",
+      url: "/v1/admin/applications/decision",
+      cookies: adminCookies,
+      headers: browserHeaders,
+      payload: { publicId: id, action: "approve" },
+    });
+  const block = (payload: Record<string, unknown>) =>
+    ctx.app.inject({
+      method: "POST",
+      url: "/v1/admin/applications/block",
+      cookies: adminCookies,
+      headers: browserHeaders,
+      payload: { publicId, ...payload },
+    });
+  const statuses = async () =>
+    (await ctx.db.select().from(playerAccess)).map((row) => row.status);
+  const removals = async () =>
+    (await ctx.db.select().from(commands))
+      .filter((command) => command.type === "whitelist_remove")
+      .map((command) => command.serverId)
+      .sort();
+
+  expect((await decide(publicId)).statusCode).toBe(200);
+  const [vanilla] = await ctx.db.select().from(playerAccess);
+  await ctx.db.insert(playerAccess).values({
+    userId: vanilla!.userId,
+    minecraftIdentityId: vanilla!.minecraftIdentityId,
+    serverId: "modded",
+    status: "active",
+  });
+
+  // Таймаут обмежує лише нові заявки.
+  const timeout = await block({ blocked: true, durationMinutes: 60 });
+  expect(timeout.statusCode, timeout.body).toBe(200);
+  expect(await statuses()).toEqual(["active", "active"]);
+  expect(await removals()).toEqual([]);
+
+  const blocked = await block({ blocked: true });
+  expect(blocked.statusCode, blocked.body).toBe(200);
+  expect(await statuses()).toEqual(["revoked", "revoked"]);
+  expect(await removals()).toEqual(["modded", "vanilla"]);
+  expect(
+    (
+      await ctx.app.inject({
+        url: "/v1/admin/whitelist",
+        cookies: adminCookies,
+      })
+    ).json().count,
+  ).toBe(0);
+  const leaseCommands = async () =>
+    (
+      await ctx.app.inject({
+        method: "POST",
+        url: "/v1/minecraft/commands/lease",
+        headers: serverHeaders,
+        payload: { limit: 1 },
+      })
+    ).json().commands;
+  // Невиконаний whitelist_add для відкликаного доступу черга просто закриває.
+  expect(await leaseCommands()).toEqual([]);
+  expect(await leaseCommands()).toMatchObject([
+    { type: "whitelist_remove", payload: { username: "Blocked_Player" } },
+  ]);
+
+  // Повторне блокування не ставить зайвих команд.
+  expect((await block({ blocked: true })).statusCode).toBe(200);
+  expect(await removals()).toEqual(["modded", "vanilla"]);
+
+  // Розблокування дозволяє нову заявку, але не повертає доступ само.
+  expect((await block({ blocked: false })).statusCode).toBe(200);
+  expect(await statuses()).toEqual(["revoked", "revoked"]);
+  await ctx.db
+    .update(applications)
+    .set({ createdAt: new Date(Date.now() - 120_000) });
+  const second = await submit("Blocked_Player");
+  expect(second.statusCode, second.body).toBe(201);
+  const pendingId = second.json().application.publicId;
+
+  // Заявка на розгляді скасовується, тож її схвалення вже не поверне гравця.
+  expect((await block({ blocked: true })).statusCode).toBe(200);
+  const cancelled = await ctx.db
+    .select()
+    .from(applications)
+    .where(eq(applications.publicId, pendingId));
+  expect(cancelled[0]?.status).toBe("cancelled");
+  const lateApproval = await decide(pendingId);
+  expect(lateApproval.statusCode, lateApproval.body).toBe(200);
+  expect(lateApproval.json().status).toBe("cancelled");
+  expect(await statuses()).toEqual(["revoked", "revoked"]);
+});
+
 it("adds, lists and removes whitelist players through the plugin command queue", async () => {
   ctx.discord.identity.mockResolvedValue({
     id: "554465791358140417",

@@ -65,11 +65,6 @@ export function AdminApplicationsPanel({ active }: { active: boolean }) {
           {decision.error.message}
         </p>
       )}
-      {applicationBlock.error && (
-        <p className="admin-action-error" role="alert">
-          {applicationBlock.error.message}
-        </p>
-      )}
 
       {data?.applications.length === 0 && (
         <div className="admin-empty">
@@ -132,11 +127,15 @@ export function AdminApplicationsPanel({ active }: { active: boolean }) {
                 " не зможе надсилати заявки протягом однієї години. Після цього доступ відновиться автоматично."
               : blockConfirmation.blocked
                 ? blockConfirmation.minecraftUsername +
-                  " не зможе надсилати нові заявки, доки адміністратор не зніме блокування."
+                  " буде прибрано з вайтліста всіх серверів, а заявки на розгляді скасовано. Нові заявки будуть недоступні, доки адміністратор не зніме блокування."
                 : blockConfirmation.minecraftUsername +
-                  " знову зможе надсилати заявки на сервер."
+                  " знову зможе надсилати заявки на сервер. У вайтліст гравець автоматично не повернеться."
           }
-          onCancel={() => setBlockConfirmation(null)}
+          error={applicationBlock.error?.message}
+          onCancel={() => {
+            applicationBlock.reset();
+            setBlockConfirmation(null);
+          }}
           onConfirm={() =>
             applicationBlock.mutate({
               publicId: blockConfirmation.publicId,
