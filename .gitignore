@@ -29,3 +29,8 @@ coverage/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Local AI assistant files
+.claude/
+AGENTS.md
+CLAUDE.md
